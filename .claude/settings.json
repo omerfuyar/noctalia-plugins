@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.github/scripts/check.sh)",
+      "Bash(.github/scripts/live.sh:*)",
+      "Bash(noctalia msg status)",
+      "Bash(noctalia msg config-reload)",
+      "Bash(noctalia msg log-level-status)",
+      "Bash(noctalia msg log-level-set:*)",
+      "Bash(noctalia msg plugins:*)",
+      "Bash(noctalia msg plugin:*)",
+      "Bash(noctalia msg panel-toggle:*)",
+      "Bash(noctalia msg screenshot-fullscreen:*)",
+      "Bash(hyprctl -j:*)",
+      "Bash(luau-lsp analyze:*)"
+    ],
+    "deny": [
+      "Bash(noctalia msg session:*)",
+      "Bash(noctalia msg dpms-off:*)"
+    ]
+  }
+}
