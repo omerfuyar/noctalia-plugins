@@ -1,0 +1,14 @@
+id = "omerfuyar/hello"
+name = "Hello"
+version = "1.0.0"
+plugin_api = 43
+author = "omerfuyar"
+license = "MIT"
+icon = "puzzle"
+description = "Throwaway plugin that tests the repository's check and live-test scripts."
+dependencies = []
+tags = ["demo"]
+
+[[widget]]
+id = "hello"
+entry = "widget.luau"
