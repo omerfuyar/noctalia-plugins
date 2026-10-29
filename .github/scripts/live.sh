@@ -92,7 +92,7 @@ noctalia msg plugins disable "$id" >/dev/null
 noctalia msg plugins enable "$id" >/dev/null
 enabled=false
 for _ in 1 2 3 4 5 6 7 8 9 10; do
-  if grep -q "^$id \[dev\] .* enabled$" <<<"$(noctalia msg plugins list)"; then
+  if grep -qE "^$id \[dev\] [^ ]+ enabled( |$)" <<<"$(noctalia msg plugins list)"; then
     enabled=true
     break
   fi
