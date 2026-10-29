@@ -1,16 +1,9 @@
-.vscode
-*.exe
-*.old
+# Local output: live-test screenshots and tools that check.sh fetches.
 ignore/
-ignore.*
-*.ignore
-*.pdb
-build/
-*.o
-*.obj
-*.shu
-*.out
-*.log
-dist/
+
+# Noctalia's plugin API types, fetched by check.sh.
+noctalia.d.luau
+
+# Editor settings.
+.vscode
 .luarc.json
-.clangd
