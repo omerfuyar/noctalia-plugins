@@ -53,15 +53,13 @@ No plugin is built yet. Build one plugin at a time, in small milestones, and kee
 
 - Changing anything that is marked as decided.
 - Adding an external command to a plugin's `dependencies`.
-- Editing this repository's README.md. It is written for people: show the owner the change you propose, and edit only after the owner reviews it.
 - Opening a pull request in any other repository, such as `noctalia-dev/community-plugins` (DESIGN.md, sections 14.2 and 14.3).
 
 **Never**
 
-- Push, unless the owner tells you to. Never push to `main`.
+- Push to `main`. Changes reach it only through pull requests.
 - Edit `catalog.toml` or `noctalia.d.luau` by hand.
 - Add AI features to a plugin (OVERVIEW.md, section 2).
-- Tell people to run a shell script, in any document. Scripts are for CI and agents.
 - Run Noctalia commands that end the owner's session or turn off screens, such as `noctalia msg session` or `noctalia msg dpms-off`.
 
 ## Checks
