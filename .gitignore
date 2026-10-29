@@ -1,0 +1,16 @@
+.vscode
+*.exe
+*.old
+ignore/
+ignore.*
+*.ignore
+*.pdb
+build/
+*.o
+*.obj
+*.shu
+*.out
+*.log
+dist/
+.luarc.json
+.clangd
