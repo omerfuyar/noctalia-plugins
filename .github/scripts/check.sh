@@ -16,7 +16,13 @@ if [[ ! -f $validator ]]; then
 fi
 
 status=0
-python3 -I "$validator" --root "$root" >/dev/null || status=1
+# The validator does not know [[layer]] entries yet (Noctalia has them since plugin API 36),
+# so that one error is left out.
+errors=$(python3 -I "$validator" --root "$root" 2>&1 >/dev/null | grep -vF "unknown root field 'layer'" || true)
+if [[ -n $errors ]]; then
+  echo "$errors" >&2
+  status=1
+fi
 
 # Luau files, when luau-lsp is installed. The API types come from official-plugins, from a
 # fixed commit; delete noctalia.d.luau after changing it.

@@ -1,0 +1,30 @@
+{
+  "level": {
+    "dim": "Dim {percent}%"
+  },
+  "monitor": {
+    "builtin": "Built-in display",
+    "workspace": "Workspace {name}"
+  },
+  "night": {
+    "off": "Off",
+    "on": "On",
+    "scheduled": "Scheduled",
+    "title": "Night light",
+    "warmth": "Warmth"
+  },
+  "panel": {
+    "loading": "Loading…",
+    "title": "Screen Control"
+  },
+  "settings": {
+    "max_dim": {
+      "description": "How dark the screen can get below its lowest brightness, in percent.",
+      "label": "Darkest dimming"
+    },
+    "per_workspace": {
+      "description": "Each workspace keeps its own dimming. Needs Hyprland.",
+      "label": "Dim each workspace on its own"
+    }
+  }
+}

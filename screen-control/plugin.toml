@@ -1,0 +1,52 @@
+id = "omerfuyar/screen-control"
+name = "Screen Control"
+version = "1.0.0"
+plugin_api = 43
+author = "omerfuyar"
+license = "MIT"
+icon = "sun"
+description = "Brightness for each monitor, dimming below the lowest brightness, and night light, in one bar item."
+dependencies = ["noctalia", "ddcutil", "hyprctl"]
+tags = ["bar", "system", "utility"]
+
+[[setting]]
+key = "max_dim"
+type = "int"
+label_key = "settings.max_dim.label"
+description_key = "settings.max_dim.description"
+default = 95
+min = 10
+max = 99
+
+[[setting]]
+key = "per_workspace"
+type = "bool"
+label_key = "settings.per_workspace.label"
+description_key = "settings.per_workspace.description"
+default = false
+
+[[service]]
+id = "service"
+entry = "service.luau"
+
+[[widget]]
+id = "widget"
+entry = "widget.luau"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 380
+height = "content"
+max_height = 560
+placement = "attached"
+position = "auto"
+open_near_click = true
+
+[[layer]]
+id = "dim"
+entry = "layer.luau"
+layer = "overlay"
+anchors = ["top", "bottom", "left", "right"]
+exclusive_zone = -1
+click_through = true
