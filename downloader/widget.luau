@@ -78,3 +78,8 @@ end
 function onClick()
   noctalia.togglePanel(PANEL)
 end
+
+-- Right click downloads the link on the clipboard, as video or audio like the last download.
+function onRightClick()
+  noctalia.state.set("downloader.command", { action = "clipboard", n = noctalia.nowMs() })
+end

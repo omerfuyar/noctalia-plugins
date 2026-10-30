@@ -33,17 +33,20 @@ Add the **Overview** widget to the bar and click it.
 - Drag a window onto another workspace to move it there without leaving the overview.
 - Escape or a click outside closes the overview.
 
-To open it with a key, bind the panel in Hyprland's config. With a Lua config:
+To open it with a key, set **Key binding** in its settings, such as `SUPER + Tab`. The
+binding is added to Hyprland while Noctalia runs, not written to your config. A key that
+is already bound is left alone, and a notification says so: free it in your Hyprland
+config first, or pick another.
 
-```lua
-hl.bind("SUPER + grave", hl.dsp.exec_cmd("noctalia msg panel-toggle omerfuyar/overview:panel"))
+```sh
+noctalia msg panel-toggle omerfuyar/overview:panel
 ```
 
-With the older config format:
+## Settings
 
-```ini
-bind = SUPER, grave, exec, noctalia msg panel-toggle omerfuyar/overview:panel
-```
+| Setting   | Type     | Default | Description                                                                  |
+| --------- | -------- | ------- | ---------------------------------------------------------------------------- |
+| `keybind` | `string` | `""`    | A key that opens Overview, such as `SUPER + Tab`. Empty adds no key binding. |
 
 ## Notes
 

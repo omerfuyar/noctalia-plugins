@@ -64,3 +64,11 @@ function onScroll(axis, steps)
   end
   send({ action = "step", output = ownMonitor().name, delta = -steps * Level.STEP })
 end
+
+-- Right click switches night light on, or off when it is on or scheduled.
+function onRightClick()
+  if model == nil then
+    return
+  end
+  send({ action = "night", mode = model.night.mode == "off" and "on" or "off" })
+end
