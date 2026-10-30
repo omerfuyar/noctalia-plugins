@@ -1,0 +1,80 @@
+id = "omerfuyar/resurrect"
+name = "Resurrect"
+version = "1.0.0"
+plugin_api = 43
+author = "omerfuyar"
+license = "MIT"
+icon = "lifebuoy"
+description = "Save your packages, dotfiles, services and Noctalia settings to a git repository, and restore them on a new install."
+dependencies = ["git", "sh", "systemctl", "xdg-open"]
+tags = ["bar", "system", "utility"]
+
+[[setting]]
+key = "folder"
+type = "folder"
+label_key = "settings.folder.label"
+description_key = "settings.folder.description"
+default = "~/resurrect"
+
+[[setting]]
+key = "remote"
+type = "string"
+label_key = "settings.remote.label"
+description_key = "settings.remote.description"
+default = ""
+
+[[setting]]
+key = "files"
+type = "string_list"
+label_key = "settings.files.label"
+description_key = "settings.files.description"
+default = ["~/.config/hypr"]
+
+[[setting]]
+key = "daily"
+type = "bool"
+label_key = "settings.daily.label"
+description_key = "settings.daily.description"
+default = true
+
+[[setting]]
+key = "packages"
+type = "bool"
+label_key = "settings.packages.label"
+description_key = "settings.packages.description"
+default = true
+advanced = true
+
+[[setting]]
+key = "services"
+type = "bool"
+label_key = "settings.services.label"
+description_key = "settings.services.description"
+default = true
+advanced = true
+
+[[setting]]
+key = "noctalia"
+type = "bool"
+label_key = "settings.noctalia.label"
+description_key = "settings.noctalia.description"
+default = true
+advanced = true
+
+[[service]]
+id = "service"
+entry = "service.luau"
+
+[[widget]]
+id = "widget"
+entry = "widget.luau"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 400
+height = "content"
+max_height = 600
+placement = "attached"
+position = "auto"
+open_near_click = true
