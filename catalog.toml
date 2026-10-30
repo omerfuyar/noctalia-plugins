@@ -33,3 +33,16 @@ icon = "calendar-event"
 description = "Your next calendar event in the bar, with a countdown and a Join button, from the calendars set up in Noctalia."
 plugin_api = 43
 tags = ["bar", "productivity", "time"]
+
+[[plugin]]
+id = "omerfuyar/screen-control"
+name = "Screen Control"
+version = "1.0.0"
+updated_at = 1793330113
+added_at = 1793330113
+author = "omerfuyar"
+license = "MIT"
+icon = "sun"
+description = "Brightness for each monitor, dimming below the lowest brightness, and night light, in one bar item."
+plugin_api = 43
+tags = ["bar", "system", "utility"]
