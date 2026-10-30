@@ -54,6 +54,47 @@ local function modeButton(mode)
   })
 end
 
+local function timeInput(key, value, placeholder)
+  return ui.input({
+    key = "time-" .. key,
+    value = value,
+    placeholder = placeholder,
+    width = 80,
+    onChange = function(text)
+      send({ action = "schedule", key = key, value = noctalia.string.trim(text) })
+    end,
+  })
+end
+
+-- Sunset to sunrise where Noctalia's location is, or times the user sets.
+local function scheduleBlock()
+  local night = model.night
+  local children = {
+    ui.row({ gap = 8, align = "center" }, {
+      ui.label({ text = noctalia.tr("night.custom"), color = "on_surface_variant", flexGrow = 1 }),
+      ui.toggle({
+        checked = night.custom,
+        onChange = function(value) send({ action = "schedule", custom = value == "true" }) end,
+      }),
+    }),
+  }
+  if night.custom then
+    table.insert(children, ui.row({ gap = 8, align = "center" }, {
+      ui.label({ text = noctalia.tr("night.from"), color = "on_surface_variant" }),
+      timeInput("sunset", night.start, "20:30"),
+      ui.label({ text = noctalia.tr("night.until"), color = "on_surface_variant" }),
+      timeInput("sunrise", night.finish, "07:30"),
+    }))
+    table.insert(children, ui.label({ text = noctalia.tr("night.dark_mode_note"), color = "on_surface_variant" }))
+  elseif night.place ~= "" then
+    table.insert(children, ui.label({ text = noctalia.tr("night.at_place", { place = night.place }),
+      color = "on_surface_variant" }))
+  else
+    table.insert(children, ui.label({ text = noctalia.tr("night.no_place"), color = "on_surface_variant" }))
+  end
+  return ui.column({ gap = 8 }, children)
+end
+
 local function nightBlock()
   local buttons = {}
   for _, mode in ipairs(NIGHT_MODES) do
@@ -66,6 +107,9 @@ local function nightBlock()
     }),
     ui.row({ gap = 6 }, buttons),
   }
+  if model.night.mode == "scheduled" then
+    table.insert(children, scheduleBlock())
+  end
   if model.night.mode ~= "off" then
     table.insert(children, ui.row({ gap = 8, align = "center" }, {
       ui.label({ text = noctalia.tr("night.warmth"), color = "on_surface_variant", flexGrow = 1 }),
@@ -101,6 +145,9 @@ local function render()
   }
   for _, monitor in ipairs(model.monitors) do
     table.insert(children, monitorBlock(monitor))
+  end
+  if model.sharedDim and #model.monitors > 1 then
+    table.insert(children, ui.label({ text = noctalia.tr("panel.shared_dim"), color = "on_surface_variant" }))
   end
   table.insert(children, ui.separator({}))
   table.insert(children, nightBlock())

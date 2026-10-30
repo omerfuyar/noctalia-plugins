@@ -175,7 +175,10 @@ end
 
 local function queue()
   if #model.jobs == 0 then
-    return ui.label({ text = noctalia.tr("panel.empty"), color = "on_surface_variant" })
+    return ui.column({ gap = 4 }, {
+      ui.label({ text = noctalia.tr("panel.empty"), color = "on_surface_variant" }),
+      ui.label({ text = noctalia.tr("panel.sites"), color = "on_surface_variant" }),
+    })
   end
   local rows = {}
   local finished = 0
@@ -198,7 +201,7 @@ local function queue()
       }),
     }))
   end
-  return ui.column({ gap = 6 }, children)
+  return ui.column({ gap = 6, flexGrow = 1 }, children)
 end
 
 local function modeButton(value, glyph)

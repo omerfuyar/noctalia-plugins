@@ -12,7 +12,7 @@ local DIM_SPAN = 0.25
 Level.STEP = 0.05
 
 function Level.maxDim()
-  return (noctalia.getConfig("max_dim") or 95) / 100
+  return (noctalia.getConfig("max_dim") or 75) / 100
 end
 
 -- The lowest brightness: Noctalia's own minimum, but never 0, which turns some backlights off.

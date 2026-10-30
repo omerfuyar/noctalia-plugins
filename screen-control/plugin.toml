@@ -1,12 +1,12 @@
 id = "omerfuyar/screen-control"
 name = "Screen Control"
-version = "1.0.0"
+version = "1.1.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
 icon = "sun"
 description = "Brightness for each monitor, dimming below the lowest brightness, and night light, in one bar item."
-dependencies = ["noctalia", "ddcutil", "hyprctl"]
+dependencies = ["noctalia", "hyprsunset", "hyprctl", "ddcutil"]
 tags = ["bar", "system", "utility"]
 
 [[setting]]
@@ -14,7 +14,7 @@ key = "max_dim"
 type = "int"
 label_key = "settings.max_dim.label"
 description_key = "settings.max_dim.description"
-default = 95
+default = 75
 min = 10
 max = 99
 

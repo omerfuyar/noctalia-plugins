@@ -38,7 +38,7 @@ How the plugins are built. What they are and why is in [OVERVIEW.md](OVERVIEW.md
    - `plugin.toml`, the manifest (section 3);
    - the entry scripts and `lib/` (section 1);
    - `translations/en.json` (section 12);
-   - `README.md` and `thumbnail.webp` (section 14.2);
+   - `README.md`, `thumbnail.webp` and `screenshots/` (section 14.2);
    - any other files its scripts read, such as sounds or helper scripts.
 4. A plugin directory holds at most 200 files.
 
@@ -109,7 +109,9 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 1. Noctalia's runtime API covers monitors, wallpaper, calendar events, system stats, idle time, notifications, the on-screen display, sounds, files, HTTP and downloads. Plugins use it before any external command.
 2. Shell features, such as brightness and night light, are reached with `noctalia msg` through `noctalia.runAsync`.
    - Brightness is set with `noctalia msg brightness-set <connector> <value>`, which also reaches external monitors through ddcutil when Noctalia's `brightness.enable_ddcutil` is on. Noctalia cannot report brightness, so a plugin reads the built-in display's from `/sys/class/backlight` and an external monitor's with `ddcutil getvcp 10`.
-   - Night light is set with `noctalia msg config-set nightlight.<key>`, including its temperature, and read with `noctalia.getSetting`. The `nightlight-*` commands change a temporary state that plugins cannot read.
+   - Dimming below the lowest brightness lowers the gamma with `hyprctl hyprsunset gamma <percent>` on Hyprland, starting `hyprsunset --identity --gamma <percent>` when it is not running, and sets it back to 100 when the plugin stops. Gamma is one level for all monitors and does not show in screenshots. Where hyprsunset is missing, a black overlay layer dims each monitor.
+   - Night light is set with `noctalia msg config-set nightlight.<key>`, including its temperature, and read with `noctalia.getSetting`. The `nightlight-*` commands change a temporary state that plugins cannot read. Its schedule is in `location`: `custom_schedule`, `sunset` and `sunrise`.
+   - Each `config-set` reloads Noctalia's config, so a plugin runs them one at a time. String values are TOML strings, with quotes: `'"21:30"'`. A missing key passed to `noctalia.getSetting` logs a warning, so optional keys are read from their parent table.
 3. Hyprland is reached with `hyprctl -j` through `noctalia.runAsync`.
 4. Commands with any changing value use the argument list form of `noctalia.runAsync`, never a shell string.
 5. Nothing blocks. Commands, HTTP and file reads are asynchronous, and the UI renders again when their results arrive.
@@ -171,7 +173,7 @@ On every pull request, CI installs luau-lsp, from a fixed release, and runs `che
 1. A finished plugin is offered to community-plugins in its own pull request, unchanged.
 2. Its `README.md` follows the template of community-plugins: a title, a short explanation, the plugin table, Usage, Requirements, Settings, and IPC and Notes when needed.
 3. `thumbnail.webp` is 960 × 540 pixels and made with the thumbnail generator that community-plugins links.
-4. A plugin with a visible surface has screenshots in its README.
+4. A plugin with a visible surface has screenshots in its README, at least the panel and the bar widget. They are WebP files in the plugin's `screenshots/` directory, linked with relative paths.
 
 ### 14.3 Other authors' plugins
 

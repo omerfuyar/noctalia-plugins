@@ -26,7 +26,9 @@ wait $!
 echo $? >"$prefix.exit"
 ]]
 
-local PROGRESS_TEMPLATE = "download:progress:%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s"
+-- Bytes rather than yt-dlp's percent text, which can lag behind on fast downloads.
+local PROGRESS_TEMPLATE = "download:progress:%(progress.downloaded_bytes)s|"
+  .. "%(progress.total_bytes,progress.total_bytes_estimate)s|%(progress._speed_str)s|%(progress._eta_str)s"
 
 local FINISHED = { done = true, failed = true, cancelled = true }
 
@@ -102,10 +104,10 @@ local function readLog(job, text)
     local file = line:match("^file:(.*)")
     local err = line:match("^ERROR: (.*)")
     if progress then
-      local percent, speed, eta = progress:match("^([^|]*)|([^|]*)|([^|]*)")
-      local number = tonumber((field(percent) or ""):match("[%d.]+") or "")
-      if number then
-        job.progress = math.clamp(number / 100, 0, 1)
+      local done, total, speed, eta = progress:match("^([^|]*)|([^|]*)|([^|]*)|([^|]*)")
+      done, total = tonumber(field(done) or ""), tonumber(field(total) or "")
+      if done and total and total > 0 then
+        job.progress = math.clamp(done / total, 0, 1)
       end
       job.speed = field(speed)
       job.eta = field(eta)
