@@ -15,14 +15,15 @@ script brings it all back.
 
 ## Requirements
 
-| Command                                | Needed   | What for                                                                                        |
-| -------------------------------------- | -------- | ----------------------------------------------------------------------------------------------- |
-| `git`                                  | Required | Keeps each save as a commit, and pushes it when a remote is set. Without it, the panel says so. |
-| `sh`                                   | Required | Runs the plugin's save script. It comes with every Linux system.                                |
-| `systemctl`                            | Optional | Lists and restores the services that start by themselves. Without it, services are not saved.   |
-| `xdg-open`                             | Optional | Opens the repository folder. Without it, that button is hidden.                                 |
-| `pacman`, `apt-mark`, `dnf`, `flatpak` | Optional | List installed packages; each one the system has is used. Without any, no packages are saved.   |
-| `paru` or `yay`                        | Optional | Restore AUR packages. Without them, the AUR list stays in `packages/aur.txt`.                   |
+| Command                                | Needed   | What for                                                                                                   |
+| -------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+| `git`                                  | Required | Keeps each save as a commit, and pushes it when a remote is set. Without it, the panel says so.            |
+| `sh`                                   | Required | Runs the plugin's save script. It comes with every Linux system.                                           |
+| `systemctl`                            | Optional | Lists and restores the services that start by themselves. Without it, services are not saved.              |
+| `xdg-open`                             | Optional | Opens the repository folder. Without it, that button is hidden.                                            |
+| `pacman`, `apt-mark`, `dnf`, `flatpak` | Optional | List installed packages; each one the system has is used. Without any, no packages are saved.              |
+| `paru` or `yay`                        | Optional | Restore AUR packages. Without them, the AUR list stays in `packages/aur.txt`.                              |
+| `gitleaks`                             | Optional | Checks each save for passwords, tokens and keys before it is committed. Without it, saves are not checked. |
 
 ## Usage
 
@@ -57,15 +58,24 @@ noctalia msg panel-toggle omerfuyar/resurrect:panel
 
 ### The repository
 
-| Path                | What it holds                                                                                       |
-| ------------------- | --------------------------------------------------------------------------------------------------- |
-| `computers/<name>/` | What Resurrect saved on the computer with that hostname. One repository can hold several computers. |
-| `hooks/save/`       | Your own steps for each save. Resurrect never changes this folder.                                  |
-| `hooks/restore/`    | Your own steps for restoring. Resurrect never changes this folder.                                  |
-| `restore.sh`        | The restore script, updated on each save.                                                           |
+| Path                   | What it holds                                                                                                                                  |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `computers/<name>/`    | What Resurrect saved on the computer with that hostname. One repository can hold several computers.                                            |
+| `packages/exclude.txt` | Optional, yours. Package names left out of every save: one regular expression per line, for the whole name, such as `linux.*` or `.*nvidia.*`. |
+| `packages/extra.txt`   | Optional, yours. Packages installed on restore besides the saved ones, one per line, such as ones pacman counts as dependencies.               |
+| `.gitleaksignore`      | Optional, yours. Findings of the secret check that may be committed.                                                                           |
+| `hooks/save/`          | Your own steps for each save. Resurrect never changes this folder.                                                                             |
+| `hooks/restore/`       | Your own steps for restoring. Resurrect never changes this folder.                                                                             |
+| `restore.sh`           | The restore script, updated on each save.                                                                                                      |
 
 Anything else in the repository is yours too: Resurrect only writes `computers/<name>/` of
 the computer it runs on, and `restore.sh`.
+
+### Secrets
+
+When `gitleaks` is installed, each save is checked before it is committed. If something
+looks like a password, token or key, nothing is committed, and the panel names the file.
+Take the file out of the dotfiles, or allow the finding in `.gitleaksignore`.
 
 ### Your own steps
 

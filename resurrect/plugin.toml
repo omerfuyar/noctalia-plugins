@@ -1,12 +1,12 @@
 id = "omerfuyar/resurrect"
 name = "Resurrect"
-version = "1.1.0"
+version = "1.2.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
 icon = "lifebuoy"
 description = "Save your packages, dotfiles, services and Noctalia settings to a git repository, and restore them on a new install."
-dependencies = ["git", "sh", "systemctl", "xdg-open"]
+dependencies = ["git", "sh", "systemctl", "xdg-open", "gitleaks"]
 tags = ["bar", "system", "utility"]
 
 [[setting]]
