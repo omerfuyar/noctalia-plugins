@@ -195,7 +195,8 @@ local function render()
       ui.label({ text = noctalia.tr("panel.title"), fontWeight = "semibold", flexGrow = 1 }),
       ui.label({ text = noctalia.tr("panel.hint"), color = "on_surface_variant" }),
     }),
-    ui.scroll({ gap = 20, height = math.min(contentHeight, MAX_LIST_HEIGHT) }, sections),
+    ui.scroll({ key = "list" .. math.min(contentHeight, MAX_LIST_HEIGHT), gap = 20,
+      height = math.min(contentHeight, MAX_LIST_HEIGHT) }, sections),
   }))
 end
 
