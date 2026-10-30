@@ -111,6 +111,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 3. Hyprland is reached with `hyprctl -j` through `noctalia.runAsync`.
 4. Commands with any changing value use the argument list form of `noctalia.runAsync`, never a shell string.
 5. Nothing blocks. Commands, HTTP and file reads are asynchronous, and the UI renders again when their results arrive.
+6. A command that can run longer than a minute, such as a download, runs detached: `noctalia.runAsync` without a callback, on `sh -c` with a fixed script and the changing values as its arguments. The script writes the command's output, process id and exit code to files in the data directory, and the service reads them on its update tick. The command also survives a reload of the service.
 
 ## 11. Data and state
 

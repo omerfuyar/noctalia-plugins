@@ -14,12 +14,11 @@ Open questions and pending tasks. When one is settled, write the decision where 
 Each plugin of [OVERVIEW.md](OVERVIEW.md), section 4, is to be built:
 
 1. Screen Control.
-2. Downloader.
-3. Overview.
-4. Display Layout. First ask the author of Hyprland Settings whether these features belong in that plugin (OVERVIEW.md, section 5).
-5. Phone Cam.
-6. Radio. First compare with `fel/radio` and `nilsonlinux/world-radio` in community-plugins; a contribution to one of them may serve better.
-7. Resurrect.
+2. Overview.
+3. Display Layout. First ask the author of Hyprland Settings whether these features belong in that plugin (OVERVIEW.md, section 5).
+4. Phone Cam.
+5. Radio. First compare with `fel/radio` and `nilsonlinux/world-radio` in community-plugins; a contribution to one of them may serve better.
+6. Resurrect.
 
 ## Contributions
 
