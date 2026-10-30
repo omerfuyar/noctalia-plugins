@@ -37,8 +37,8 @@ tags = ["bar", "system", "utility"]
 [[plugin]]
 id = "omerfuyar/overview"
 name = "Overview"
-version = "1.0.1"
-updated_at = 1793345446
+version = "1.1.0"
+updated_at = 1793346134
 added_at = 1793333899
 author = "omerfuyar"
 license = "MIT"
