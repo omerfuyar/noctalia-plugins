@@ -11,11 +11,10 @@ Open questions and pending tasks. When one is settled, write the decision where 
 
 Each plugin of [OVERVIEW.md](OVERVIEW.md), section 4, is to be built:
 
-1. Overview.
-2. Display Layout. First ask the author of Hyprland Settings whether these features belong in that plugin (OVERVIEW.md, section 5).
-3. Phone Cam.
-4. Radio. First compare with `fel/radio` and `nilsonlinux/world-radio` in community-plugins; a contribution to one of them may serve better.
-5. Resurrect.
+1. Display Layout. First ask the author of Hyprland Settings whether these features belong in that plugin (OVERVIEW.md, section 5).
+2. Phone Cam.
+3. Radio. First compare with `fel/radio` and `nilsonlinux/world-radio` in community-plugins; a contribution to one of them may serve better.
+4. Resurrect.
 
 ## Contributions
 
