@@ -11,8 +11,8 @@
 [[plugin]]
 id = "omerfuyar/downloader"
 name = "Downloader"
-version = "1.0.1"
-updated_at = 1793329359
+version = "1.1.0"
+updated_at = 1793333209
 added_at = 1793293826
 author = "omerfuyar"
 license = "MIT"
@@ -24,8 +24,8 @@ tags = ["bar", "media", "video", "utility"]
 [[plugin]]
 id = "omerfuyar/agenda"
 name = "Agenda"
-version = "1.0.0"
-updated_at = 1793294310
+version = "1.0.1"
+updated_at = 1793333230
 added_at = 1793294310
 author = "omerfuyar"
 license = "MIT"
@@ -37,8 +37,8 @@ tags = ["bar", "productivity", "time"]
 [[plugin]]
 id = "omerfuyar/screen-control"
 name = "Screen Control"
-version = "1.0.0"
-updated_at = 1793330113
+version = "1.1.0"
+updated_at = 1793333482
 added_at = 1793330113
 author = "omerfuyar"
 license = "MIT"
