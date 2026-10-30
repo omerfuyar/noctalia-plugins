@@ -27,7 +27,8 @@ local workspaces = {} -- active workspace name by output name
 local focused = nil -- focused output name, from hyprctl
 local gamma = nil -- the gamma last sent to hyprsunset, in percent
 local gammaStartedMs = -10000
--- Noctalia's caffeine, as this plugin last set it: Noctalia cannot report it.
+-- Noctalia's caffeine. Noctalia does not report it to plugins, but while it is on, Noctalia
+-- holds a logind idle inhibitor named "Caffeine", which systemd-inhibit lists.
 local caffeine = false
 local backlight = nil -- { output, path, max }
 local lastSetMs = {}
@@ -159,7 +160,7 @@ local function publish()
 end
 
 local function save()
-  local text = noctalia.json.encode({ dims = dims, caffeine = caffeine })
+  local text = noctalia.json.encode({ dims = dims })
   if text then
     noctalia.writeFile(dataFile, text)
   end
@@ -229,7 +230,24 @@ end
 local function setCaffeine(on)
   caffeine = on
   noctalia.runAsync({ "noctalia", "msg", on and "caffeine-enable" or "caffeine-disable" })
-  save()
+end
+
+local function readCaffeine()
+  if not noctalia.commandExists("systemd-inhibit") then
+    return
+  end
+  noctalia.runAsync({ "systemd-inhibit", "--list", "--no-pager", "--no-legend" }, function(result)
+    local on = false
+    for line in (result.stdout or ""):gmatch("[^\n]+") do
+      if line:match("^noctalia%s") and line:match("%sidle%s") and line:match("Caffeine") then
+        on = true
+      end
+    end
+    if on ~= caffeine then
+      caffeine = on
+      publish()
+    end
+  end)
 end
 
 local function isTime(text)
@@ -419,7 +437,11 @@ local function handle(command)
   elseif action == "night" then
     setNightMode(command.mode)
   elseif action == "caffeine" then
-    setCaffeine(not caffeine)
+    if type(command.on) == "boolean" then
+      setCaffeine(command.on)
+    else
+      setCaffeine(not caffeine)
+    end
   elseif action == "schedule" then
     setSchedule(command)
   elseif action == "temperature" and type(command.value) == "number" then
@@ -462,9 +484,16 @@ end
 
 local lastNight = nil
 
+local lastCaffeineMs = 0
+
 function update()
   if gamma == nil and useGamma() then
     publish()
+  end
+  -- Caffeine can change in Noctalia's own menu; it is read every 2 seconds.
+  if noctalia.nowMs() - lastCaffeineMs >= 2000 then
+    lastCaffeineMs = noctalia.nowMs()
+    readCaffeine()
   end
   readBacklight()
   readWorkspaces()
@@ -499,10 +528,6 @@ noctalia.readFileAsync(dataFile, function(text)
   local saved = text and noctalia.json.decode(text)
   if type(saved) == "table" and type(saved.dims) == "table" then
     dims = saved.dims
-  end
-  -- Caffeine ends when Noctalia restarts; turned on here, it comes back.
-  if type(saved) == "table" and saved.caffeine == true then
-    setCaffeine(true)
   end
   loadOutputs()
   onConfigChanged()

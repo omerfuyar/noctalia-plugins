@@ -205,6 +205,11 @@ noctalia.state.watch("overview.model", function(value)
 end)
 
 function onOpen(_context)
-  send({ action = "refresh" })
+  send({ action = "open" })
+  model = noctalia.state.get("overview.model") or model
   render()
+end
+
+function onClose()
+  send({ action = "close" })
 end

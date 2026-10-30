@@ -8,10 +8,10 @@ to move it there.
 
 ## Plugin
 
-| Field   | Value                                                    |
-| ------- | -------------------------------------------------------- |
-| ID      | `omerfuyar/overview`                                     |
-| Entries | Bar widget: `widget`; panel: `panel`; service: `service` |
+| Field   | Value                                                                                                                 |
+| ------- | --------------------------------------------------------------------------------------------------------------------- |
+| ID      | `omerfuyar/overview`                                                                                                  |
+| Entries | Bar widget: `widget`; panels: `panel`, next to the bar, and `center`, in the middle of the screen; service: `service` |
 
 ## Requirements
 
@@ -38,7 +38,11 @@ binding is added to Hyprland while Noctalia runs, not written to your config. A 
 is already bound is left alone, and a notification says so: free it in your Hyprland
 config first, or pick another.
 
+The key binding opens the overview in the middle of the screen. To bind it yourself, or
+to open it from a script:
+
 ```sh
+noctalia msg panel-toggle omerfuyar/overview:center
 noctalia msg panel-toggle omerfuyar/overview:panel
 ```
 
@@ -50,5 +54,5 @@ noctalia msg panel-toggle omerfuyar/overview:panel
 
 ## Notes
 
-- Pictures are taken each time the overview opens, so they show the windows as they were then. They are kept in the plugin's data folder.
+- Pictures are taken when the overview opens and when windows move, so they show each window as it was then. While the overview is open, it follows workspaces and windows as they change. Pictures are kept in the plugin's data folder.
 - Works with both Hyprland config formats, Lua and the older one.
