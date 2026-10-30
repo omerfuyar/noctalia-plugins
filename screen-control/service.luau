@@ -27,6 +27,8 @@ local workspaces = {} -- active workspace name by output name
 local focused = nil -- focused output name, from hyprctl
 local gamma = nil -- the gamma last sent to hyprsunset, in percent
 local gammaStartedMs = -10000
+-- Noctalia's caffeine, as this plugin last set it: Noctalia cannot report it.
+local caffeine = false
 local backlight = nil -- { output, path, max }
 local lastSetMs = {}
 local lastDdcMs = -DDC_REFRESH_MS
@@ -37,8 +39,10 @@ local function perWorkspace()
   return noctalia.getConfig("per_workspace") and noctalia.commandExists("hyprctl")
 end
 
+-- Gamma when chosen and hyprsunset is there; the black layer otherwise.
 local function useGamma()
-  return noctalia.commandExists("hyprsunset") and noctalia.commandExists("hyprctl")
+  return noctalia.getConfig("dim_method") ~= "overlay"
+    and noctalia.commandExists("hyprsunset") and noctalia.commandExists("hyprctl")
 end
 
 -- With gamma, one level covers all monitors; per workspace, it is the focused one's.
@@ -133,14 +137,21 @@ local function publish()
     custom = location.custom_schedule == true,
     start = location.sunset or "",
     finish = location.sunrise or "",
-    place = location.address or "",
+    place = type(location.address) == "string" and location.address or "",
   }
   model.sharedDim = useGamma()
+  model.caffeine = caffeine
   noctalia.state.set("screen-control.model", model)
   if useGamma() then
     noctalia.layer.hide(DIM_LAYER)
     setGamma(math.floor((1 - (dims[dimKey("")] or 0)) * 100 + 0.5))
-  elseif anyDim then
+    return
+  end
+  -- Switched to the layer: gamma goes back to full first.
+  if gamma and gamma < 100 then
+    setGamma(100)
+  end
+  if anyDim then
     noctalia.layer.show(DIM_LAYER)
   else
     noctalia.layer.hide(DIM_LAYER)
@@ -148,7 +159,7 @@ local function publish()
 end
 
 local function save()
-  local text = noctalia.json.encode({ dims = dims })
+  local text = noctalia.json.encode({ dims = dims, caffeine = caffeine })
   if text then
     noctalia.writeFile(dataFile, text)
   end
@@ -215,6 +226,12 @@ local function setNightMode(mode)
   configSet("nightlight.force", mode == "on")
 end
 
+local function setCaffeine(on)
+  caffeine = on
+  noctalia.runAsync({ "noctalia", "msg", on and "caffeine-enable" or "caffeine-disable" })
+  save()
+end
+
 local function isTime(text)
   local hours, minutes = (text or ""):match("^(%d%d?):(%d%d)$")
   return hours ~= nil and tonumber(hours) < 24 and tonumber(minutes) < 60
@@ -225,13 +242,14 @@ end
 local function setSchedule(command)
   local location = noctalia.getSetting("location") or {}
   if type(command.custom) == "boolean" then
-    configSet("location.custom_schedule", command.custom)
+    -- Noctalia turns custom times off again while they are empty, so they are set first.
     if command.custom and not isTime(location.sunset) then
       configSet("location.sunset", '"20:30"')
     end
     if command.custom and not isTime(location.sunrise) then
       configSet("location.sunrise", '"07:30"')
     end
+    configSet("location.custom_schedule", command.custom)
   elseif (command.key == "sunset" or command.key == "sunrise") and isTime(command.value) then
     configSet("location." .. command.key, `"{command.value}"`)
   end
@@ -389,7 +407,7 @@ local function readWorkspaces()
   end)
 end
 
-noctalia.state.watch("screen-control.command", function(command)
+local function handle(command)
   if type(command) ~= "table" then
     return
   end
@@ -400,6 +418,8 @@ noctalia.state.watch("screen-control.command", function(command)
     step(command.output, command.delta)
   elseif action == "night" then
     setNightMode(command.mode)
+  elseif action == "caffeine" then
+    setCaffeine(not caffeine)
   elseif action == "schedule" then
     setSchedule(command)
   elseif action == "temperature" and type(command.value) == "number" then
@@ -408,13 +428,26 @@ noctalia.state.watch("screen-control.command", function(command)
     readDdc()
   end
   publish()
-end)
+end
+
+noctalia.state.watch("screen-control.command", handle)
 
 -- noctalia msg plugin omerfuyar/screen-control:service all up [percent]
 -- noctalia msg plugin omerfuyar/screen-control:service all down [percent]
+-- noctalia msg plugin omerfuyar/screen-control:service all night off|scheduled|on
+-- noctalia msg plugin omerfuyar/screen-control:service all caffeine
 -- Moves the focused monitor along the scale; "down" goes on into dimming.
 function onIpc(event, payload)
-  if event ~= "up" and event ~= "down" then
+  if event == "caffeine" then
+    setCaffeine(not caffeine)
+    publish()
+    return
+  elseif event == "night" then
+    if payload == "off" or payload == "scheduled" or payload == "on" then
+      setNightMode(payload)
+    end
+    return
+  elseif event ~= "up" and event ~= "down" then
     return
   end
   local name = noctalia.focusedOutputName()
@@ -466,6 +499,10 @@ noctalia.readFileAsync(dataFile, function(text)
   local saved = text and noctalia.json.decode(text)
   if type(saved) == "table" and type(saved.dims) == "table" then
     dims = saved.dims
+  end
+  -- Caffeine ends when Noctalia restarts; turned on here, it comes back.
+  if type(saved) == "table" and saved.caffeine == true then
+    setCaffeine(true)
   end
   loadOutputs()
   onConfigChanged()
