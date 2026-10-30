@@ -15,15 +15,15 @@ This is the only file written for agents. Everything else is written for humans.
 
 Before you propose or change anything, read the Contents of OVERVIEW.md and DESIGN.md, then every section the task touches. Read DESIGN.md section 1 before you write code.
 
-| Path              | What it holds                                                                                                   |
-| ----------------- | --------------------------------------------------------------------------------------------------------------- |
-| `<plugin>/`       | One directory per plugin (DESIGN.md, section 2).                                                                |
-| `catalog.toml`    | The plugin source's index. CI generates it on `main`; never edit it (DESIGN.md, section 14.1).                  |
-| `.github/`        | Check scripts for agents and CI, and the workflows (DESIGN.md, section 13).                                     |
-| `.claude/`        | Claude Code's settings: which commands run without asking, and which never run.                                 |
-| `.luaurc`         | Luau's analysis mode for the language server.                                                                   |
-| `noctalia.d.luau` | Noctalia's plugin API types for the language server. `check.sh` fetches it; it is not committed.                |
-| `ignore/`         | Local output, not committed: screenshots from live tests and tools that `check.sh` fetches.                     |
+| Path              | What it holds                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------------ |
+| `<plugin>/`       | One directory per plugin (DESIGN.md, section 2).                                                 |
+| `catalog.toml`    | The plugin source's index. CI generates it on `main`; never edit it (DESIGN.md, section 14.1).   |
+| `.github/`        | Check scripts for agents and CI, and the workflows (DESIGN.md, section 13).                      |
+| `.claude/`        | Claude Code's settings: which commands run without asking, and which never run.                  |
+| `.luaurc`         | Luau's analysis mode for the language server.                                                    |
+| `noctalia.d.luau` | Noctalia's plugin API types for the language server. `check.sh` fetches it; it is not committed. |
+| `ignore/`         | Local output, not committed: screenshots from live tests and tools that `check.sh` fetches.      |
 
 ## Current stage
 

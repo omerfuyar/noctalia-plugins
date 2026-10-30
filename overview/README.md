@@ -8,9 +8,9 @@ to move it there.
 
 ## Plugin
 
-| Field | Value |
-| --- | --- |
-| ID | `omerfuyar/overview` |
+| Field   | Value                                                    |
+| ------- | -------------------------------------------------------- |
+| ID      | `omerfuyar/overview`                                     |
 | Entries | Bar widget: `widget`; panel: `panel`; service: `service` |
 
 ## Requirements

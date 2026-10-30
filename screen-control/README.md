@@ -4,13 +4,15 @@ One bar item for everything about your screens: the brightness of each monitor, 
 further than the lowest brightness, and night light with its schedule. Each workspace can
 also keep its own dimming.
 
+todo also add caffeine functionality !!!
+
 ![Screen Control panel](screenshots/panel.webp)
 
 ## Plugin
 
-| Field | Value |
-| --- | --- |
-| ID | `omerfuyar/screen-control` |
+| Field   | Value                                                                  |
+| ------- | ---------------------------------------------------------------------- |
+| ID      | `omerfuyar/screen-control`                                             |
 | Entries | Bar widget: `widget`; panel: `panel`; service: `service`; layer: `dim` |
 
 ## Requirements
@@ -46,10 +48,10 @@ noctalia msg panel-toggle omerfuyar/screen-control:panel
 
 ## Settings
 
-| Setting | Type | Default | Description |
-| --- | --- | --- | --- |
-| `max_dim` | `int` | `75` | How dark the screens can get below their lowest brightness, in percent. |
-| `per_workspace` | `bool` | `false` | Each workspace keeps its own dimming. Needs Hyprland. |
+| Setting         | Type   | Default | Description                                                             |
+| --------------- | ------ | ------- | ----------------------------------------------------------------------- |
+| `max_dim`       | `int`  | `75`    | How dark the screens can get below their lowest brightness, in percent. |
+| `per_workspace` | `bool` | `false` | Each workspace keeps its own dimming. Needs Hyprland.                   |
 
 ## IPC
 

@@ -1,9 +1,3 @@
-# Local output: live-test screenshots and tools that check.sh fetches.
 ignore/
-
-# Noctalia's plugin API types, fetched by check.sh.
 noctalia.d.luau
-
-# Editor settings.
 .vscode
-.luarc.json

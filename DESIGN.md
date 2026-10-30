@@ -1,24 +1,35 @@
+todo move this to .claude/docs this is not for humans anymore !!!
+
 # Design
 
 How the plugins are built. What they are and why is in [OVERVIEW.md](OVERVIEW.md).
 
 ## Contents
 
-1. [Code conventions](#1-code-conventions)
-2. [Repository layout](#2-repository-layout)
-3. [Plugin manifest](#3-plugin-manifest)
-4. [Architecture](#4-architecture)
-5. [Bar widget](#5-bar-widget)
-6. [Panel](#6-panel)
-7. [Look and feel](#7-look-and-feel)
-8. [Settings](#8-settings)
-9. [Dependencies and setup](#9-dependencies-and-setup)
-10. [Noctalia and external commands](#10-noctalia-and-external-commands)
-11. [Data and state](#11-data-and-state)
-12. [Text and translations](#12-text-and-translations)
-13. [Checks and testing](#13-checks-and-testing)
-14. [Publishing](#14-publishing)
-15. [Glossary](#15-glossary)
+- [Design](#design)
+  - [Contents](#contents)
+  - [1. Code conventions](#1-code-conventions)
+  - [2. Repository layout](#2-repository-layout)
+  - [3. Plugin manifest](#3-plugin-manifest)
+  - [4. Architecture](#4-architecture)
+  - [5. Bar widget](#5-bar-widget)
+  - [6. Panel](#6-panel)
+  - [7. Look and feel](#7-look-and-feel)
+  - [8. Settings](#8-settings)
+  - [9. Dependencies and setup](#9-dependencies-and-setup)
+  - [10. Noctalia and external commands](#10-noctalia-and-external-commands)
+  - [11. Data and state](#11-data-and-state)
+  - [12. Text and translations](#12-text-and-translations)
+  - [13. Checks and testing](#13-checks-and-testing)
+    - [13.1 Static checks](#131-static-checks)
+    - [13.2 Live test](#132-live-test)
+    - [13.3 The owner's machine](#133-the-owners-machine)
+    - [13.4 CI](#134-ci)
+  - [14. Publishing](#14-publishing)
+    - [14.1 This repository as a source](#141-this-repository-as-a-source)
+    - [14.2 community-plugins](#142-community-plugins)
+    - [14.3 Other authors' plugins](#143-other-authors-plugins)
+  - [15. Glossary](#15-glossary)
 
 ## 1. Code conventions
 
