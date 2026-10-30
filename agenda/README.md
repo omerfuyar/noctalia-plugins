@@ -4,6 +4,8 @@ Shows your next calendar event in the bar, with a countdown as it gets close and
 button for meetings. It reads the calendars you already set up in Noctalia, so there is
 nothing else to configure.
 
+![Agenda panel](screenshots/panel.webp)
+
 ## Plugin
 
 | Field | Value |
@@ -27,6 +29,8 @@ Add the **Agenda** widget to the bar.
 - Right click the widget to join the meeting it shows. Its tooltip has the details.
 - Left click opens the panel: the next event with a **Join** button, then the events of
   the coming days. All-day events appear only in the panel.
+
+![Agenda counting down in the bar](screenshots/bar.webp)
 
 ```sh
 noctalia msg panel-toggle omerfuyar/agenda:panel
