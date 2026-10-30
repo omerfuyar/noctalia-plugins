@@ -19,6 +19,11 @@ shift 5
 here=$(cd "$(dirname "$0")" && pwd)
 computer=$(uname -n)
 
+# A new computer starts from the remote's saves, so all computers share one history.
+if [ ! -d "$repo/.git" ] && [ -n "$remote" ] && [ -z "$(ls -A "$repo" 2>/dev/null)" ] &&
+  [ -n "$(git ls-remote "$remote" 2>/dev/null)" ]; then
+  git clone -q "$remote" "$repo" || exit 2
+fi
 mkdir -p "$repo" || exit 1
 cd "$repo" || exit 1
 [ -d .git ] || git init -q || exit 1

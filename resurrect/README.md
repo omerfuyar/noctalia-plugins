@@ -133,5 +133,6 @@ noctalia msg plugin omerfuyar/resurrect:service all save
   is pushed, and push only to a private repository.
 - Only packages installed on purpose are saved, not their dependencies.
 - Each save is a git commit, so older setups stay in the repository's history.
+- With **Push to** set, a computer without the repository folder clones it on its first save, so all computers share one history.
 - Several computers can push to one repository: before pushing, a save is put on top of the other computers' saves. A file both changed, such as a step in `hooks/`, keeps the version of the computer that saves last.
 - Saves from version 1.0, at the top of the repository, move into `computers/<name>/` on the first save.
