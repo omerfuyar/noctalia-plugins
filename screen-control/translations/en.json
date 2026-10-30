@@ -7,19 +7,26 @@
     "workspace": "Workspace {name}"
   },
   "night": {
+    "at_place": "From sunset to sunrise in {place}.",
+    "custom": "Set the times myself",
+    "dark_mode_note": "Noctalia's automatic dark mode follows these times too.",
+    "from": "From",
+    "no_place": "From sunset to sunrise. Set your location in Noctalia's settings, under Location.",
     "off": "Off",
     "on": "On",
     "scheduled": "Scheduled",
     "title": "Night light",
+    "until": "until",
     "warmth": "Warmth"
   },
   "panel": {
     "loading": "Loading…",
+    "shared_dim": "Dimming below the lowest brightness applies to all screens at once.",
     "title": "Screen Control"
   },
   "settings": {
     "max_dim": {
-      "description": "How dark the screen can get below its lowest brightness, in percent.",
+      "description": "How dark the screens can get below their lowest brightness, in percent.",
       "label": "Darkest dimming"
     },
     "per_workspace": {

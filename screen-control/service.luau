@@ -1,10 +1,14 @@
 --!nonstrict
--- Screen Control service: reads each monitor's brightness, keeps the dim levels and runs
--- the dimming layer, and reads and sets night light.
+-- Screen Control service: reads each monitor's brightness, keeps the dim levels and
+-- applies them, and reads and sets night light.
 --
 -- Brightness and night light belong to Noctalia: they are set with `noctalia msg`, and night
 -- light is read back from Noctalia's settings. Noctalia has no way to read brightness, so
 -- the built-in display's is read from sysfs, and an external monitor's with ddcutil.
+--
+-- Dimming lowers hyprsunset's gamma when hyprsunset is installed: real dimming, which
+-- screenshots do not show, but one level for all monitors. Elsewhere it draws the black
+-- "dim" layer over each monitor.
 --
 -- Publishes "screen-control.model" and takes commands on "screen-control.command".
 
@@ -18,8 +22,11 @@ local SETTLE_MS = 1500
 local dataFile = (noctalia.pluginDataDir() or "") .. "/dims.json"
 
 local monitors = {} -- { name, label, internal, brightness, bus }, in noctalia.outputs() order
-local dims = {} -- dim level by key: "output:<name>", or "workspace:<name>" per workspace
+local dims = {} -- dim level by key: "output:<name>" or "all", or "workspace:<name>" per workspace
 local workspaces = {} -- active workspace name by output name
+local focused = nil -- focused output name, from hyprctl
+local gamma = nil -- the gamma last sent to hyprsunset, in percent
+local gammaStartedMs = -10000
 local backlight = nil -- { output, path, max }
 local lastSetMs = {}
 local lastDdcMs = -DDC_REFRESH_MS
@@ -30,12 +37,20 @@ local function perWorkspace()
   return noctalia.getConfig("per_workspace") and noctalia.commandExists("hyprctl")
 end
 
+local function useGamma()
+  return noctalia.commandExists("hyprsunset") and noctalia.commandExists("hyprctl")
+end
+
+-- With gamma, one level covers all monitors; per workspace, it is the focused one's.
 local function dimKey(name)
+  if useGamma() then
+    name = focused or noctalia.focusedOutputName() or name
+  end
   local workspace = workspaces[name]
   if perWorkspace() and workspace then
     return "workspace:" .. workspace
   end
-  return "output:" .. name
+  return useGamma() and "all" or "output:" .. name
 end
 
 local function findMonitor(name)
@@ -45,6 +60,48 @@ local function findMonitor(name)
     end
   end
   return nil
+end
+
+-- Runs one command per key at a time and drops values that a newer one replaced, so a
+-- dragged slider does not queue up dozens of commands.
+local function send(key, argv, onDone)
+  pending[key] = { argv = argv, onDone = onDone }
+  if sending[key] then
+    return
+  end
+  local job = pending[key]
+  pending[key] = nil
+  sending[key] = true
+  noctalia.runAsync(job.argv, function(result)
+    sending[key] = false
+    if job.onDone then
+      job.onDone(result)
+    end
+    local nextJob = pending[key]
+    if nextJob then
+      send(key, nextJob.argv, nextJob.onDone)
+    end
+  end, 10000)
+end
+
+-- Starts hyprsunset when it is not running, with no color change and the wanted gamma.
+local function setGamma(percent)
+  if percent == gamma then
+    return
+  end
+  gamma = percent
+  send("gamma", { "hyprctl", "hyprsunset", "gamma", tostring(percent) }, function(result)
+    if result.exitCode == 0 or percent >= 100 then
+      return
+    end
+    if noctalia.nowMs() - gammaStartedMs > 3000 then
+      gammaStartedMs = noctalia.nowMs()
+      noctalia.runAsync({ "hyprsunset", "--identity", "--gamma", tostring(percent) })
+    else
+      -- It is still starting; update() tries again.
+      gamma = nil
+    end
+  end)
 end
 
 local function nightMode()
@@ -69,12 +126,21 @@ local function publish()
       workspace = workspaces[monitor.name],
     })
   end
+  local location = noctalia.getSetting("location") or {}
   model.night = {
     mode = nightMode(),
     temperature = noctalia.getSetting("nightlight.temperature_night") or 4000,
+    custom = location.custom_schedule == true,
+    start = location.sunset or "",
+    finish = location.sunrise or "",
+    place = location.address or "",
   }
+  model.sharedDim = useGamma()
   noctalia.state.set("screen-control.model", model)
-  if anyDim then
+  if useGamma() then
+    noctalia.layer.hide(DIM_LAYER)
+    setGamma(math.floor((1 - (dims[dimKey("")] or 0)) * 100 + 0.5))
+  elseif anyDim then
     noctalia.layer.show(DIM_LAYER)
   else
     noctalia.layer.hide(DIM_LAYER)
@@ -86,24 +152,6 @@ local function save()
   if text then
     noctalia.writeFile(dataFile, text)
   end
-end
-
--- Runs one command per key at a time and drops values that a newer one replaced, so a
--- dragged slider does not queue up dozens of commands.
-local function send(key, argv)
-  pending[key] = argv
-  if sending[key] then
-    return
-  end
-  local next = pending[key]
-  pending[key] = nil
-  sending[key] = true
-  noctalia.runAsync(next, function()
-    sending[key] = false
-    if pending[key] then
-      send(key, pending[key])
-    end
-  end, 10000)
 end
 
 local function setBrightness(monitor, value)
@@ -134,13 +182,59 @@ local function step(name, delta)
   end
 end
 
+-- Settings are written one at a time, in order: each write reloads Noctalia's config.
+-- A newer value for a path that still waits replaces the older one.
+local configQueue = {}
+local configBusy = false
+
+local function nextConfig()
+  local item = table.remove(configQueue, 1)
+  if item == nil then
+    configBusy = false
+    return
+  end
+  configBusy = true
+  noctalia.runAsync({ "noctalia", "msg", "config-set", item.path, item.value }, nextConfig, 10000)
+end
+
 local function configSet(path, value)
-  send("config:" .. path, { "noctalia", "msg", "config-set", path, tostring(value) })
+  for _, item in ipairs(configQueue) do
+    if item.path == path then
+      item.value = tostring(value)
+      return
+    end
+  end
+  table.insert(configQueue, { path = path, value = tostring(value) })
+  if not configBusy then
+    nextConfig()
+  end
 end
 
 local function setNightMode(mode)
   configSet("nightlight.enabled", mode ~= "off")
   configSet("nightlight.force", mode == "on")
+end
+
+local function isTime(text)
+  local hours, minutes = (text or ""):match("^(%d%d?):(%d%d)$")
+  return hours ~= nil and tonumber(hours) < 24 and tonumber(minutes) < 60
+end
+
+-- The schedule lives in Noctalia's [location]: sunset to sunrise there, or custom times.
+-- Custom times start from 20:30 to 07:30 when none are set.
+local function setSchedule(command)
+  local location = noctalia.getSetting("location") or {}
+  if type(command.custom) == "boolean" then
+    configSet("location.custom_schedule", command.custom)
+    if command.custom and not isTime(location.sunset) then
+      configSet("location.sunset", '"20:30"')
+    end
+    if command.custom and not isTime(location.sunrise) then
+      configSet("location.sunrise", '"07:30"')
+    end
+  elseif (command.key == "sunset" or command.key == "sunrise") and isTime(command.value) then
+    configSet("location." .. command.key, `"{command.value}"`)
+  end
 end
 
 local function readBacklight()
@@ -284,6 +378,10 @@ local function readWorkspaces()
         workspaces[item.name] = workspace
         changed = true
       end
+      if item.focused == true and focused ~= item.name then
+        focused = item.name
+        changed = true
+      end
     end
     if changed then
       publish()
@@ -302,6 +400,8 @@ noctalia.state.watch("screen-control.command", function(command)
     step(command.output, command.delta)
   elseif action == "night" then
     setNightMode(command.mode)
+  elseif action == "schedule" then
+    setSchedule(command)
   elseif action == "temperature" and type(command.value) == "number" then
     configSet("nightlight.temperature_night", math.floor(command.value))
   elseif action == "refresh" and noctalia.nowMs() - lastDdcMs >= DDC_REFRESH_MS then
@@ -330,10 +430,15 @@ end
 local lastNight = nil
 
 function update()
+  if gamma == nil and useGamma() then
+    publish()
+  end
   readBacklight()
   readWorkspaces()
   -- Night light can change in Noctalia's own settings.
+  local location = noctalia.getSetting("location") or {}
   local night = `{nightMode()}{noctalia.getSetting("nightlight.temperature_night")}`
+    .. `{location.custom_schedule}{location.sunset}{location.sunrise}`
   if night ~= lastNight then
     lastNight = night
     publish()
@@ -344,6 +449,13 @@ function onConfigChanged()
   noctalia.setUpdateInterval(perWorkspace() and 300 or 1000)
   readWorkspaces()
   publish()
+end
+
+-- Gamma stays where hyprsunset has it, so it goes back to full when the plugin stops.
+function onExit()
+  if useGamma() and gamma and gamma < 100 then
+    noctalia.runAsync({ "hyprctl", "hyprsunset", "gamma", "100" })
+  end
 end
 
 function onOutputsChanged()
