@@ -46,3 +46,16 @@ icon = "layout-grid"
 description = "See every workspace and its windows at once. Click a window to go to it, drag it to move it."
 plugin_api = 43
 tags = ["bar", "hyprland", "utility"]
+
+[[plugin]]
+id = "omerfuyar/resurrect"
+name = "Resurrect"
+version = "1.0.1"
+updated_at = 1793346230
+added_at = 1793335076
+author = "omerfuyar"
+license = "MIT"
+icon = "lifebuoy"
+description = "Save your packages, dotfiles, services and Noctalia settings to a git repository, and restore them on a new install."
+plugin_api = 43
+tags = ["bar", "system", "utility"]
