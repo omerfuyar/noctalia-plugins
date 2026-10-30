@@ -82,7 +82,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 
 ## 7. Look and feel
 
-1. Colors are palette roles, such as `primary`, `on_surface` or `surface_container/0.6`. UI code has no hex colors, so plugins follow every theme and light or dark mode.
+1. Colors are palette roles, such as `primary`, `on_surface` or `surface_container/0.6`. UI code has no hex colors, so plugins follow every theme and light or dark mode. The one exception is a layer that dims the screen, which is black in every theme.
 2. Sizes use `controlSize` and Noctalia's default fonts. In the bar, labels and glyphs inherit the bar's font and color.
 3. Icons are Tabler glyphs, as in Noctalia's own widgets.
 4. Button variants follow their meaning: `primary` for the main action, `destructive` for actions that delete or stop, `ghost` for small actions.
@@ -108,10 +108,13 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 
 1. Noctalia's runtime API covers monitors, wallpaper, calendar events, system stats, idle time, notifications, the on-screen display, sounds, files, HTTP and downloads. Plugins use it before any external command.
 2. Shell features, such as brightness and night light, are reached with `noctalia msg` through `noctalia.runAsync`.
+   - Brightness is set with `noctalia msg brightness-set <connector> <value>`, which also reaches external monitors through ddcutil when Noctalia's `brightness.enable_ddcutil` is on. Noctalia cannot report brightness, so a plugin reads the built-in display's from `/sys/class/backlight` and an external monitor's with `ddcutil getvcp 10`.
+   - Night light is set with `noctalia msg config-set nightlight.<key>`, including its temperature, and read with `noctalia.getSetting`. The `nightlight-*` commands change a temporary state that plugins cannot read.
 3. Hyprland is reached with `hyprctl -j` through `noctalia.runAsync`.
 4. Commands with any changing value use the argument list form of `noctalia.runAsync`, never a shell string.
 5. Nothing blocks. Commands, HTTP and file reads are asynchronous, and the UI renders again when their results arrive.
-6. A command that can run longer than a minute, such as a download, runs detached: `noctalia.runAsync` without a callback, on `sh -c` with a fixed script and the changing values as its arguments. The script writes the command's output, process id and exit code to files in the data directory, and the service reads them on its update tick. The command also survives a reload of the service.
+6. Something drawn over the whole screen, such as dimming, is a `[[layer]]` entry on the `overlay` layer with `click_through`. The service shows and hides it with `noctalia.layer`.
+7. A command that can run longer than a minute, such as a download, runs detached: `noctalia.runAsync` without a callback, on `sh -c` with a fixed script and the changing values as its arguments. The script writes the command's output, process id and exit code to files in the data directory, and the service reads them on its update tick. The command also survives a reload of the service.
 
 ## 11. Data and state
 
@@ -131,7 +134,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 
 `.github/scripts/check.sh` checks every plugin without running Noctalia:
 
-1. It runs the validator of community-plugins, from a fixed commit, on this repository. The validator checks manifests, entry scripts, translations, READMEs and thumbnails as community-plugins does.
+1. It runs the validator of community-plugins, from a fixed commit, on this repository. The validator checks manifests, entry scripts, translations, READMEs and thumbnails as community-plugins does. It does not know `[[layer]]` entries yet, so `check.sh` leaves out that one error.
 2. It checks every Luau file with `luau-lsp analyze` against `noctalia.d.luau`, which it fetches from official-plugins, from a fixed commit. When luau-lsp is not installed, it says so and skips this step.
 3. Fetched files go to `ignore/` and are not committed.
 
