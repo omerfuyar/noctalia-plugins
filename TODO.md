@@ -14,9 +14,8 @@ Plugins to build:
 
 1. Display Layout. Arranges monitors by dragging, with snapping. It sets resolution, refresh rate, scale, VRR and HDR, keeps layout profiles, and maps workspaces to monitors.
 2. Phone Hub. Becomes the plugin on the `feature/phone-cam` branch: phone screen, phone as a webcam, notifications. Discuss scope with the owner first, and whether the webcam uses Iriun Webcam.
-3. Resurrect. On the `feature/resurrect` branch, ready for review.
-4. Keyboard. Switches keyboard layouts and input methods (fcitx5) in one place, adds layouts, and shows an on-screen keyboard. Discuss scope with the owner first.
-5. Screen Capture. One trigger for a region or the whole screen, as a picture, a video or extracted text. Discuss scope with the owner first.
+3. Keyboard. Switches keyboard layouts and input methods (fcitx5) in one place, adds layouts, and shows an on-screen keyboard. Discuss scope with the owner first.
+4. Screen Capture. One trigger for a region or the whole screen, as a picture, a video or extracted text. Discuss scope with the owner first.
 
 ## Contributions
 

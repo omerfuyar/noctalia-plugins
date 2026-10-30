@@ -1,0 +1,79 @@
+{
+  "actions": {
+    "open": "Open the folder",
+    "restore": "Restore…",
+    "save": "Save now"
+  },
+  "error": {
+    "unknown": "Saving stopped with an error."
+  },
+  "notify": {
+    "failed": "Resurrect could not save your setup"
+  },
+  "panel": {
+    "loading": "Loading…",
+    "title": "Resurrect"
+  },
+  "restore": {
+    "cancel": "Cancel",
+    "confirm": "A terminal opens and asks before each step: packages, dotfiles, Noctalia's settings and services. Files it replaces are backed up first.",
+    "start": "Open terminal"
+  },
+  "saved": {
+    "files": "Dotfiles: {files}",
+    "no_files": "none chosen",
+    "noctalia": "Noctalia's settings",
+    "packages": "Installed packages",
+    "services": "Services that start by themselves",
+    "title": "Saved each time"
+  },
+  "settings": {
+    "daily": {
+      "description": "Save the setup once a day, as long as Noctalia runs.",
+      "label": "Save every day"
+    },
+    "files": {
+      "description": "Files and folders in your home folder to save, such as ~/.config/hypr. Do not add files with passwords or keys if the repository is pushed.",
+      "label": "Dotfiles"
+    },
+    "folder": {
+      "description": "The git repository the setup is saved in. It is created when missing.",
+      "label": "Repository folder"
+    },
+    "noctalia": {
+      "description": "Save Noctalia's config and the settings changed in its settings window.",
+      "label": "Save Noctalia's settings"
+    },
+    "packages": {
+      "description": "Save the list of packages you installed, from pacman, the AUR, apt, dnf and Flatpak.",
+      "label": "Save packages"
+    },
+    "remote": {
+      "description": "A git remote to push each save to, such as a private repository on GitHub. Leave empty to keep the saves on this computer.",
+      "label": "Push to"
+    },
+    "services": {
+      "description": "Save which system and user services start by themselves.",
+      "label": "Save services"
+    }
+  },
+  "setup": {
+    "body": "Resurrect needs git. Install it with your package manager, then open this panel again."
+  },
+  "status": {
+    "failed": "The last save failed",
+    "folder": "In {folder}",
+    "local": "Only on this computer. Set Push to in the settings to keep a copy elsewhere.",
+    "never": "Not saved yet",
+    "remote": "Pushed to {remote}",
+    "saved": "Saved {time}",
+    "saving": "Saving…"
+  },
+  "widget": {
+    "failed": "Resurrect: the last save failed. {error}",
+    "never": "Resurrect: not saved yet",
+    "no_git": "Resurrect needs git",
+    "saved": "Resurrect: saved {time}",
+    "saving": "Resurrect: saving…"
+  }
+}
