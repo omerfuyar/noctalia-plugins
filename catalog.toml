@@ -46,3 +46,16 @@ icon = "sun"
 description = "Brightness for each monitor, dimming below the lowest brightness, and night light, in one bar item."
 plugin_api = 43
 tags = ["bar", "system", "utility"]
+
+[[plugin]]
+id = "omerfuyar/overview"
+name = "Overview"
+version = "1.0.0"
+updated_at = 1793333899
+added_at = 1793333899
+author = "omerfuyar"
+license = "MIT"
+icon = "layout-grid"
+description = "See every workspace and its windows at once. Click a window to go to it, drag it to move it."
+plugin_api = 43
+tags = ["bar", "hyprland", "utility"]
