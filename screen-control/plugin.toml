@@ -1,11 +1,11 @@
 id = "omerfuyar/screen-control"
 name = "Screen Control"
-version = "1.1.0"
+version = "1.1.1"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
 icon = "sun"
-description = "Manage brightness for each monitor, extra dim below the lowest brightness, enable night light and caffeine. All in one bar widget."
+description = "Manage brightness per monitor, extra dim below the lowest brightness, night light and caffeine. All in one bar widget."
 dependencies = ["noctalia", "hyprsunset", "hyprctl", "ddcutil"]
 tags = ["bar", "system", "utility"]
 

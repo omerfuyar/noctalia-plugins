@@ -5,19 +5,21 @@ Open questions and pending tasks. When one is settled, write the decision where 
 ## Open questions
 
 1. Formatter for Luau: StyLua, with which settings?
-2. Can Overview show live window previews? It would need a helper that streams frames to `ui.pixelStream`.
+2. Which compositors do the plugins support, and how? Hyprland first; niri, sway and the others Noctalia supports where a plugin can.
+3. What do right click, middle click and scroll do on a bar widget, the same way in every plugin?
 
 ## Plugins
 
-Each plugin of [OVERVIEW.md](OVERVIEW.md), section 4, is to be built:
+Plugins to build:
 
-1. Display Layout. First ask the author of Hyprland Settings whether these features belong in that plugin (OVERVIEW.md, section 5).
-2. Phone Cam.
-3. Radio. First compare with `fel/radio` and `nilsonlinux/world-radio` in community-plugins; a contribution to one of them may serve better.
-4. Resurrect.
+1. Display Layout. Arranges monitors by dragging, with snapping. It sets resolution, refresh rate, scale, VRR and HDR, keeps layout profiles, and maps workspaces to monitors.
+2. Phone Hub. Becomes the plugin on the `feature/phone-cam` branch: phone screen, phone as a webcam, notifications. Discuss scope with the owner first, and whether the webcam uses Iriun Webcam.
+3. Resurrect. On the `feature/resurrect` branch, ready for review.
+4. Keyboard. Switches keyboard layouts and input methods (fcitx5) in one place, adds layouts, and shows an on-screen keyboard. Discuss scope with the owner first.
+5. Screen Capture. One trigger for a region or the whole screen, as a picture, a video or extracted text. Discuss scope with the owner first.
 
 ## Contributions
 
-1. Offer `[[layer]]` support to the validator of community-plugins. Until it has it, Screen Control cannot be offered there (DESIGN.md, section 13.1).
-2. Offer the Crashes change of OVERVIEW.md, section 5, to its author.
-3. Review the other community plugins the owner uses against OVERVIEW.md, section 2: Ayet Köşesi, Default Apps, Hyprland Settings, Keybind Cheatsheet, Mawaqit, Network Toolkit, NoctaProton VPN, Process Monitor and Shelly. Propose changes to their authors.
+1. Offer `[[layer]]` support to the validator of community-plugins. Until it has it, Screen Control cannot be offered there ([DESIGN.md](.claude/docs/DESIGN.md), section 13.1).
+2. Offer Crashes a change to its author: also show failed services and errors from the system log since boot, and make the AI diagnosis optional.
+3. Review the other community plugins the owner uses against the principles in README.md: Ayet Köşesi, Default Apps, Hyprland Settings, Keybind Cheatsheet, Mawaqit, Network Toolkit, NoctaProton VPN, Process Monitor and Shelly. Propose changes to their authors.

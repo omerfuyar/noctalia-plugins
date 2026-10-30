@@ -7,9 +7,9 @@ pick video or audio, and follow the queue and progress in the bar.
 
 ## Plugin
 
-| Field | Value |
-| --- | --- |
-| ID | `omerfuyar/downloader` |
+| Field   | Value                                                    |
+| ------- | -------------------------------------------------------- |
+| ID      | `omerfuyar/downloader`                                   |
 | Entries | Bar widget: `widget`; panel: `panel`; service: `service` |
 
 ## Supported sites
@@ -21,11 +21,15 @@ Bandcamp, Dailymotion and Bilibili. The full list is
 
 ## Requirements
 
-- `yt-dlp` downloads from the sites it supports, and `ffmpeg` joins video and audio and
-  converts audio. When either is missing, the panel offers to install both in a terminal.
-- `sh` and `kill` run and stop downloads. They come with every Linux system.
-- `xdg-open` opens finished files and the download folder. Without it, those buttons are
-  hidden.
+| Command    | Needed   | What for                                                                            |
+| ---------- | -------- | ----------------------------------------------------------------------------------- |
+| `yt-dlp`   | Required | Downloads from the sites it supports.                                               |
+| `ffmpeg`   | Required | Joins video and audio, and converts audio.                                          |
+| `sh`       | Required | Runs each download in the background. It comes with every Linux system.             |
+| `kill`     | Required | Stops a download. It comes with every Linux system.                                 |
+| `xdg-open` | Optional | Opens finished files and the download folder. Without it, those buttons are hidden. |
+
+When `yt-dlp` or `ffmpeg` is missing, the panel offers to install both in a terminal.
 
 ## Usage
 
@@ -46,13 +50,13 @@ noctalia msg panel-toggle omerfuyar/downloader:panel
 
 ## Settings
 
-| Setting | Type | Default | Description |
-| --- | --- | --- | --- |
-| `folder` | `folder` | `~/Downloads` | Where downloads are saved. |
-| `video_quality` | `select` | `1080` | Highest video resolution. A smaller video is used when the site has nothing this large. |
-| `audio_format` | `select` | `mp3` | File type for audio downloads. `best` (Original) keeps the site's format without converting. |
-| `notify` | `bool` | `true` | Notify when a download finishes or fails. |
-| `whole_playlist` | `bool` | `false` | Advanced. For a link to a video in a playlist, download the whole playlist. A link to the playlist itself always downloads all of it. |
+| Setting          | Type     | Default       | Description                                                                                                                           |
+| ---------------- | -------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `folder`         | `folder` | `~/Downloads` | Where downloads are saved.                                                                                                            |
+| `video_quality`  | `select` | `1080`        | Highest video resolution. A smaller video is used when the site has nothing this large.                                               |
+| `audio_format`   | `select` | `mp3`         | File type for audio downloads. `best` (Original) keeps the site's format without converting.                                          |
+| `notify`         | `bool`   | `true`        | Notify when a download finishes or fails.                                                                                             |
+| `whole_playlist` | `bool`   | `false`       | Advanced. For a link to a video in a playlist, download the whole playlist. A link to the playlist itself always downloads all of it. |
 
 ## IPC
 
@@ -70,4 +74,3 @@ noctalia msg plugin omerfuyar/downloader:service all audio
 - The queue and yt-dlp's output for each download are kept in the plugin's data folder.
   A download keeps running when Noctalia reloads the plugin.
 - Some sites block downloads or need a login; yt-dlp's error is shown on the failed item.
-- Based on ideas from the Omarchy plugin [otoru](https://github.com/ussego/otoru).
