@@ -12,9 +12,10 @@ Open questions and pending tasks. When one is settled, write the decision where 
 Plugins to build:
 
 1. Display Layout. Arranges monitors by dragging, with snapping. It sets resolution, refresh rate, scale, VRR and HDR, keeps layout profiles, and maps workspaces to monitors.
-2. Phone Hub. Becomes the plugin on the `feature/phone-cam` branch: phone screen and phone as a webcam, both with scrcpy. When Iriun Webcam's camera is in use, Phone Hub leaves it alone and says so. Agree on the rest of the scope with the owner, such as notifications.
-3. Keyboard. Switches keyboard layouts and input methods (fcitx5) in one place, adds layouts, and shows an on-screen keyboard. Discuss scope with the owner first.
-4. Screen Capture. One trigger for a region or the whole screen, as a picture, a video or extracted text. Discuss scope with the owner first.
+2. Phone Hub. Becomes the plugin on the `feature/phone-cam` branch: phone screen and phone as a webcam, both with scrcpy. When Iriun Webcam's camera is in use, Phone Hub leaves it alone and says so. Remind the owner: notifications need nothing of their own, since KDE Connect already sends the phone's notifications to Noctalia, and Phone Operate covers KDE Connect's actions; recommended scope is webcam and screen only.
+3. Keyboard. Remind the owner first. The built-in widget fails because fcitx5 runs a group of `keyboard-us` and `hangul` with hangul as default, and Hyprland's main keyboard is fcitx5's virtual one, so Noctalia reads that instead of the `us,tr` layouts. Recommended: one plugin that switches fcitx5 input methods when fcitx5 runs and the compositor's layouts otherwise, adds layouts, and shows an on-screen keyboard with `wvkbd`.
+4. Screen Capture. Remind the owner first. Noctalia already takes region, full screen, window and annotated screenshots. Recommended: one trigger that uses those for pictures and adds what is missing, video with `gpu-screen-recorder` or `wf-recorder` and text from the screen with `tesseract`, as an alternative to the official screen recorder.
+5. Process Manager. Lists processes with search and sorting, ends one, and force-ends one that does not stop. It shows no system totals, which Noctalia's system monitor already shows.
 
 ## Contributions
 
