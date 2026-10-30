@@ -1,0 +1,28 @@
+id = "omerfuyar/overview"
+name = "Overview"
+version = "1.0.0"
+plugin_api = 43
+author = "omerfuyar"
+license = "MIT"
+icon = "layout-grid"
+description = "See every workspace and its windows at once. Click a window to go to it, drag it to move it."
+dependencies = ["hyprctl"]
+tags = ["bar", "hyprland", "utility"]
+
+[[service]]
+id = "service"
+entry = "service.luau"
+
+[[widget]]
+id = "widget"
+entry = "widget.luau"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 1144
+height = "content"
+max_height = 900
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
