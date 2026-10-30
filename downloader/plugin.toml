@@ -1,6 +1,6 @@
 id = "omerfuyar/downloader"
 name = "Downloader"
-version = "1.0.1"
+version = "1.1.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
@@ -21,7 +21,7 @@ key = "video_quality"
 type = "select"
 label_key = "settings.video_quality.label"
 description_key = "settings.video_quality.description"
-default = "best"
+default = "1080"
 options = [
   { value = "best", label_key = "settings.video_quality.options.best" },
   { value = "2160", label_key = "settings.video_quality.options.2160" },

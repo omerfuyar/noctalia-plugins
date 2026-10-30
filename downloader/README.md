@@ -3,12 +3,21 @@
 Download a video or its audio from a link, with yt-dlp, right from the bar. Paste a link,
 pick video or audio, and follow the queue and progress in the bar.
 
+![Downloader panel](screenshots/panel.webp)
+
 ## Plugin
 
 | Field | Value |
 | --- | --- |
 | ID | `omerfuyar/downloader` |
 | Entries | Bar widget: `widget`; panel: `panel`; service: `service` |
+
+## Supported sites
+
+Downloader works with every site yt-dlp supports: more than a thousand, among them
+YouTube, Instagram, TikTok, X (Twitter), Facebook, Reddit, Vimeo, Twitch, SoundCloud,
+Bandcamp, Dailymotion and Bilibili. The full list is
+[yt-dlp's supported sites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md).
 
 ## Requirements
 
@@ -29,6 +38,8 @@ Downloads run one at a time. While one runs, the bar shows its progress, and the
 shows its name, speed and time left. The panel lists waiting and finished downloads; a
 finished file opens with the play button, and a failed one can be tried again.
 
+![Downloader in the bar](screenshots/bar.webp)
+
 ```sh
 noctalia msg panel-toggle omerfuyar/downloader:panel
 ```
@@ -38,7 +49,7 @@ noctalia msg panel-toggle omerfuyar/downloader:panel
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
 | `folder` | `folder` | `~/Downloads` | Where downloads are saved. |
-| `video_quality` | `select` | `best` | Highest video resolution. A smaller video is used when the site has nothing this large. |
+| `video_quality` | `select` | `1080` | Highest video resolution. A smaller video is used when the site has nothing this large. |
 | `audio_format` | `select` | `mp3` | File type for audio downloads. `best` (Original) keeps the site's format without converting. |
 | `notify` | `bool` | `true` | Notify when a download finishes or fails. |
 | `whole_playlist` | `bool` | `false` | Advanced. For a link to a video in a playlist, download the whole playlist. A link to the playlist itself always downloads all of it. |
