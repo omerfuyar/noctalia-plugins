@@ -42,21 +42,35 @@ local function statusCard()
   return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container_high" }, lines)
 end
 
-local function includedRow(glyph, text, on)
-  return ui.row({ gap = 8, align = "center" }, {
+-- One kind of thing a save holds, with how many the last save had.
+local function includedRow(glyph, text, on, count)
+  local children = {
     ui.glyph({ name = on and glyph or "minus", size = 16, color = on and "primary" or "on_surface_variant" }),
     ui.label({ text = text, color = on and "on_surface" or "on_surface_variant", maxLines = 2, flexGrow = 1 }),
-  })
+  }
+  if on and count then
+    table.insert(children, ui.label({ text = tostring(count), color = "on_surface_variant" }))
+  end
+  return ui.row({ gap = 8, align = "center", flexGrow = 1 }, children)
 end
 
 local function included()
+  local counts = model.counts
   local files = #model.files > 0 and table.concat(model.files, ", ") or noctalia.tr("saved.no_files")
+  -- Until a save has counted them, the steps are named without a number.
+  local hookText = counts.hooks and noctalia.trp("saved.hooks", counts.hooks) or noctalia.tr("saved.hooks_any")
+  local hookRow = { includedRow("terminal-2", hookText, counts.hooks ~= 0) }
+  if model.canOpen then
+    table.insert(hookRow, ui.button({ glyph = "folder", variant = "ghost", controlSize = "sm",
+      tooltip = noctalia.tr("saved.open_hooks"), onClick = function() send({ action = "hooks" }) end }))
+  end
   return ui.column({ gap = 6 }, {
     ui.label({ text = noctalia.tr("saved.title"), color = "on_surface_variant" }),
-    includedRow("package", noctalia.tr("saved.packages"), model.packages),
-    includedRow("file-text", noctalia.tr("saved.files", { files = files }), #model.files > 0),
-    includedRow("settings", noctalia.tr("saved.services"), model.services),
-    includedRow("adjustments", noctalia.tr("saved.noctalia"), model.noctalia),
+    includedRow("package", noctalia.tr("saved.packages"), model.packages, counts.packages),
+    includedRow("file-text", noctalia.tr("saved.files", { files = files }), #model.files > 0, counts.files),
+    includedRow("settings", noctalia.tr("saved.services"), model.services, counts.services),
+    includedRow("adjustments", noctalia.tr("saved.noctalia"), model.noctalia, counts.plugins),
+    ui.row({ gap = 4, align = "center" }, hookRow),
   })
 end
 
