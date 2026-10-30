@@ -1,6 +1,6 @@
 id = "omerfuyar/overview"
 name = "Overview"
-version = "1.2.0"
+version = "1.3.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
@@ -33,4 +33,15 @@ max_height = 900
 placement = "attached"
 position = "auto"
 open_near_click = true
+keyboard_focus = "exclusive"
+
+# The same overview, floating in the middle of the screen, for the key binding.
+[[panel]]
+id = "center"
+entry = "panel.luau"
+width = 1144
+height = "content"
+max_height = 900
+placement = "floating"
+position = "center"
 keyboard_focus = "exclusive"

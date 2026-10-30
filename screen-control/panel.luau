@@ -142,7 +142,7 @@ local function caffeineRow()
     }),
     ui.toggle({
       checked = model.caffeine == true,
-      onChange = function() send({ action = "caffeine" }) end,
+      onChange = function(value) send({ action = "caffeine", on = value == "true" }) end,
     }),
   })
 end

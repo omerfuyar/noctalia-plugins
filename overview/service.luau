@@ -84,45 +84,88 @@ local function build(monitorList, workspaceList, clientList)
 end
 
 local reading = false
+local watching = false -- the panel is open
+local lastPublished = nil
 
 -- Pictures are taken at this share of the window's size: enough for a card.
 local PREVIEW_SCALE = "0.25"
 local previewDir = (noctalia.pluginDataDir() or "") .. "/previews"
-local previewFiles = {} -- files of the last pictures, removed before new ones are taken
+
+-- Takes the pictures one after another in one process. Arguments are the scale, then pairs
+-- of toplevel id and file. Prints each file that worked.
+local CAPTURE = [[
+scale=$1
+shift
+while [ $# -ge 2 ]; do
+  grim -T "$1" -s "$scale" "$2" 2>/dev/null && echo "$2"
+  shift 2
+done
+]]
+
+local pictures = {} -- the last good picture of each window, by toplevel id
+local capturing = false
+local capturedFor = nil -- the windows and places the last pictures were taken for
 local generation = 0
 
+local function applyPictures(model)
+  for _, workspace in ipairs(model.workspaces) do
+    for _, window in ipairs(workspace.windows) do
+      window.preview = window.stableId and pictures[window.stableId] or nil
+    end
+  end
+end
+
+-- What the pictures depend on: which windows there are, where, and on which workspace.
+local function layoutKey(model)
+  local parts = {}
+  for _, workspace in ipairs(model.workspaces) do
+    for _, window in ipairs(workspace.windows) do
+      table.insert(parts, `{window.address}@{workspace.id}:{window.x},{window.y},{window.width},{window.height}`)
+    end
+  end
+  return table.concat(parts, ";")
+end
+
 -- Takes a picture of every window, even on hidden workspaces, with grim and the window's
--- toplevel id. Each round has new file names, so the panel does not show a cached picture.
+-- toplevel id. The old pictures stay on screen until the new ones are all there; each round
+-- has new file names, so the panel never shows a cached picture.
 local function capture(model)
-  if not noctalia.commandExists("grim") then
+  local key = layoutKey(model)
+  if capturing or key == capturedFor or not noctalia.commandExists("grim") then
     return
   end
-  for _, path in ipairs(previewFiles) do
-    noctalia.removeFile(path)
-  end
-  previewFiles = {}
+  capturing = true
   generation += 1
   noctalia.mkdirAll(previewDir)
-  local pending = 0
+  local argv = { "sh", "-c", CAPTURE, "overview", PREVIEW_SCALE }
+  local wanted = {}
   for _, workspace in ipairs(model.workspaces) do
     for _, window in ipairs(workspace.windows) do
       if window.stableId then
         local path = `{previewDir}/{window.stableId}-{generation}.png`
-        pending += 1
-        table.insert(previewFiles, path)
-        noctalia.runAsync({ "grim", "-T", window.stableId, "-s", PREVIEW_SCALE, path }, function(result)
-          pending -= 1
-          if result.exitCode == 0 then
-            window.preview = path
-          end
-          -- One update when all pictures are there.
-          if pending == 0 then
-            noctalia.state.set("overview.model", model)
-          end
-        end, 5000)
+        wanted[path] = window.stableId
+        table.insert(argv, window.stableId)
+        table.insert(argv, path)
       end
     end
   end
+  noctalia.runAsync(argv, function(result)
+    capturing = false
+    capturedFor = key
+    local old = pictures
+    pictures = {}
+    for path in (result.stdout or ""):gmatch("[^\n]+") do
+      if wanted[path] then
+        pictures[wanted[path]] = path
+      end
+    end
+    for _, path in pairs(old) do
+      noctalia.removeFile(path)
+    end
+    applyPictures(model)
+    lastPublished = noctalia.json.encode(model)
+    noctalia.state.set("overview.model", model)
+  end, 30000)
 end
 
 local function refresh()
@@ -141,7 +184,13 @@ local function refresh()
         local m, w, c = decode(monitors), decode(workspaces), decode(clients)
         if m and w and c then
           local model = build(m, w, c)
-          noctalia.state.set("overview.model", model)
+          applyPictures(model)
+          -- Rendered again only when something changed.
+          local text = noctalia.json.encode(model)
+          if text ~= lastPublished then
+            lastPublished = text
+            noctalia.state.set("overview.model", model)
+          end
           capture(model)
         end
       end)
@@ -175,8 +224,11 @@ noctalia.state.watch("overview.command", function(command)
     return
   end
   local action = command.action
-  if action == "refresh" then
+  if action == "open" then
+    watching = true
     refresh()
+  elseif action == "close" then
+    watching = false
   elseif action == "focus" and type(command.address) == "string" then
     local window = "address:" .. command.address
     dispatch(`hl.dsp.focus(\{ window = {quoted(window)} \})`, { "focuswindow", window })
@@ -198,7 +250,7 @@ end)
 -- while Noctalia runs, never written to its config. A key that is already bound is left
 -- alone, and Hyprland drops added bindings when it reloads, so update() checks it again.
 
-local TOGGLE = "noctalia msg panel-toggle omerfuyar/overview:panel"
+local TOGGLE = "noctalia msg panel-toggle omerfuyar/overview:center"
 local MODIFIERS = { SHIFT = 1, CAPS = 2, CTRL = 4, CONTROL = 4, ALT = 8, MOD2 = 16, MOD3 = 32, SUPER = 64, MOD5 = 128 }
 
 local bound = nil -- the key this plugin bound, as written in the setting
@@ -276,8 +328,17 @@ local function checkBinding()
   end)
 end
 
+local lastBindingMs = 0
+
 function update()
-  checkBinding()
+  -- While the panel is open, workspaces and windows are read again, so it follows changes.
+  if watching then
+    refresh()
+  end
+  if noctalia.nowMs() - lastBindingMs >= 5000 then
+    lastBindingMs = noctalia.nowMs()
+    checkBinding()
+  end
 end
 
 function onConfigChanged()
@@ -290,4 +351,4 @@ function onExit()
   end
 end
 
-noctalia.setUpdateInterval(5000)
+noctalia.setUpdateInterval(1500)

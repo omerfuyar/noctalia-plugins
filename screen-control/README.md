@@ -15,12 +15,13 @@ workspace can also keep its own dimming.
 
 ## Requirements
 
-| Command      | Needed   | What for                                                                                                                                                  |
-| ------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `noctalia`   | Required | Sets brightness, night light and caffeine, which are Noctalia's own.                                                                                      |
-| `hyprsunset` | Optional | Dims below the lowest brightness by lowering the gamma, on Hyprland. The plugin starts it when it is not running. Without it, a black layer dims instead. |
-| `hyprctl`    | Optional | Talks to hyprsunset, and finds the workspace on each monitor. Without it, a black layer dims, and each workspace cannot keep its own dimming.             |
-| `ddcutil`    | Optional | Reads the brightness of external monitors; Noctalia uses it too, when **Brightness → ddcutil** is on. Without it, external monitors can still be dimmed.  |
+| Command           | Needed   | What for                                                                                                                                                  |
+| ----------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `noctalia`        | Required | Sets brightness, night light and caffeine, which are Noctalia's own.                                                                                      |
+| `hyprsunset`      | Optional | Dims below the lowest brightness by lowering the gamma, on Hyprland. The plugin starts it when it is not running. Without it, a black layer dims instead. |
+| `hyprctl`         | Optional | Talks to hyprsunset, and finds the workspace on each monitor. Without it, a black layer dims, and each workspace cannot keep its own dimming.             |
+| `ddcutil`         | Optional | Reads the brightness of external monitors; Noctalia uses it too, when **Brightness → ddcutil** is on. Without it, external monitors can still be dimmed.  |
+| `systemd-inhibit` | Optional | Reads whether Noctalia's caffeine is on, so the panel matches Noctalia's own menu. Without it, the panel shows caffeine as it last set it.                |
 
 ## Usage
 
@@ -38,7 +39,7 @@ is on, and turns the accent color while its monitor is dimmed.
   **Scheduled** runs from sunset to sunrise where Noctalia's location is; turn on
   **Set the times myself** to type a start and end time instead, such as `21:30` and
   `07:00`.
-- **Caffeine** keeps the screen on and stops it from locking, using Noctalia's caffeine.
+- **Caffeine** keeps the screen on and stops it from locking. It is Noctalia's own caffeine, so it matches Noctalia's menu.
 
 ```sh
 noctalia msg panel-toggle omerfuyar/screen-control:panel
@@ -78,8 +79,6 @@ noctalia msg plugin omerfuyar/screen-control:service all caffeine
   Custom times also set when Noctalia's automatic dark mode switches. Noctalia's own
   night light widget switches a temporary state that plugins cannot read, so the panel
   may not match it until night light is changed here or in Noctalia's settings.
-- Noctalia cannot report caffeine, so the panel shows it as this plugin last set it. When
-  Noctalia restarts with caffeine on here, the plugin turns it on again.
 - The black layer dims each screen on its own, but also darkens screenshots.
 - The lowest brightness is Noctalia's **Minimum brightness**, but never below 1%, since
   some backlights turn off at 0.
