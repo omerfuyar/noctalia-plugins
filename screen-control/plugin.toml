@@ -1,11 +1,11 @@
 id = "omerfuyar/screen-control"
 name = "Screen Control"
-version = "1.1.0"
+version = "1.2.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
 icon = "sun"
-description = "Brightness for each monitor, dimming below the lowest brightness, and night light, in one bar item."
+description = "Manage brightness per monitor, extra dim below the lowest brightness, night light and caffeine. All in one bar widget."
 dependencies = ["noctalia", "hyprsunset", "hyprctl", "ddcutil"]
 tags = ["bar", "system", "utility"]
 
@@ -17,6 +17,17 @@ description_key = "settings.max_dim.description"
 default = 75
 min = 10
 max = 99
+
+[[setting]]
+key = "dim_method"
+type = "select"
+label_key = "settings.dim_method.label"
+description_key = "settings.dim_method.description"
+default = "gamma"
+options = [
+  { value = "gamma", label_key = "settings.dim_method.options.gamma" },
+  { value = "overlay", label_key = "settings.dim_method.options.overlay" },
+]
 
 [[setting]]
 key = "per_workspace"

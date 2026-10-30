@@ -8,18 +8,21 @@ script brings it all back.
 
 ## Plugin
 
-| Field | Value |
-| --- | --- |
-| ID | `omerfuyar/resurrect` |
+| Field   | Value                                                    |
+| ------- | -------------------------------------------------------- |
+| ID      | `omerfuyar/resurrect`                                    |
 | Entries | Bar widget: `widget`; panel: `panel`; service: `service` |
 
 ## Requirements
 
-- `git` keeps the saves. Without it, the panel says so.
-- `sh` runs the plugin's save script, and `systemctl` lists the services.
-- `xdg-open` opens the repository folder. Without it, that button is hidden.
-- Package lists come from whichever of `pacman`, `apt`, `dnf` and `flatpak` the system
-  has. Restoring AUR packages needs `paru` or `yay`.
+| Command                                | Needed   | What for                                                                                        |
+| -------------------------------------- | -------- | ----------------------------------------------------------------------------------------------- |
+| `git`                                  | Required | Keeps each save as a commit, and pushes it when a remote is set. Without it, the panel says so. |
+| `sh`                                   | Required | Runs the plugin's save script. It comes with every Linux system.                                |
+| `systemctl`                            | Optional | Lists and restores the services that start by themselves. Without it, services are not saved.   |
+| `xdg-open`                             | Optional | Opens the repository folder. Without it, that button is hidden.                                 |
+| `pacman`, `apt-mark`, `dnf`, `flatpak` | Optional | List installed packages; each one the system has is used. Without any, no packages are saved.   |
+| `paru` or `yay`                        | Optional | Restore AUR packages. Without them, the AUR list stays in `packages/aur.txt`.                   |
 
 ## Usage
 
@@ -51,15 +54,15 @@ noctalia msg panel-toggle omerfuyar/resurrect:panel
 
 ## Settings
 
-| Setting | Type | Default | Description |
-| --- | --- | --- | --- |
-| `folder` | `folder` | `~/resurrect` | The git repository the setup is saved in. It is created when missing. |
-| `remote` | `string` | `""` | A git remote to push each save to. Empty keeps the saves on this computer. |
-| `files` | `string_list` | `["~/.config/hypr"]` | Files and folders in the home folder to save. |
-| `daily` | `bool` | `true` | Save once a day while Noctalia runs. |
-| `packages` | `bool` | `true` | Advanced. Save the list of installed packages. |
-| `services` | `bool` | `true` | Advanced. Save which services start by themselves. |
-| `noctalia` | `bool` | `true` | Advanced. Save Noctalia's config and settings. |
+| Setting    | Type          | Default              | Description                                                                |
+| ---------- | ------------- | -------------------- | -------------------------------------------------------------------------- |
+| `folder`   | `folder`      | `~/resurrect`        | The git repository the setup is saved in. It is created when missing.      |
+| `remote`   | `string`      | `""`                 | A git remote to push each save to. Empty keeps the saves on this computer. |
+| `files`    | `string_list` | `["~/.config/hypr"]` | Files and folders in the home folder to save.                              |
+| `daily`    | `bool`        | `true`               | Save once a day while Noctalia runs.                                       |
+| `packages` | `bool`        | `true`               | Advanced. Save the list of installed packages.                             |
+| `services` | `bool`        | `true`               | Advanced. Save which services start by themselves.                         |
+| `noctalia` | `bool`        | `true`               | Advanced. Save Noctalia's config and settings.                             |
 
 ## IPC
 
@@ -75,4 +78,3 @@ noctalia msg plugin omerfuyar/resurrect:service all save
   is pushed, and push only to a private repository.
 - Only packages installed on purpose are saved, not their dependencies.
 - Each save is a git commit, so older setups stay in the repository's history.
-- Based on ideas from Omarchy's resurrect plugin.

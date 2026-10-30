@@ -11,8 +11,8 @@
 [[plugin]]
 id = "omerfuyar/downloader"
 name = "Downloader"
-version = "1.1.0"
-updated_at = 1793333209
+version = "1.1.1"
+updated_at = 1793345446
 added_at = 1793293826
 author = "omerfuyar"
 license = "MIT"
@@ -22,36 +22,23 @@ plugin_api = 43
 tags = ["bar", "media", "video", "utility"]
 
 [[plugin]]
-id = "omerfuyar/agenda"
-name = "Agenda"
-version = "1.0.1"
-updated_at = 1793333230
-added_at = 1793294310
-author = "omerfuyar"
-license = "MIT"
-icon = "calendar-event"
-description = "Your next calendar event in the bar, with a countdown and a Join button, from the calendars set up in Noctalia."
-plugin_api = 43
-tags = ["bar", "productivity", "time"]
-
-[[plugin]]
 id = "omerfuyar/screen-control"
 name = "Screen Control"
-version = "1.1.0"
-updated_at = 1793333482
+version = "1.2.0"
+updated_at = 1793345983
 added_at = 1793330113
 author = "omerfuyar"
 license = "MIT"
 icon = "sun"
-description = "Brightness for each monitor, dimming below the lowest brightness, and night light, in one bar item."
+description = "Manage brightness per monitor, extra dim below the lowest brightness, night light and caffeine. All in one bar widget."
 plugin_api = 43
 tags = ["bar", "system", "utility"]
 
 [[plugin]]
 id = "omerfuyar/overview"
 name = "Overview"
-version = "1.0.0"
-updated_at = 1793333899
+version = "1.1.0"
+updated_at = 1793346134
 added_at = 1793333899
 author = "omerfuyar"
 license = "MIT"

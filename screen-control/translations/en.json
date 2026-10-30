@@ -1,4 +1,8 @@
 {
+  "caffeine": {
+    "hint": "Keeps the screen on and unlocked.",
+    "title": "Caffeine"
+  },
   "level": {
     "dim": "Dim {percent}%"
   },
@@ -7,7 +11,6 @@
     "workspace": "Workspace {name}"
   },
   "night": {
-    "at_place": "From sunset to sunrise in {place}.",
     "custom": "Set the times myself",
     "dark_mode_note": "Noctalia's automatic dark mode follows these times too.",
     "from": "From",
@@ -15,6 +18,7 @@
     "off": "Off",
     "on": "On",
     "scheduled": "Scheduled",
+    "sunset_to_sunrise": "From sunset to sunrise, where Noctalia's location is:",
     "title": "Night light",
     "until": "until",
     "warmth": "Warmth"
@@ -25,6 +29,14 @@
     "title": "Screen Control"
   },
   "settings": {
+    "dim_method": {
+      "description": "How the screens get darker below their lowest brightness. Gamma needs hyprsunset on Hyprland; elsewhere a black layer is used.",
+      "label": "Dimming method",
+      "options": {
+        "gamma": "Gamma",
+        "overlay": "Black layer"
+      }
+    },
     "max_dim": {
       "description": "How dark the screens can get below their lowest brightness, in percent.",
       "label": "Darkest dimming"

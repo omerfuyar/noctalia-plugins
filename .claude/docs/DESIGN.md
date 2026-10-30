@@ -1,24 +1,33 @@
 # Design
 
-How the plugins are built. What they are and why is in [OVERVIEW.md](OVERVIEW.md).
+How the plugins are built. What they are and why is in the [README](../../README.md) and in each plugin's own README.
 
 ## Contents
 
-1. [Code conventions](#1-code-conventions)
-2. [Repository layout](#2-repository-layout)
-3. [Plugin manifest](#3-plugin-manifest)
-4. [Architecture](#4-architecture)
-5. [Bar widget](#5-bar-widget)
-6. [Panel](#6-panel)
-7. [Look and feel](#7-look-and-feel)
-8. [Settings](#8-settings)
-9. [Dependencies and setup](#9-dependencies-and-setup)
-10. [Noctalia and external commands](#10-noctalia-and-external-commands)
-11. [Data and state](#11-data-and-state)
-12. [Text and translations](#12-text-and-translations)
-13. [Checks and testing](#13-checks-and-testing)
-14. [Publishing](#14-publishing)
-15. [Glossary](#15-glossary)
+- [Design](#design)
+  - [Contents](#contents)
+  - [1. Code conventions](#1-code-conventions)
+  - [2. Repository layout](#2-repository-layout)
+  - [3. Plugin manifest](#3-plugin-manifest)
+  - [4. Architecture](#4-architecture)
+  - [5. Bar widget](#5-bar-widget)
+  - [6. Panel](#6-panel)
+  - [7. Look and feel](#7-look-and-feel)
+  - [8. Settings](#8-settings)
+  - [9. Dependencies and setup](#9-dependencies-and-setup)
+  - [10. Noctalia and external commands](#10-noctalia-and-external-commands)
+  - [11. Data and state](#11-data-and-state)
+  - [12. Text and translations](#12-text-and-translations)
+  - [13. Checks and testing](#13-checks-and-testing)
+    - [13.1 Static checks](#131-static-checks)
+    - [13.2 Live test](#132-live-test)
+    - [13.3 The owner's machine](#133-the-owners-machine)
+    - [13.4 CI](#134-ci)
+  - [14. Publishing](#14-publishing)
+    - [14.1 This repository as a source](#141-this-repository-as-a-source)
+    - [14.2 community-plugins](#142-community-plugins)
+    - [14.3 Other authors' plugins](#143-other-authors-plugins)
+  - [15. Glossary](#15-glossary)
 
 ## 1. Code conventions
 
@@ -66,7 +75,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 
 ## 5. Bar widget
 
-1. The bar widget is each plugin's main surface.
+1. A plugin uses the entries that suit it: bar widget, panel, service, launcher provider, shortcut, desktop widget or layer. A bar widget is the usual way in, not a must.
 2. It shows one glyph and, when there is room, a short text. On a vertical bar it shows only the glyph.
 3. A tooltip gives the details that do not fit.
 4. Left click opens the plugin's panel. Scroll changes the plugin's main value when it has one, such as brightness. Middle click keeps Noctalia's default: the widget's settings.
@@ -77,8 +86,9 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 
 1. The panel holds the details and controls that do not fit the bar.
 2. Its height follows its content, up to a limit.
-3. Long lists scroll inside the panel.
+3. Long lists scroll inside the panel. A `ui.scroll` in a panel whose height follows its content gets an explicit `height`, or it shrinks to one row.
 4. It shows a placeholder while data loads, and never an empty frame.
+5. A panel that a bar widget opens has `placement = "attached"`, `position = "auto"` and `open_near_click = true`, so it opens next to the widget, as Noctalia's own panels do. Opened by IPC or a key binding, it follows the same settings.
 
 ## 7. Look and feel
 
@@ -98,7 +108,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 ## 9. Dependencies and setup
 
 1. A plugin first uses what Noctalia provides (section 10). It runs an external command only when Noctalia cannot do the job.
-2. Every external command is listed in `dependencies` and in the README's Requirements.
+2. Every external command is listed in `dependencies` and in the README's Requirements. The Requirements are a table of each command, whether it is required or optional, and what it is for; an optional one also says what stops working without it.
 3. On start, the service checks each required command with `noctalia.commandExists`.
 4. When something is missing, the panel shows a setup card in place of its normal content. The card names what is missing and has one button that installs it in a terminal with `noctalia.runInTerminal`. The bar widget shows the setup state as section 5 says.
 5. One-time setup that needs root, such as loading a kernel module, uses the same card.

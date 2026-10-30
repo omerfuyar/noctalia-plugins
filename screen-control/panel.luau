@@ -86,9 +86,12 @@ local function scheduleBlock()
       timeInput("sunrise", night.finish, "07:30"),
     }))
     table.insert(children, ui.label({ text = noctalia.tr("night.dark_mode_note"), color = "on_surface_variant" }))
-  elseif night.place ~= "" then
-    table.insert(children, ui.label({ text = noctalia.tr("night.at_place", { place = night.place }),
-      color = "on_surface_variant" }))
+  elseif night.place and night.place ~= "" then
+    table.insert(children, ui.label({ text = noctalia.tr("night.sunset_to_sunrise"), color = "on_surface_variant" }))
+    table.insert(children, ui.row({ gap = 6, align = "center" }, {
+      ui.glyph({ name = "map-pin", size = 14, color = "on_surface_variant" }),
+      ui.label({ text = night.place, color = "on_surface_variant", maxLines = 1 }),
+    }))
   else
     table.insert(children, ui.label({ text = noctalia.tr("night.no_place"), color = "on_surface_variant" }))
   end
@@ -129,6 +132,21 @@ local function nightBlock()
   return ui.column({ gap = 8 }, children)
 end
 
+-- Noctalia's caffeine: the screen stays on and does not lock while it is on.
+local function caffeineRow()
+  return ui.row({ gap = 8, align = "center" }, {
+    ui.glyph({ name = "coffee", size = 18, color = model.caffeine and "primary" or "on_surface_variant" }),
+    ui.column({ gap = 2, flexGrow = 1 }, {
+      ui.label({ text = noctalia.tr("caffeine.title") }),
+      ui.label({ text = noctalia.tr("caffeine.hint"), color = "on_surface_variant" }),
+    }),
+    ui.toggle({
+      checked = model.caffeine == true,
+      onChange = function() send({ action = "caffeine" }) end,
+    }),
+  })
+end
+
 local function render()
   if model == nil then
     panel.render(ui.column({ padding = 16 }, {
@@ -151,6 +169,8 @@ local function render()
   end
   table.insert(children, ui.separator({}))
   table.insert(children, nightBlock())
+  table.insert(children, ui.separator({}))
+  table.insert(children, caffeineRow())
   panel.render(ui.column({ gap = 14, padding = 16 }, children))
 end
 
