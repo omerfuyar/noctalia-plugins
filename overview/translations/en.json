@@ -11,7 +11,6 @@
   "workspace": {
     "empty": "Empty",
     "name": "Workspace {name}",
-    "new": "New workspace",
     "windows": {
       "one": "1 window",
       "other": "{count} windows"
