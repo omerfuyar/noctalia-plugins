@@ -10,9 +10,18 @@ The repository is itself a plugin source, add it as a plugin source with command
 noctalia msg plugins source add omerfuyar git https://github.com/omerfuyar/noctalia-plugins
 ```
 
-todo how to uninstall !!!
-
 Then enable plugins in Noctalia's settings, under Plugins.
+
+## Uninstall
+
+Disable each plugin you enabled, in Noctalia's settings under Plugins or with the command below, then remove the plugin source:
+
+```bash
+noctalia msg plugins disable omerfuyar/<plugin>
+noctalia msg plugins source remove omerfuyar
+```
+
+A plugin keeps its data in `~/.local/state/noctalia/plugins/data/omerfuyar/<plugin>/`; delete that folder to remove it too.
 
 Finished plugins are also offered to community-plugins, so people find them in Noctalia's plugin store by default
 

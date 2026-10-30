@@ -2,18 +2,18 @@
 
 Instructions for AI agents working in this repository. Read this file fully before doing anything.
 
-This is the only file written for agents. Everything else is written for humans. This file does not repeat project information; it tells you where to find it.
+This file and `.claude/docs/` are written for agents. Everything else is written for humans. This file does not repeat project information; it tells you where to find it.
 
 ## Where things are
 
-| File                       | What it holds                                                                                  |
-| -------------------------- | ---------------------------------------------------------------------------------------------- |
-| [README.md](README.md)     | Short introduction and how to install the plugins.                                             |
-| [OVERVIEW.md](OVERVIEW.md) | What the plugins are: principles, scope and what each plugin does.                             |
-| [DESIGN.md](DESIGN.md)     | How the plugins are built: layout, conventions, the Noctalia plugin model, checks, publishing. |
-| [TODO.md](TODO.md)         | Open questions and pending tasks.                                                              |
+| File                                | What it holds                                                                                  |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [README.md](README.md)              | Short introduction, how to install and uninstall the plugins, and the principles.              |
+| `<plugin>/README.md`                | What each plugin does. It is the plugin's page on noctalia.dev.                                |
+| [DESIGN.md](.claude/docs/DESIGN.md) | How the plugins are built: layout, conventions, the Noctalia plugin model, checks, publishing. |
+| [TODO.md](TODO.md)                  | Open questions, plugins to build and pending tasks.                                            |
 
-Before you propose or change anything, read the Contents of OVERVIEW.md and DESIGN.md, then every section the task touches. Read DESIGN.md section 1 before you write code.
+Before you propose or change anything, read README.md, the Contents of DESIGN.md, then every section the task touches. Read DESIGN.md section 1 before you write code.
 
 | Path              | What it holds                                                                                    |
 | ----------------- | ------------------------------------------------------------------------------------------------ |
@@ -27,7 +27,7 @@ Before you propose or change anything, read the Contents of OVERVIEW.md and DESI
 
 ## Current stage
 
-No plugin is built yet. Build one plugin at a time, in small milestones, and keep DESIGN.md in step with the code.
+Screen Control, Downloader and Overview are on `main`. Build or change one plugin at a time, in small milestones, and keep DESIGN.md in step with the code.
 
 ## How to work with the owner
 
@@ -46,6 +46,8 @@ No plugin is built yet. Build one plugin at a time, in small milestones, and kee
 **Always**
 
 - Write text and code for a human reader: simple, short and easy to read. Do not bloat.
+- State every dependency explicitly: in `plugin.toml`, and in the plugin README's Requirements, each one marked as required or optional, with what it is for.
+- Credit no other project as the origin of a plugin. These plugins are built for Noctalia.
 - Keep each plugin's `README.md`, `plugin.toml` and `translations/en.json` in step with its code.
 - Check your work as [Checks](#checks) says.
 
@@ -59,7 +61,7 @@ No plugin is built yet. Build one plugin at a time, in small milestones, and kee
 
 - Push to `main`. Changes reach it only through pull requests.
 - Edit `catalog.toml` or `noctalia.d.luau` by hand.
-- Add AI features to a plugin (OVERVIEW.md, section 2).
+- Add AI features to a plugin.
 - Run Noctalia commands that end the owner's session or turn off screens, such as `noctalia msg session` or `noctalia msg dpms-off`.
 
 ## Checks
@@ -82,8 +84,8 @@ No plugin is built yet. Build one plugin at a time, in small milestones, and kee
 
 - Markdown only.
 - One source of truth: write each thing in one place only. Elsewhere, link to it instead of repeating it.
-- Put each thing in its place: product decisions in OVERVIEW.md, technical decisions in DESIGN.md, open questions and pending work in TODO.md, introduction and installing in README.md, instructions for agents in this file. A plugin's own `README.md` is its page on noctalia.dev and follows DESIGN.md, section 14.2.
-- OVERVIEW.md and DESIGN.md explain the design and nothing else: no history, sources, research evidence, comparisons with alternatives, status or open questions. Everything in them is decided.
+- Put each thing in its place: principles in README.md, what a plugin does in its own `README.md`, technical decisions in DESIGN.md, open questions and pending work in TODO.md, introduction and installing in README.md, instructions for agents in this file. A plugin's own `README.md` is its page on noctalia.dev and follows DESIGN.md, section 14.2.
+- DESIGN.md explains the design and nothing else: no history, sources, research evidence, comparisons with alternatives, status or open questions. Everything in it is decided.
 - Explain terms only in the glossary of the document that uses them, never inline.
 - Do not invent framings, categories or rules. Do not make vague claims.
 - Keep section and list numbers in order, and update cross-references when they change.

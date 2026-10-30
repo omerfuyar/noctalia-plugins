@@ -40,4 +40,3 @@ noctalia msg panel-toggle omerfuyar/overview:panel
 
 - Windows are shown as icons, not live pictures of their content.
 - Works with both Hyprland config formats, Lua and the older one.
-- Based on ideas from Omarchy's Mirador plugin.

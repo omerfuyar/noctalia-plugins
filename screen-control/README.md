@@ -74,4 +74,3 @@ noctalia msg plugin omerfuyar/screen-control:service all down 10
   may not match it until night light is changed here or in Noctalia's settings.
 - The lowest brightness is Noctalia's **Minimum brightness**, but never below 1%, since
   some backlights turn off at 0.
-- Based on ideas from Omarchy's screen-comfort plugin.
