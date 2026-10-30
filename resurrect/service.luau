@@ -23,7 +23,8 @@ local dataDir = noctalia.pluginDataDir() or ""
 local stateFile = dataDir .. "/state.json"
 local runPrefix = dataDir .. "/snapshot"
 
-local state = { lastMs = nil, result = nil, error = nil } -- result: "saved", "unchanged", "pushed"
+-- result: "saved", "unchanged" or "pushed"; counts: what the last save held, by kind.
+local state = { lastMs = nil, result = nil, error = nil, counts = nil }
 local running = false
 local reading = false
 local loaded = false
@@ -57,6 +58,8 @@ local function publish()
     noctalia = noctalia.getConfig("noctalia") ~= false,
     files = files,
     canRestore = noctalia.fileExists(repo() .. "/restore.sh"),
+    counts = state.counts or {},
+    hooks = repo() .. "/hooks",
     canOpen = noctalia.commandExists("xdg-open"),
   })
 end
@@ -107,6 +110,13 @@ local function poll()
       reading = false
       running = false
       state.lastMs = noctalia.nowMs()
+      local counts = {}
+      for what, number in (log or ""):gmatch("count (%a+) (%d+)") do
+        counts[what] = tonumber(number)
+      end
+      if next(counts) then
+        state.counts = counts
+      end
       if code == 0 then
         state.error = nil
         state.result = (log or ""):find("pushed") and "pushed"
@@ -142,6 +152,10 @@ noctalia.state.watch("resurrect.command", function(command)
   elseif command.action == "open" and noctalia.commandExists("xdg-open") then
     noctalia.mkdirAll(repo())
     noctalia.runAsync({ "xdg-open", repo() })
+  elseif command.action == "hooks" and noctalia.commandExists("xdg-open") then
+    noctalia.mkdirAll(repo() .. "/hooks/save")
+    noctalia.mkdirAll(repo() .. "/hooks/restore")
+    noctalia.runAsync({ "xdg-open", repo() .. "/hooks" })
   end
   publish()
 end)

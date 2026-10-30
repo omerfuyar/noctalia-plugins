@@ -1,10 +1,12 @@
 #!/bin/sh
 # Brings back a setup saved by Resurrect, on this computer. Run it from the saved
 # repository: ./restore.sh
-# It asks before each step. Files it would replace are first copied to a backup folder.
+# It asks which computer's save to use, then before each step. Files it would replace are
+# first copied to a backup folder. Last, it offers each of the owner's hooks/restore/ steps.
 set -u
 
 cd "$(dirname "$0")" || exit 1
+repo=$(pwd)
 backup=$HOME/.local/state/resurrect/backup-$(date '+%Y%m%d-%H%M%S')
 
 ask() {
@@ -29,6 +31,26 @@ put_back() {
     cp -a "$source/$file" "$target/$file"
   done
 }
+
+# This computer's own save when there is one, the only one, or the one the user picks.
+computer=$(uname -n)
+if [ ! -d "computers/$computer" ]; then
+  set --
+  for folder in computers/*/; do
+    [ -d "$folder" ] && set -- "$@" "$(basename "$folder")"
+  done
+  if [ $# -eq 1 ]; then
+    computer=$1
+  elif [ $# -gt 1 ]; then
+    echo "Saves of these computers are here: $*"
+    printf 'Which one should this computer get? '
+    read -r computer
+  fi
+fi
+if [ -d "computers/$computer" ]; then
+  echo "Restoring the save of $computer."
+  cd "computers/$computer" || exit 1
+fi
 
 if [ -d packages ] && ask "Install the saved packages?"; then
   if [ -f packages/pacman.txt ] && command -v pacman >/dev/null; then
@@ -63,6 +85,13 @@ if [ -d noctalia ] && ask "Put back Noctalia's settings?"; then
   [ -d noctalia/state ] && put_back noctalia/state "$HOME/.local/state/noctalia"
 fi
 
+if [ -s noctalia/plugins.txt ] && command -v noctalia >/dev/null &&
+  ask "Turn on the saved Noctalia plugins? Noctalia must be running."; then
+  while read -r plugin; do
+    noctalia msg plugins enable "$plugin" >/dev/null || echo "skipped: $plugin"
+  done <noctalia/plugins.txt
+fi
+
 if [ -d services ] && ask "Turn on the saved services?"; then
   # One at a time, so a unit this system does not have does not stop the others.
   [ -f services/system.txt ] && while read -r unit; do
@@ -71,6 +100,18 @@ if [ -d services ] && ask "Turn on the saved services?"; then
   [ -f services/user.txt ] && while read -r unit; do
     systemctl --user enable "$unit" 2>/dev/null || echo "skipped: $unit"
   done <services/user.txt
+fi
+
+# The owner's own steps, in name order, each with the same variables as when saving.
+cd "$repo" || exit 1
+if [ -d hooks/restore ]; then
+  for hook in hooks/restore/*; do
+    [ -f "$hook" ] && [ -x "$hook" ] || continue
+    if ask "Run your step $(basename "$hook")?"; then
+      RESURRECT_REPO=$repo RESURRECT_COMPUTER=$computer RESURRECT_DIR=$repo/computers/$computer "$hook" ||
+        echo "The step $(basename "$hook") failed."
+    fi
+  done
 fi
 
 [ -d "$backup" ] && echo "Replaced files were saved in $backup."

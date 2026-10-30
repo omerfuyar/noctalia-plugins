@@ -16,13 +16,19 @@
   },
   "restore": {
     "cancel": "Cancel",
-    "confirm": "A terminal opens and asks before each step: packages, dotfiles, Noctalia's settings and services. Files it replaces are backed up first.",
+    "confirm": "A terminal opens and asks which computer's save to use, then before each step: packages, dotfiles, Noctalia's settings and plugins, services, and your own steps. Files it replaces are backed up first.",
     "start": "Open terminal"
   },
   "saved": {
     "files": "Dotfiles: {files}",
+    "hooks": {
+      "one": "1 step of your own, in hooks/",
+      "other": "{count} steps of your own, in hooks/"
+    },
+    "hooks_any": "Steps of your own, in hooks/",
     "no_files": "none chosen",
-    "noctalia": "Noctalia's settings",
+    "noctalia": "Noctalia's settings and plugins",
+    "open_hooks": "Open the hooks folder",
     "packages": "Installed packages",
     "services": "Services that start by themselves",
     "title": "Saved each time"
