@@ -20,3 +20,16 @@ icon = "download"
 description = "Download video or audio from a link with yt-dlp, and follow the queue and progress from the bar."
 plugin_api = 43
 tags = ["bar", "media", "video", "utility"]
+
+[[plugin]]
+id = "omerfuyar/agenda"
+name = "Agenda"
+version = "1.0.0"
+updated_at = 1793294310
+added_at = 1793294310
+author = "omerfuyar"
+license = "MIT"
+icon = "calendar-event"
+description = "Your next calendar event in the bar, with a countdown and a Join button, from the calendars set up in Noctalia."
+plugin_api = 43
+tags = ["bar", "productivity", "time"]
