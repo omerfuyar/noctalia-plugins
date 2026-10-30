@@ -38,14 +38,24 @@ count() {
   echo "count $what $(cat "$@" 2>/dev/null | grep -c .)"
 }
 
-# Package lists, by package manager. Only what was installed on purpose.
+# Lines of a list you keep by hand, without comments and blank lines.
+entries() {
+  sed 's/#.*//; s/[[:space:]]*$//; /^$/d' "$1" 2>/dev/null
+}
+
+# Package lists, by package manager. Only what was installed on purpose, without the names
+# that packages/exclude.txt matches: one regular expression per line, for the whole name.
 rm -rf "$dir/packages"
 if [ "$packages" = true ]; then
   mkdir -p "$dir/packages"
+  exclude=$(mktemp)
+  entries packages/exclude.txt >"$exclude"
+  [ -s "$exclude" ] || echo '^$' >"$exclude"
   if command -v pacman >/dev/null; then
-    pacman -Qqen >"$dir/packages/pacman.txt"
-    pacman -Qqem >"$dir/packages/aur.txt"
+    pacman -Qqen | grep -vxEf "$exclude" >"$dir/packages/pacman.txt"
+    pacman -Qqem | grep -vxEf "$exclude" >"$dir/packages/aur.txt"
   fi
+  rm -f "$exclude"
   if command -v apt-mark >/dev/null; then
     apt-mark showmanual >"$dir/packages/apt.txt"
   fi
@@ -118,6 +128,16 @@ fi
 echo "count hooks $hooks"
 
 git add -A
+
+# Nothing that looks like a password or key is committed, since saves may be pushed. Known
+# findings can be allowed in .gitleaksignore.
+if command -v gitleaks >/dev/null &&
+  ! found=$(gitleaks git --pre-commit --staged --redact --no-banner -v . 2>&1); then
+  git reset -q
+  echo "$found" | sed 's/\x1b\[[0-9;]*m//g' | sed -n 's/^File:[[:space:]]*/secret found in: /p' | sort -u
+  exit 4
+fi
+
 if git diff --cached --quiet; then
   echo "unchanged"
 else

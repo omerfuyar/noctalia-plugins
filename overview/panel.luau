@@ -118,9 +118,7 @@ local function card(workspace, monitor, active)
     fill = active and "primary/0.12" or "surface_container",
     border = active and "primary" or "outline_variant",
     borderWidth = active and 2 or 1,
-  }, #workspace.windows > 0 and preview(workspace, width - 12, inner) or {
-    ui.label({ text = noctalia.tr("workspace.empty"), color = "on_surface_variant" }),
-  })
+  }, preview(workspace, width - 12, inner))
   local count = #workspace.windows
   return ui.column({
     key = "ws" .. workspace.id,
@@ -143,18 +141,22 @@ end
 local function monitorSection(monitor, showName)
   local cards = {}
   for _, workspace in ipairs(model.workspaces) do
-    if workspace.monitor == monitor.name then
+    -- Only workspaces in use: empty ones are left out.
+    if workspace.monitor == monitor.name and #workspace.windows > 0 then
       table.insert(cards, card(workspace, monitor, workspace.id == monitor.active))
     end
   end
 
   local rows = {}
+  if #cards == 0 then
+    table.insert(rows, ui.label({ text = noctalia.tr("panel.no_windows"), color = "on_surface_variant" }))
+  end
   for start = 1, #cards, PER_ROW do
     table.insert(rows, ui.row({ gap = 16 }, table.move(cards, start, math.min(start + PER_ROW - 1, #cards), 1, {})))
   end
   -- Each row is a title line and a card; rows and the monitor name are 14 apart.
   local cardHeight = math.floor(CARD_WIDTH * monitor.height / monitor.width)
-  local height = #rows * (CARD_HEADER + cardHeight) + (#rows - 1) * 14
+  local height = #cards == 0 and 24 or #rows * (CARD_HEADER + cardHeight) + (#rows - 1) * 14
   local children = {}
   if showName then
     height += 20 + 14

@@ -57,6 +57,11 @@ if [ -d packages ] && ask "Install the saved packages?"; then
     # shellcheck disable=SC2024 # the list is read by this user, not by root
     sudo pacman -S --needed - <packages/pacman.txt
   fi
+  # Packages kept by hand in the repository's packages/extra.txt, such as ones pacman
+  # counts as dependencies and so leaves out of the saved lists.
+  if [ -f "$repo/packages/extra.txt" ] && command -v pacman >/dev/null; then
+    sed 's/#.*//; s/[[:space:]]*$//; /^$/d' "$repo/packages/extra.txt" | sudo pacman -S --needed -
+  fi
   if [ -s packages/aur.txt ]; then
     helper=$(command -v paru || command -v yay || true)
     if [ -n "$helper" ]; then
