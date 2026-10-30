@@ -29,6 +29,7 @@ is on, and turns the accent color while its monitor is dimmed.
 
 ![Screen Control in the bar, with night light on](screenshots/bar.webp)
 
+- Right click the widget to switch night light on, or off when it is on or scheduled.
 - Scroll on the widget to change the brightness of the monitor the bar is on. Below the
   lowest brightness, scrolling down dims further.
 - Click it to open the panel. Each monitor has one slider: its right part is the

@@ -1,6 +1,6 @@
 id = "omerfuyar/overview"
 name = "Overview"
-version = "1.1.0"
+version = "1.2.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
@@ -8,6 +8,13 @@ icon = "layout-grid"
 description = "See every workspace and its windows at once. Click a window to go to it, drag it to move it."
 dependencies = ["hyprctl", "grim"]
 tags = ["bar", "hyprland", "utility"]
+
+[[setting]]
+key = "keybind"
+type = "string"
+label_key = "settings.keybind.label"
+description_key = "settings.keybind.description"
+default = ""
 
 [[service]]
 id = "service"

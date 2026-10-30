@@ -38,6 +38,9 @@ When `yt-dlp` or `ffmpeg` is missing, the panel offers to install both in a term
    clipboard button.
 3. Pick **Video** or **Audio** and press **Download** or Enter.
 
+Right click the widget to download the link you copied, as video or audio like the last
+download.
+
 Downloads run one at a time. While one runs, the bar shows its progress, and the tooltip
 shows its name, speed and time left. The panel lists waiting and finished downloads; a
 finished file opens with the play button, and a failed one can be tried again.

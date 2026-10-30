@@ -303,6 +303,18 @@ local function add(url, mode)
   save()
 end
 
+-- Queues a link as video or audio. Without a link, the clipboard's text is used.
+local function queueLink(payload, mode)
+  local link = noctalia.string.trim(payload or noctalia.clipboardText() or "")
+  if not link:match("^https?://%S+$") then
+    noctalia.notifyError(noctalia.tr("notify.not_a_link.title"), link)
+    return
+  end
+  add(link, mode)
+  publish()
+  poll()
+end
+
 noctalia.state.watch("downloader.command", function(command)
   if type(command) ~= "table" then
     return
@@ -338,6 +350,9 @@ noctalia.state.watch("downloader.command", function(command)
     end
     jobs = kept
     save()
+  elseif action == "clipboard" then
+    queueLink(nil, lastMode)
+    return
   elseif action == "recheck" then
     checkDependencies()
   end
@@ -373,17 +388,9 @@ end
 -- noctalia msg plugin omerfuyar/downloader:service all audio <link>
 -- Without a link, the clipboard's text is used.
 function onIpc(event, payload)
-  if event ~= "video" and event ~= "audio" then
-    return
+  if event == "video" or event == "audio" then
+    queueLink(payload, event)
   end
-  local link = noctalia.string.trim(payload or noctalia.clipboardText() or "")
-  if not link:match("^https?://%S+$") then
-    noctalia.notifyError(noctalia.tr("notify.not_a_link.title"), link)
-    return
-  end
-  add(link, event)
-  publish()
-  poll()
 end
 
 function update()
