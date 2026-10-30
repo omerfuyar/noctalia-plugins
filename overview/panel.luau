@@ -1,7 +1,7 @@
 --!nonstrict
 -- Overview panel: every workspace as a small picture of its windows. A click on a window
 -- goes to it, a click on a workspace switches to it, and a window dragged onto another
--- workspace moves there. Renders "overview.model" and sends actions on "overview.command".
+-- workspace moves there. Windows show as pictures once the service has taken them. Renders "overview.model" and sends actions on "overview.command".
 
 local Layout = require("./lib/layout.luau")
 
@@ -25,7 +25,11 @@ local function focusWindow(window)
   panel.close()
 end
 
-local function windowTile(window, width, height)
+-- The window's picture when there is one; its app icon and title until then.
+local function tileContent(window, width, height)
+  if window.preview then
+    return { ui.image({ path = window.preview, width = width - 4, height = height - 4, fit = "cover", radius = 4 }) }
+  end
   local iconSize = math.max(math.min(32, width - 12, height - 12), 12)
   local icon = window.class ~= "" and noctalia.appIconPath(window.class, iconSize) or nil
   local children = {
@@ -36,6 +40,10 @@ local function windowTile(window, width, height)
     table.insert(children, ui.label({ text = window.title, maxLines = 1, fontSize = 11,
       width = width - 12, color = "on_surface_variant" }))
   end
+  return { ui.column({ gap = 4, align = "center", justify = "center", flexGrow = 1 }, children) }
+end
+
+local function windowTile(window, width, height)
   return ui.dragSource({
     key = window.address,
     dragType = DRAG_TYPE,
@@ -43,8 +51,7 @@ local function windowTile(window, width, height)
     grabCursor = false,
     width = width,
     height = height,
-    gap = 4,
-    padding = 4,
+    padding = window.preview and 2 or 4,
     align = "center",
     justify = "center",
     radius = 6,
@@ -53,7 +60,7 @@ local function windowTile(window, width, height)
     borderWidth = window.focused and 2 or 1,
     tooltip = window.title,
     onClick = function() focusWindow(window) end,
-  }, { ui.column({ gap = 4, align = "center", justify = "center", flexGrow = 1 }, children) })
+  }, tileContent(window, width, height))
 end
 
 local function renderNode(node, width, height)
@@ -133,39 +140,13 @@ local function card(workspace, monitor, active)
   })
 end
 
--- A drop target for a window that should get a workspace of its own.
-local function newCard(monitor, id)
-  local width = CARD_WIDTH
-  local height = math.floor(width * monitor.height / monitor.width)
-  return ui.column({ key = "new" .. monitor.name, gap = 6, width = width }, {
-    ui.label({ text = noctalia.tr("workspace.new"), color = "on_surface_variant", fontWeight = "semibold" }),
-    ui.dropZone({
-      accepts = { DRAG_TYPE },
-      value = tostring(id),
-      onDrop = function(address, value)
-        send({ action = "move", address = address, workspace = value })
-      end,
-      width = width,
-      height = height,
-      radius = 10,
-      align = "center",
-      justify = "center",
-      border = "outline_variant",
-      borderWidth = 1,
-    }, {
-      ui.glyph({ name = "plus", size = 28, color = "on_surface_variant" }),
-    }),
-  })
-end
-
-local function monitorSection(monitor, showName, nextId)
+local function monitorSection(monitor, showName)
   local cards = {}
   for _, workspace in ipairs(model.workspaces) do
     if workspace.monitor == monitor.name then
       table.insert(cards, card(workspace, monitor, workspace.id == monitor.active))
     end
   end
-  table.insert(cards, newCard(monitor, nextId))
 
   local rows = {}
   for start = 1, #cards, PER_ROW do
@@ -200,15 +181,10 @@ local function render()
     return
   end
 
-  local nextId = 1
-  for _, workspace in ipairs(model.workspaces) do
-    nextId = math.max(nextId, workspace.id + 1)
-  end
-
   -- A scroll in a panel that follows its content needs a height of its own.
   local sections, contentHeight = {}, 0
   for index, monitor in ipairs(model.monitors) do
-    local section, height = monitorSection(monitor, #model.monitors > 1, nextId + index - 1)
+    local section, height = monitorSection(monitor, #model.monitors > 1)
     table.insert(sections, section)
     contentHeight += height + (index > 1 and 20 or 0)
   end

@@ -1,6 +1,7 @@
 --!nonstrict
 -- Overview service: reads Hyprland's monitors, workspaces and windows when the panel opens,
--- and runs what the panel asks: focus a window, switch workspace, move a window.
+-- takes a small picture of each window with grim, and runs what the panel asks: focus a
+-- window, switch workspace, move a window.
 --
 -- Hyprland takes dispatchers in Lua when its config is Lua, and in the older form
 -- otherwise; dispatch() tries Lua first.
@@ -74,6 +75,7 @@ local function build(monitorList, workspaceList, clientList)
         height = c.size[2],
         floating = c.floating == true,
         focused = c.focusHistoryID == 0,
+        stableId = c.stableId,
       })
     end
   end
@@ -82,6 +84,46 @@ local function build(monitorList, workspaceList, clientList)
 end
 
 local reading = false
+
+-- Pictures are taken at this share of the window's size: enough for a card.
+local PREVIEW_SCALE = "0.25"
+local previewDir = (noctalia.pluginDataDir() or "") .. "/previews"
+local previewFiles = {} -- files of the last pictures, removed before new ones are taken
+local generation = 0
+
+-- Takes a picture of every window, even on hidden workspaces, with grim and the window's
+-- toplevel id. Each round has new file names, so the panel does not show a cached picture.
+local function capture(model)
+  if not noctalia.commandExists("grim") then
+    return
+  end
+  for _, path in ipairs(previewFiles) do
+    noctalia.removeFile(path)
+  end
+  previewFiles = {}
+  generation += 1
+  noctalia.mkdirAll(previewDir)
+  local pending = 0
+  for _, workspace in ipairs(model.workspaces) do
+    for _, window in ipairs(workspace.windows) do
+      if window.stableId then
+        local path = `{previewDir}/{window.stableId}-{generation}.png`
+        pending += 1
+        table.insert(previewFiles, path)
+        noctalia.runAsync({ "grim", "-T", window.stableId, "-s", PREVIEW_SCALE, path }, function(result)
+          pending -= 1
+          if result.exitCode == 0 then
+            window.preview = path
+          end
+          -- One update when all pictures are there.
+          if pending == 0 then
+            noctalia.state.set("overview.model", model)
+          end
+        end, 5000)
+      end
+    end
+  end
+end
 
 local function refresh()
   if not onHyprland() then
@@ -98,7 +140,9 @@ local function refresh()
         reading = false
         local m, w, c = decode(monitors), decode(workspaces), decode(clients)
         if m and w and c then
-          noctalia.state.set("overview.model", build(m, w, c))
+          local model = build(m, w, c)
+          noctalia.state.set("overview.model", model)
+          capture(model)
         end
       end)
     end)
