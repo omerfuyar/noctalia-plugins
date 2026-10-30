@@ -46,7 +46,10 @@ local function jobPrefix(job)
 end
 
 local function save()
-  noctalia.writeFile(queueFile, noctalia.json.encode({ jobs = jobs, lastMode = lastMode }))
+  local text = noctalia.json.encode({ jobs = jobs, lastMode = lastMode })
+  if text then
+    noctalia.writeFile(queueFile, text)
+  end
 end
 
 local function installCommand()
