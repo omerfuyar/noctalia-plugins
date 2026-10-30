@@ -15,12 +15,11 @@ Each plugin of [OVERVIEW.md](OVERVIEW.md), section 4, is to be built:
 
 1. Screen Control.
 2. Downloader.
-3. Agenda.
-4. Overview.
-5. Display Layout. First ask the author of Hyprland Settings whether these features belong in that plugin (OVERVIEW.md, section 5).
-6. Phone Cam.
-7. Radio. First compare with `fel/radio` and `nilsonlinux/world-radio` in community-plugins; a contribution to one of them may serve better.
-8. Resurrect.
+3. Overview.
+4. Display Layout. First ask the author of Hyprland Settings whether these features belong in that plugin (OVERVIEW.md, section 5).
+5. Phone Cam.
+6. Radio. First compare with `fel/radio` and `nilsonlinux/world-radio` in community-plugins; a contribution to one of them may serve better.
+7. Resurrect.
 
 ## Contributions
 
