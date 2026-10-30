@@ -26,7 +26,7 @@ Add the **Overview** widget to the bar and click it.
 
 ![Overview in the bar](screenshots/bar.webp)
 
-- Each workspace shows its tiled windows in their places, as pictures of their content.
+- Each workspace in use shows its tiled windows in their places, as pictures of their content.
   Floating windows are small tiles under them.
 - The active workspace and the focused window have an accent border.
 - Click a window to focus it, or a workspace's title to switch to it. The overview closes.

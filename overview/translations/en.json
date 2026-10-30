@@ -8,6 +8,7 @@
   "panel": {
     "hint": "Click a window to go to it. Drag it onto a workspace to move it.",
     "loading": "Loading…",
+    "no_windows": "No windows open.",
     "not_hyprland": "Overview works on Hyprland.",
     "title": "Overview"
   },
@@ -21,7 +22,6 @@
     "tooltip": "Overview: all workspaces and windows"
   },
   "workspace": {
-    "empty": "Empty",
     "name": "Workspace {name}",
     "windows": {
       "one": "1 window",
