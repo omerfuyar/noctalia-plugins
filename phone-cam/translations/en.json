@@ -1,0 +1,58 @@
+{
+  "device": {
+    "none": "No phone found",
+    "offline": "Not responding. Unplug the phone and plug it in again.",
+    "ready": "Ready",
+    "step1": "1. On the phone, turn on USB debugging: Settings → Developer options.",
+    "step2": "2. Connect it by USB and allow this computer when the phone asks.",
+    "unauthorized": "Allow USB debugging on the phone, then wait a moment."
+  },
+  "error": {
+    "dismiss": "Dismiss",
+    "exited": "scrcpy stopped unexpectedly."
+  },
+  "mirror": {
+    "start": "Show",
+    "stop": "Close",
+    "title": "Phone screen"
+  },
+  "panel": {
+    "loading": "Loading…",
+    "title": "Phone Cam"
+  },
+  "settings": {
+    "quality": {
+      "description": "Size of the webcam picture. Larger needs a faster USB connection.",
+      "label": "Webcam quality",
+      "options": {
+        "1080": "1080p",
+        "1440": "1440p",
+        "720": "720p"
+      }
+    }
+  },
+  "setup": {
+    "body": "Phone Cam needs {list}.",
+    "check": "Check again",
+    "install": "Install in terminal",
+    "manual": "Install {list} with your package manager, then open this panel again.",
+    "title": "Setup needed"
+  },
+  "webcam": {
+    "back": "Back camera",
+    "front": "Front camera",
+    "hint": "Video apps will see the phone as the camera “{camera}”.",
+    "no_loopback": "The webcam needs the v4l2loopback kernel module, which adds a virtual camera. Setting it up asks for your password once.",
+    "running": "{name} is the camera “{camera}”. Pick it in your video app.",
+    "setup": "Set up virtual camera",
+    "start": "Start",
+    "stop": "Stop",
+    "title": "Webcam"
+  },
+  "widget": {
+    "idle": "Phone Cam: click to use your phone as a webcam",
+    "mirror": "Showing the screen of {name}",
+    "setup": "Phone Cam needs {list}. Click to set it up.",
+    "webcam": "{name} is your webcam. Right click to stop."
+  }
+}

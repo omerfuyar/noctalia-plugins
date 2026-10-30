@@ -1,0 +1,40 @@
+id = "omerfuyar/phone-cam"
+name = "Phone Cam"
+version = "1.0.0"
+plugin_api = 43
+author = "omerfuyar"
+license = "MIT"
+icon = "device-mobile"
+description = "Use an Android phone as a webcam over USB, or show its screen, with scrcpy."
+dependencies = ["scrcpy", "adb", "sh", "kill"]
+tags = ["bar", "hardware", "utility"]
+
+[[setting]]
+key = "quality"
+type = "select"
+label_key = "settings.quality.label"
+description_key = "settings.quality.description"
+default = "1080"
+options = [
+  { value = "720", label_key = "settings.quality.options.720" },
+  { value = "1080", label_key = "settings.quality.options.1080" },
+  { value = "1440", label_key = "settings.quality.options.1440" },
+]
+
+[[service]]
+id = "service"
+entry = "service.luau"
+
+[[widget]]
+id = "widget"
+entry = "widget.luau"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 400
+height = "content"
+max_height = 600
+placement = "attached"
+position = "auto"
+open_near_click = true
