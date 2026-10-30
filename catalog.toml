@@ -37,8 +37,8 @@ tags = ["bar", "system", "utility"]
 [[plugin]]
 id = "omerfuyar/overview"
 name = "Overview"
-version = "1.3.1"
-updated_at = 1793364329
+version = "1.4.0"
+updated_at = 1793381285
 added_at = 1793333899
 author = "omerfuyar"
 license = "MIT"
@@ -50,8 +50,8 @@ tags = ["bar", "hyprland", "utility"]
 [[plugin]]
 id = "omerfuyar/resurrect"
 name = "Resurrect"
-version = "1.1.0"
-updated_at = 1793363761
+version = "1.2.0"
+updated_at = 1793381328
 added_at = 1793335076
 author = "omerfuyar"
 license = "MIT"
