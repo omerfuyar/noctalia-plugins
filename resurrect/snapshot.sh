@@ -23,9 +23,12 @@ mkdir -p "$repo" || exit 1
 cd "$repo" || exit 1
 [ -d .git ] || git init -q || exit 1
 
-# Version 1.0 saved at the top of the repository, with a README.md it wrote itself.
+# Version 1.0 saved at the top of the repository, with a README.md it wrote itself. Only
+# the files it wrote are removed: packages/exclude.txt and the like stay.
 if head -n 1 README.md 2>/dev/null | grep -q '^Saved from '; then
-  rm -rf packages services noctalia files README.md
+  rm -rf README.md files noctalia/config noctalia/state services/system.txt services/user.txt \
+    packages/pacman.txt packages/aur.txt packages/apt.txt packages/dnf.txt packages/flatpak.txt
+  rmdir noctalia services packages 2>/dev/null || true
 fi
 
 dir=computers/$computer
@@ -151,6 +154,17 @@ if [ -n "$remote" ]; then
     git remote set-url origin "$remote"
   else
     git remote add origin "$remote"
+  fi
+  # Other computers push to the same repository. Their saves are in their own folders, so
+  # this save goes on top of theirs; a file both changed keeps this computer's version.
+  branch=$(git symbolic-ref --short HEAD)
+  if git fetch -q origin "$branch" 2>/dev/null; then
+    if ! git -c user.name="${USER:-resurrect}" -c user.email="${USER:-resurrect}@$computer" \
+      rebase -q -X theirs "origin/$branch" >/dev/null 2>&1; then
+      git rebase --abort 2>/dev/null
+      echo "could not combine this save with the other computers' saves; see git status in $repo"
+      exit 2
+    fi
   fi
   git push -q -u origin HEAD || exit 2
   echo "pushed"
