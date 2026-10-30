@@ -8,3 +8,15 @@
 # plugin_api, so an older release stays installable instead of the plugin vanishing.
 # On every row, updated_at dates the commit that first shipped that row's version.
 
+[[plugin]]
+id = "omerfuyar/downloader"
+name = "Downloader"
+version = "1.0.1"
+updated_at = 1793329359
+added_at = 1793293826
+author = "omerfuyar"
+license = "MIT"
+icon = "download"
+description = "Download video or audio from a link with yt-dlp, and follow the queue and progress from the bar."
+plugin_api = 43
+tags = ["bar", "media", "video", "utility"]
