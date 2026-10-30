@@ -86,7 +86,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 
 1. The panel holds the details and controls that do not fit the bar.
 2. Its height follows its content, up to a limit.
-3. Long lists scroll inside the panel. A `ui.scroll` in a panel whose height follows its content gets an explicit `height`, or it shrinks to one row.
+3. Long lists scroll inside the panel. A `ui.scroll` in a panel whose height follows its content gets an explicit `height`, or it shrinks to one row. Its `key` changes with that height, since a scroll keeps the height it was made with.
 4. It shows a placeholder while data loads, and never an empty frame.
 5. A panel that a bar widget opens has `placement = "attached"`, `position = "auto"` and `open_near_click = true`, so it opens next to the widget, as Noctalia's own panels do. Opened by IPC or a key binding, it follows the same settings.
 
@@ -124,7 +124,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
    - Each `config-set` reloads Noctalia's config, so a plugin runs them one at a time. String values are TOML strings, with quotes: `'"21:30"'`. A missing key passed to `noctalia.getSetting` logs a warning, so optional keys are read from their parent table.
 3. Hyprland comes first; other compositors follow where a feature maps cleanly. Noctalia's plugin API has no workspaces or windows, so a plugin reaches each compositor with its own tool: `hyprctl` for Hyprland, `niri msg` for niri, `swaymsg` for sway. A plugin keeps each compositor's commands in one `lib/` module, and a feature a compositor cannot do hides there. The plugin's tags name the compositors it supports. Hyprland is reached with `hyprctl -j` through `noctalia.runAsync`. Dispatchers are sent in Lua first, such as `hyprctl dispatch 'hl.dsp.focus({ window = "address:0x…" })'`, since a Hyprland with a Lua config takes only those, and in the older form, such as `hyprctl dispatch focuswindow address:0x…`, when that fails. Values go into the Lua text through `string.format("%q")`.
 4. Commands with any changing value use the argument list form of `noctalia.runAsync`, never a shell string.
-5. Nothing blocks. Commands, HTTP and file reads are asynchronous, and the UI renders again when their results arrive.
+5. Nothing blocks. Commands, HTTP and file reads are asynchronous, and the UI renders again when their results arrive. Each callback has 25 ms of CPU: heavy parsing runs in the command, such as `awk`, and slow calls such as `noctalia.appIconPath` are cached.
 6. Something drawn over the whole screen, such as dimming, is a `[[layer]]` entry on the `overlay` layer with `click_through`. The service shows and hides it with `noctalia.layer`.
 7. A key binding a plugin offers is a setting, empty or free by default. The service adds it to the compositor while Noctalia runs, never to its config, only when the key is free, and adds it again after the compositor reloads. On Hyprland: `hyprctl eval 'hl.bind(…)'` and `hl.unbind(…)`, or `hyprctl keyword bind` and `unbind` with the older config.
 8. A command that can run longer than a minute, such as a download, runs detached: `noctalia.runAsync` without a callback, on `sh -c` with a fixed script and the changing values as its arguments. The script writes the command's output, process id and exit code to files in the data directory, and the service reads them on its update tick. The command also survives a reload of the service.
