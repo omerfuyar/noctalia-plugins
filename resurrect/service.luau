@@ -13,6 +13,8 @@
 -- Publishes "resurrect.model" and takes commands on "resurrect.command".
 
 local DAY_MS = 24 * 60 * 60 * 1000
+-- A run that started longer ago than this was stopped without an exit code.
+local RUN_LIMIT_MS = 30 * 60 * 1000
 
 -- $1 is the path prefix of the run's files, the rest is the snapshot command.
 local RUNNER = [[
@@ -107,6 +109,8 @@ local function snapshot()
   running = true
   again = false
   runLists = lists()
+  state.runMs = noctalia.nowMs()
+  save()
   noctalia.mkdirAll(dataDir)
   -- "mine <path>" or "theirs <path>" per line; snapshot.sh removes the file once read.
   local lines = {}
@@ -335,6 +339,9 @@ function onIpc(event)
 end
 
 function update()
+  if running and not reading and type(state.runMs) == "number" and noctalia.nowMs() - state.runMs >= RUN_LIMIT_MS then
+    running = false
+  end
   poll()
   if loaded and not running and noctalia.getConfig("daily") ~= false
     and (state.lastMs == nil or noctalia.nowMs() - state.lastMs >= DAY_MS) then
@@ -351,8 +358,10 @@ noctalia.readFileAsync(stateFile, function(text)
   if type(saved) == "table" then
     state = saved
   end
-  -- A run that was going when Noctalia stopped is read back by poll().
+  -- A run that was going when Noctalia stopped is read back by poll(). One that was stopped
+  -- left no exit code: it is over, or the next save would wait for it forever.
   running = noctalia.fileExists(runPrefix .. ".log") and not noctalia.fileExists(runPrefix .. ".exit")
+    and type(state.runMs) == "number" and noctalia.nowMs() - state.runMs < RUN_LIMIT_MS
   state.conflicts = state.conflicts or {}
   state.held = state.held or {}
   state.missing = state.missing or {}
