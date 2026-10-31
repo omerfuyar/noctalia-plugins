@@ -35,7 +35,8 @@ press **Save now** in the panel.
 - The panel shows when the setup was last saved, where, and how many packages, services,
   Noctalia plugins, dotfiles and steps of your own the last save held.
 - Choose the dotfiles in the settings, such as `~/.config/hypr` and `~/.config/kitty`.
-  Links are followed, so files kept elsewhere, as with GNU Stow, are saved themselves.
+  Links are followed, here and in Noctalia's config, so files kept elsewhere, as with GNU
+  Stow, are saved themselves.
 - To keep a copy off this computer, set **Push to** to a private git repository.
 - **Restore…** opens a terminal that asks before each step.
 
@@ -133,5 +134,6 @@ noctalia msg plugin omerfuyar/resurrect:service all save
   is pushed, and push only to a private repository.
 - Only packages installed on purpose are saved, not their dependencies.
 - Each save is a git commit, so older setups stay in the repository's history.
+- With **Push to** set, a computer without the repository folder clones it on its first save, so all computers share one history.
 - Several computers can push to one repository: before pushing, a save is put on top of the other computers' saves. A file both changed, such as a step in `hooks/`, keeps the version of the computer that saves last.
 - Saves from version 1.0, at the top of the repository, move into `computers/<name>/` on the first save.

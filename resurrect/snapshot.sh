@@ -19,6 +19,11 @@ shift 5
 here=$(cd "$(dirname "$0")" && pwd)
 computer=$(uname -n)
 
+# A new computer starts from the remote's saves, so all computers share one history.
+if [ ! -d "$repo/.git" ] && [ -n "$remote" ] && [ -z "$(ls -A "$repo" 2>/dev/null)" ] &&
+  [ -n "$(git ls-remote "$remote" 2>/dev/null)" ]; then
+  git clone -q "$remote" "$repo" || exit 2
+fi
 mkdir -p "$repo" || exit 1
 cd "$repo" || exit 1
 [ -d .git ] || git init -q || exit 1
@@ -83,12 +88,13 @@ if [ "$services" = true ] && command -v systemctl >/dev/null; then
 fi
 
 # Noctalia's config, the settings changed in its settings window, and the plugins that are on.
+# Links are followed, as for the dotfiles.
 rm -rf "$dir/noctalia"
 if [ "$noctalia" = true ]; then
   mkdir -p "$dir/noctalia/config" "$dir/noctalia/state"
-  [ -d "$HOME/.config/noctalia" ] && cp -a "$HOME/.config/noctalia/." "$dir/noctalia/config/"
+  [ -d "$HOME/.config/noctalia" ] && cp -RL --preserve=mode,timestamps "$HOME/.config/noctalia/." "$dir/noctalia/config/"
   [ -f "$HOME/.local/state/noctalia/settings.toml" ] &&
-    cp -a "$HOME/.local/state/noctalia/settings.toml" "$dir/noctalia/state/"
+    cp -L --preserve=mode,timestamps "$HOME/.local/state/noctalia/settings.toml" "$dir/noctalia/state/"
   if command -v noctalia >/dev/null; then
     noctalia msg plugins list 2>/dev/null | awk '$4 == "enabled" {print $1}' >"$dir/noctalia/plugins.txt"
     count plugins "$dir/noctalia/plugins.txt"
