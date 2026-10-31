@@ -37,7 +37,7 @@ press **Save now** in the panel.
 - Choose the dotfiles in the settings, such as `~/.config/hypr` and `~/.config/kitty`.
   Links are followed, here and in Noctalia's config, so files kept elsewhere, as with GNU
   Stow, are saved themselves.
-- To keep a copy off this computer, set **Push to** to a private git repository.
+- To keep a copy off this device, set **Push to** to a private git repository.
 - **Restore…** opens a terminal that asks before each step.
 
 On a new install, before anything else:
@@ -47,7 +47,7 @@ git clone <your repository> ~/resurrect
 ~/resurrect/restore.sh
 ```
 
-The script asks which computer's save to use when there is no save of this computer, then
+The script asks which device's save to use when there is no save of this device, then
 installs the saved packages, puts back the dotfiles and Noctalia's settings, turns on the
 saved Noctalia plugins and services, and runs your own steps. It asks before each of
 these, and copies any file it would replace to `~/.local/state/resurrect/backup-<date>`
@@ -61,7 +61,7 @@ noctalia msg panel-toggle omerfuyar/resurrect:panel
 
 | Path                   | What it holds                                                                                                                                  |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `computers/<name>/`    | What Resurrect saved on the computer with that hostname. One repository can hold several computers.                                            |
+| `devices/<name>/`    | What Resurrect saved on the device with that hostname. One repository can hold several devices.                                            |
 | `packages/exclude.txt` | Optional, yours. Package names left out of every save: one regular expression per line, for the whole name, such as `linux.*` or `.*nvidia.*`. |
 | `packages/extra.txt`   | Optional, yours. Packages installed on restore besides the saved ones, one per line, such as ones pacman counts as dependencies.               |
 | `.gitleaksignore`      | Optional, yours. Findings of the secret check that may be committed.                                                                           |
@@ -69,8 +69,8 @@ noctalia msg panel-toggle omerfuyar/resurrect:panel
 | `hooks/restore/`       | Your own steps for restoring. Resurrect never changes this folder.                                                                             |
 | `restore.sh`           | The restore script, updated on each save.                                                                                                      |
 
-Anything else in the repository is yours too: Resurrect only writes `computers/<name>/` of
-the computer it runs on, and `restore.sh`.
+Anything else in the repository is yours too: Resurrect only writes `devices/<name>/` of
+the device it runs on, and `restore.sh`.
 
 ### Secrets
 
@@ -87,8 +87,8 @@ folder, with these variables:
 | Variable             | Value                                                    |
 | -------------------- | -------------------------------------------------------- |
 | `RESURRECT_REPO`     | The repository's folder.                                 |
-| `RESURRECT_COMPUTER` | The hostname of the computer whose save it is.           |
-| `RESURRECT_DIR`      | That computer's folder in the repository, for its files. |
+| `RESURRECT_DEVICE` | The hostname of the device whose save it is.           |
+| `RESURRECT_DIR`      | That device's folder in the repository, for its files. |
 
 Whatever a save step writes into the repository is committed with the save. A save step
 that fails stops the save, and the panel shows it. For example, to also save a database:
@@ -113,7 +113,7 @@ The panel's hooks button opens the folder and creates it when it is missing.
 | Setting    | Type          | Default              | Description                                                                |
 | ---------- | ------------- | -------------------- | -------------------------------------------------------------------------- |
 | `folder`   | `folder`      | `~/resurrect`        | The git repository the setup is saved in. It is created when missing.      |
-| `remote`   | `string`      | `""`                 | A git remote to push each save to. Empty keeps the saves on this computer. |
+| `remote`   | `string`      | `""`                 | A git remote to push each save to. Empty keeps the saves on this device. |
 | `files`    | `string_list` | `["~/.config/hypr"]` | Files and folders in the home folder to save.                              |
 | `daily`    | `bool`        | `true`               | Save once a day while Noctalia runs.                                       |
 | `packages` | `bool`        | `true`               | Advanced. Save the list of installed packages.                             |
@@ -134,6 +134,6 @@ noctalia msg plugin omerfuyar/resurrect:service all save
   is pushed, and push only to a private repository.
 - Only packages installed on purpose are saved, not their dependencies.
 - Each save is a git commit, so older setups stay in the repository's history.
-- With **Push to** set, a computer without the repository folder clones it on its first save, so all computers share one history.
-- Several computers can push to one repository: before pushing, a save is put on top of the other computers' saves. A file both changed, such as a step in `hooks/`, keeps the version of the computer that saves last.
-- Saves from version 1.0, at the top of the repository, move into `computers/<name>/` on the first save.
+- With **Push to** set, a device without the repository folder clones it on its first save, so all devices share one history.
+- Several devices can push to one repository: before pushing, a save is put on top of the other devices' saves. A file both changed, such as a step in `hooks/`, keeps the version of the device that saves last.
+- Saves from version 1.0, at the top of the repository, move into `devices/<name>/` on the first save.

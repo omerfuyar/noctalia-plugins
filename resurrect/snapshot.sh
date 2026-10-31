@@ -1,10 +1,10 @@
 #!/bin/sh
-# Saves this computer's setup into a git repository, for restore.sh to bring back.
+# Saves this device's setup into a git repository, for restore.sh to bring back.
 #   snapshot.sh <repo> <remote> <packages> <services> <noctalia> [path...]
 # <remote> may be empty. <packages>, <services> and <noctalia> are "true" or "false".
 # Each path is a full path to a file or folder under the home folder.
 #
-# What the plugin saves goes into computers/<hostname>/, so computers sharing one repository
+# What the plugin saves goes into devices/<hostname>/, so devices sharing one repository
 # never overwrite each other, and nothing else in the repository is touched. Then every
 # executable file in hooks/save/ runs, in name order, for the owner's own steps.
 # Prints "count <what> <number>" lines, then "saved" or "unchanged", and "pushed".
@@ -17,9 +17,9 @@ services=$4
 noctalia=$5
 shift 5
 here=$(cd "$(dirname "$0")" && pwd)
-computer=$(uname -n)
+device=$(uname -n)
 
-# A new computer starts from the remote's saves, so all computers share one history.
+# A new device starts from the remote's saves, so all devices share one history.
 if [ ! -d "$repo/.git" ] && [ -n "$remote" ] && [ -z "$(ls -A "$repo" 2>/dev/null)" ] &&
   [ -n "$(git ls-remote "$remote" 2>/dev/null)" ]; then
   git clone -q "$remote" "$repo" || exit 2
@@ -36,7 +36,22 @@ if head -n 1 README.md 2>/dev/null | grep -q '^Saved from '; then
   rmdir noctalia services packages 2>/dev/null || true
 fi
 
-dir=computers/$computer
+# Version 1 kept each device's save in computers/<name>/. A folder already moved by another
+# device is only removed: the next save of its device writes it again.
+if [ -d computers ]; then
+  for old in computers/*/; do
+    [ -d "$old" ] || continue
+    name=$(basename "$old")
+    if [ -e "devices/$name" ]; then
+      rm -rf "$old"
+    else
+      mkdir -p devices && mv "$old" "devices/$name"
+    fi
+  done
+  rmdir computers 2>/dev/null || true
+fi
+
+dir=devices/$device
 mkdir -p "$dir"
 
 # Prints "count <what> <lines in the files>".
@@ -124,13 +139,13 @@ echo "count files $files"
 cp "$here/restore.sh" restore.sh
 chmod +x restore.sh
 
-# The owner's own steps. Each gets the repository, this computer's name and its folder.
+# The owner's own steps. Each gets the repository, this device's name and its folder.
 hooks=0
 if [ -d hooks/save ]; then
   for hook in hooks/save/*; do
     [ -f "$hook" ] && [ -x "$hook" ] || continue
     hooks=$((hooks + 1))
-    RESURRECT_REPO=$(pwd) RESURRECT_COMPUTER=$computer RESURRECT_DIR=$(pwd)/$dir "$hook" ||
+    RESURRECT_REPO=$(pwd) RESURRECT_DEVICE=$device RESURRECT_DIR=$(pwd)/$dir "$hook" ||
       { echo "hook failed: $hook"; exit 3; }
   done
 fi
@@ -150,8 +165,8 @@ fi
 if git diff --cached --quiet; then
   echo "unchanged"
 else
-  git -c user.name="${USER:-resurrect}" -c user.email="${USER:-resurrect}@$computer" \
-    commit -q -m "Snapshot of $computer on $(date '+%Y-%m-%d %H:%M')" || exit 1
+  git -c user.name="${USER:-resurrect}" -c user.email="${USER:-resurrect}@$device" \
+    commit -q -m "Snapshot of $device on $(date '+%Y-%m-%d %H:%M')" || exit 1
   echo "saved"
 fi
 
@@ -161,14 +176,14 @@ if [ -n "$remote" ]; then
   else
     git remote add origin "$remote"
   fi
-  # Other computers push to the same repository. Their saves are in their own folders, so
-  # this save goes on top of theirs; a file both changed keeps this computer's version.
+  # Other devices push to the same repository. Their saves are in their own folders, so
+  # this save goes on top of theirs; a file both changed keeps this device's version.
   branch=$(git symbolic-ref --short HEAD)
   if git fetch -q origin "$branch" 2>/dev/null; then
-    if ! git -c user.name="${USER:-resurrect}" -c user.email="${USER:-resurrect}@$computer" \
+    if ! git -c user.name="${USER:-resurrect}" -c user.email="${USER:-resurrect}@$device" \
       rebase -q -X theirs "origin/$branch" >/dev/null 2>&1; then
       git rebase --abort 2>/dev/null
-      echo "could not combine this save with the other computers' saves; see git status in $repo"
+      echo "could not combine this save with the other devices' saves; see git status in $repo"
       exit 2
     fi
   fi

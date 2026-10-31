@@ -16,7 +16,7 @@
   },
   "restore": {
     "cancel": "Cancel",
-    "confirm": "A terminal opens and asks which computer's save to use, then before each step: packages, dotfiles, Noctalia's settings and plugins, services, and your own steps. Files it replaces are backed up first.",
+    "confirm": "A terminal opens and asks which device's save to use, then before each step: packages, dotfiles, Noctalia's settings and plugins, services, and your own steps. Files it replaces are backed up first.",
     "start": "Open terminal"
   },
   "saved": {
@@ -55,7 +55,7 @@
       "label": "Save packages"
     },
     "remote": {
-      "description": "A git remote to push each save to, such as a private repository on GitHub. Leave empty to keep the saves on this computer.",
+      "description": "A git remote to push each save to, such as a private repository on GitHub. Leave empty to keep the saves on this device.",
       "label": "Push to"
     },
     "services": {
@@ -69,7 +69,7 @@
   "status": {
     "failed": "The last save failed",
     "folder": "In {folder}",
-    "local": "Only on this computer. Set Push to in the settings to keep a copy elsewhere.",
+    "local": "Only on this device. Set Push to in the settings to keep a copy elsewhere.",
     "never": "Not saved yet",
     "remote": "Pushed to {remote}",
     "saved": "Saved {time}",

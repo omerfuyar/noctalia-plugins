@@ -1,7 +1,7 @@
 #!/bin/sh
-# Brings back a setup saved by Resurrect, on this computer. Run it from the saved
+# Brings back a setup saved by Resurrect, on this device. Run it from the saved
 # repository: ./restore.sh
-# It asks which computer's save to use, then before each step. Files it would replace are
+# It asks which device's save to use, then before each step. Files it would replace are
 # first copied to a backup folder. Last, it offers each of the owner's hooks/restore/ steps.
 set -u
 
@@ -32,24 +32,24 @@ put_back() {
   done
 }
 
-# This computer's own save when there is one, the only one, or the one the user picks.
-computer=$(uname -n)
-if [ ! -d "computers/$computer" ]; then
+# This device's own save when there is one, the only one, or the one the user picks.
+device=$(uname -n)
+if [ ! -d "devices/$device" ]; then
   set --
-  for folder in computers/*/; do
+  for folder in devices/*/; do
     [ -d "$folder" ] && set -- "$@" "$(basename "$folder")"
   done
   if [ $# -eq 1 ]; then
-    computer=$1
+    device=$1
   elif [ $# -gt 1 ]; then
-    echo "Saves of these computers are here: $*"
-    printf 'Which one should this computer get? '
-    read -r computer
+    echo "Saves of these devices are here: $*"
+    printf 'Which one should this device get? '
+    read -r device
   fi
 fi
-if [ -d "computers/$computer" ]; then
-  echo "Restoring the save of $computer."
-  cd "computers/$computer" || exit 1
+if [ -d "devices/$device" ]; then
+  echo "Restoring the save of $device."
+  cd "devices/$device" || exit 1
 fi
 
 if [ -d packages ] && ask "Install the saved packages?"; then
@@ -113,7 +113,7 @@ if [ -d hooks/restore ]; then
   for hook in hooks/restore/*; do
     [ -f "$hook" ] && [ -x "$hook" ] || continue
     if ask "Run your step $(basename "$hook")?"; then
-      RESURRECT_REPO=$repo RESURRECT_COMPUTER=$computer RESURRECT_DIR=$repo/computers/$computer "$hook" ||
+      RESURRECT_REPO=$repo RESURRECT_DEVICE=$device RESURRECT_DIR=$repo/devices/$device "$hook" ||
         echo "The step $(basename "$hook") failed."
     fi
   done
