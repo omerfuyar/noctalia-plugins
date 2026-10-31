@@ -188,11 +188,16 @@ local function poll()
           table.insert(applied, line.path)
         end
       end
+      -- Names left out while this run went are not in its list yet; the next run adds them.
+      local leaving = {}
+      for _, name in ipairs(skips) do
+        leaving[name] = true
+      end
       local missing = {}
       for _, line in ipairs(lines) do
         if line.word == "missing" then
           local listName, name = line.path:match("^(%S+) (%S+)$")
-          if listName then
+          if listName and not leaving[name] then
             table.insert(missing, { list = listName, name = name })
           end
         end
