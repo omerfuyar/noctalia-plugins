@@ -78,7 +78,8 @@ other devices changed:
   goes to `~/.local/state/resurrect/backup-<date>` first.
 - A dotfile that only this device changed reaches the others on their next save. A file
   deleted on one device is deleted on the others, into the same backup. When a device
-  deletes more than 20 files at once, the others keep theirs and share them again.
+  deletes more than half of the shared files at once, the others keep theirs and share
+  them again.
 - A dotfile changed on two devices is left as it is on both. The panel lists it, with
   **Keep mine** and **Take theirs**.
 - When files that came in give Hyprland config errors, they go back, and the panel lists
@@ -186,5 +187,3 @@ noctalia msg plugin omerfuyar/resurrect:service all save
 - Several devices can push to one repository: before pushing, a save is put on top of the
   other devices' saves. A file both changed, such as a step in `hooks/`, keeps the version
   of the device that saves last.
-- Saves from version 1.0, at the top of the repository, and from version 1, in
-  `computers/<name>/`, move into `devices/<name>/` on the first save.
