@@ -36,9 +36,18 @@ press **Save now** in the panel.
 
 - The panel shows when the setup was last saved, where, and how many packages, services,
   Noctalia plugins, dotfiles and steps of your own the last save held.
-- Choose the dotfiles in the settings, such as `~/.config/hypr` and `~/.config/kitty`.
-  Links are followed, here and in Noctalia's config, so files kept elsewhere, as with GNU
-  Stow, are saved themselves.
+- Choose the dotfiles in the settings. The default, `~/.config`, saves your whole config
+  folder; list files elsewhere, such as `~/.icons/default/index.theme`, beside it. Links
+  are followed, here and in Noctalia's config, so files kept elsewhere, as with GNU Stow,
+  are saved themselves.
+- Inside a folder, a save leaves out what is not settings: caches, logs and crash reports,
+  the data of browsers and Electron apps such as Brave or VS Code, nested git folders,
+  binary files and files over 1 MB. A file you list by name is always saved, such as
+  `~/.config/Code/User/settings.json`.
+- List what else to skip in **Leave out**, such as `~/.config/gh/hosts.yml`, which holds
+  a token, or `~/.config/kdeconnect`, which holds this device's key.
+- When the dotfiles still add up to more than 50 MB, or a file cannot be read, nothing is
+  saved, and the panel names the folder.
 - To keep a copy off this device, set **Push to** to a private git repository.
 - **Restore…** opens a terminal that asks before each step.
 
@@ -68,7 +77,8 @@ other devices changed:
 - A dotfile that only another device changed is put in place here. The file it replaces
   goes to `~/.local/state/resurrect/backup-<date>` first.
 - A dotfile that only this device changed reaches the others on their next save. A file
-  deleted on one device is deleted on the others, into the same backup.
+  deleted on one device is deleted on the others, into the same backup. When a device
+  deletes more than 20 files at once, the others keep theirs and share them again.
 - A dotfile changed on two devices is left as it is on both. The panel lists it, with
   **Keep mine** and **Take theirs**.
 - When files that came in give Hyprland config errors, they go back, and the panel lists
@@ -144,17 +154,18 @@ The panel's hooks button opens the folder and creates it when it is missing.
 
 ## Settings
 
-| Setting        | Type          | Default              | Description                                                                |
-| -------------- | ------------- | -------------------- | -------------------------------------------------------------------------- |
-| `folder`       | `folder`      | `~/resurrect`        | The git repository the setup is saved in. It is created when missing.      |
-| `remote`       | `string`      | `""`                 | A git remote to push each save to. Empty keeps the saves on this device.   |
-| `files`        | `string_list` | `["~/.config/hypr"]` | Files and folders in the home folder to save.                              |
-| `share`        | `bool`        | `true`               | Share the dotfiles with the other devices that push to the same remote.    |
-| `device_files` | `string_list` | `[]`                 | Shown when `share` is on. Files and folders saved but kept on this device. |
-| `daily`        | `bool`        | `true`               | Save once a day while Noctalia runs.                                       |
-| `packages`     | `bool`        | `true`               | Advanced. Save the list of installed packages.                             |
-| `services`     | `bool`        | `true`               | Advanced. Save which services start by themselves.                         |
-| `noctalia`     | `bool`        | `true`               | Advanced. Save Noctalia's config and settings.                             |
+| Setting        | Type          | Default         | Description                                                                |
+| -------------- | ------------- | --------------- | -------------------------------------------------------------------------- |
+| `folder`       | `folder`      | `~/resurrect`   | The git repository the setup is saved in. It is created when missing.      |
+| `remote`       | `string`      | `""`            | A git remote to push each save to. Empty keeps the saves on this device.   |
+| `files`        | `string_list` | `["~/.config"]` | Files and folders in the home folder to save.                              |
+| `leave_out`    | `string_list` | `[]`            | Files and folders inside the dotfiles not to save.                         |
+| `share`        | `bool`        | `true`          | Share the dotfiles with the other devices that push to the same remote.    |
+| `device_files` | `string_list` | `[]`            | Shown when `share` is on. Files and folders saved but kept on this device. |
+| `daily`        | `bool`        | `true`          | Save once a day while Noctalia runs.                                       |
+| `packages`     | `bool`        | `true`          | Advanced. Save the list of installed packages.                             |
+| `services`     | `bool`        | `true`          | Advanced. Save which services start by themselves.                         |
+| `noctalia`     | `bool`        | `true`          | Advanced. Save Noctalia's config and settings.                             |
 
 ## IPC
 

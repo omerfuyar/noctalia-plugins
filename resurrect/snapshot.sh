@@ -44,6 +44,8 @@ if [ -n "$remote" ]; then
   branch=$(git symbolic-ref --short HEAD)
   git fetch -q origin "$branch" 2>/dev/null
 fi
+# The remote's save share.sh starts from; see the push below.
+fetched=$(git rev-parse -q --verify "origin/${branch:-}" 2>/dev/null)
 if git rev-parse -q --verify HEAD >/dev/null; then
   theirs=HEAD
   if [ -n "$remote" ] && git rev-parse -q --verify "origin/$branch" >/dev/null; then
@@ -173,10 +175,12 @@ if [ "$noctalia" = true ]; then
   fi
 fi
 
-# Dotfiles, kept at their place under the home folder. Nested git folders are left out.
-# With sharing on, only the ones kept on this device are saved here.
+# Dotfiles, kept at their place under the home folder, as pick.sh chooses them. Links are
+# followed, so files kept elsewhere, as with GNU Stow, are saved themselves. With sharing on,
+# only the ones kept on this device are saved here.
 rm -rf "$dir/files"
 after=false
+own=
 for path in "$@"; do
   if [ "$path" = -- ]; then
     after=true
@@ -188,23 +192,31 @@ for path in "$@"; do
     *) echo "skipped, not in the home folder: $path"; continue ;;
   esac
   [ -e "$path" ] || { echo "skipped, missing: $path"; continue; }
-  relative=${path#"$HOME"/}
-  mkdir -p "$dir/files/$(dirname "$relative")"
-  # Links are followed, so files kept elsewhere, as with GNU Stow, are saved themselves.
-  cp -RL --preserve=mode,timestamps "$path" "$dir/files/$relative"
+  own="$own$path
+"
 done
 files=0
-if [ -d "$dir/files" ]; then
-  find "$dir/files" -name .git -prune -exec rm -rf {} +
-  files=$(find "$dir/files" -type f | wc -l)
+if [ -n "$own" ]; then
+  # shellcheck disable=SC2086 # one path per line
+  picked=$(IFS='
+' && set -f && sh "$here/pick.sh" $own) || { printf '%s\n' "$picked"; exit 1; }
+  while IFS= read -r relative; do
+    [ -n "$relative" ] || continue
+    mkdir -p "$dir/files/$(dirname "$relative")" &&
+      cp -L --preserve=mode,timestamps "$HOME/$relative" "$dir/files/$relative" ||
+      { echo "could not read ~/$relative"; exit 1; }
+    files=$((files + 1))
+  done <<EOF
+$picked
+EOF
 fi
 echo "count files $files"
 
 if [ "$share" = true ]; then
   # Noctalia's config folder is shared like the dotfiles; its settings.toml one setting at
-  # a time, when python3 is there to read TOML.
+  # a time, when python3 is there to read TOML. The settings come first, so a file list
+  # another device changed is in place for the plugin's next save.
   if [ "$noctalia" = true ]; then
-    sh "$here/share.sh" "$theirs" "$HOME/.config/noctalia" "$@" || exit 1
     if [ -f "$HOME/.local/state/noctalia/settings.toml" ] && command -v python3 >/dev/null; then
       their_settings=$(mktemp)
       [ -n "$theirs" ] && git show "$theirs:shared/noctalia/settings.toml" >"$their_settings" 2>/dev/null
@@ -221,6 +233,7 @@ if [ "$share" = true ]; then
         *) command -v noctalia >/dev/null && noctalia msg config-reload >/dev/null 2>&1 ;;
       esac
     fi
+    sh "$here/share.sh" "$theirs" "$HOME/.config/noctalia" "$@" || exit 1
   else
     sh "$here/share.sh" "$theirs" "$@" || exit 1
   fi
@@ -265,12 +278,23 @@ if [ -n "$remote" ]; then
   # share.sh already took in their shared files, so this save goes on top of theirs; a file
   # both changed keeps this device's version.
   branch=$(git symbolic-ref --short HEAD)
+  saved=$(git rev-parse HEAD)
   if git fetch -q origin "$branch" 2>/dev/null; then
     if ! git -c user.name="${USER:-resurrect}" -c user.email="${USER:-resurrect}@$device" \
       rebase -q -X theirs "origin/$branch" >/dev/null 2>&1; then
       git rebase --abort 2>/dev/null
       echo "could not combine this save with the other devices' saves; see git status in $repo"
       exit 2
+    fi
+    # share.sh already merged the other devices' shared files into shared/, so it stays as
+    # this save made it, also where it equals this device's last save. When another device
+    # pushed meanwhile, its save is newer: the next save merges it.
+    if [ "$share" = true ] && [ "$(git rev-parse -q --verify "origin/$branch")" = "$fetched" ]; then
+      git restore -q --source="$saved" --staged --worktree -- shared 2>/dev/null
+      if ! git diff --cached --quiet; then
+        git -c user.name="${USER:-resurrect}" -c user.email="${USER:-resurrect}@$device" \
+          commit -q -m "Snapshot of $device on $(date '+%Y-%m-%d %H:%M')" || exit 1
+      fi
     fi
   fi
   git push -q -u origin HEAD || exit 2

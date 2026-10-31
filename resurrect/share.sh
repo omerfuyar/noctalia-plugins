@@ -3,7 +3,8 @@
 # the repository's folder:
 #   share.sh <theirs> <path>... [-- <path kept on this device>...]
 # <theirs> is a commit or tree with the other devices' latest saves, or empty. Each path is a
-# full path under the home folder. A path after -- is not shared, nor anything inside it.
+# full path under the home folder. A path after -- is not shared, nor anything inside it,
+# and neither is a path in $RESURRECT_LEAVE_OUT. pick.sh chooses the files inside folders.
 #
 # shared/files/ holds every shared file at its place under the home folder. For each file
 # there are three versions: this device's, the one in <theirs>, and the one this device last
@@ -11,10 +12,12 @@
 # only another device changed is put in place here, after a backup. A file both changed is
 # left alone on both sides and reported, until $RESURRECT_RESOLVE says "mine <path>" or
 # "theirs <path>". When files put in place give Hyprland config errors, they go back and
-# stay held in .git/resurrect-held until another device changes them again.
+# stay held in .git/resurrect-held until another device changes them again. When another
+# device removed more than 20 files at once, none is removed here; this device shares them
+# again. A file that cannot be read stops the save, so it never reads as removed.
 #
-# Prints "applied <path>", "removed <path>", "conflict <path>", "held <path>" and
-# "count shared <number>".
+# Prints "applied <path>", "removed <path>", "conflict <path>", "held <path>",
+# "kept <number> files another device removed" and "count shared <number>".
 set -u
 IFS='
 '
@@ -22,26 +25,39 @@ set -f
 
 theirs=$1
 shift
+here=$(cd "$(dirname "$0")" && pwd)
 shared=
-only=
+only=${RESURRECT_LEAVE_OUT:+$RESURRECT_LEAVE_OUT
+}
 after=false
 for path in "$@"; do
   if [ "$path" = -- ]; then
     after=true
     continue
   fi
+  path=${path%/}
   case $path in
     "$HOME"/*) ;;
     *) continue ;;
   esac
   if $after; then
-    only="$only${path#"$HOME"/}
+    only="$only$path
 "
   else
-    shared="$shared${path#"$HOME"/}
+    shared="$shared$path
 "
   fi
 done
+# The kept paths, relative to the home folder like the rest.
+kept_paths=
+for path in $only; do
+  path=${path%/}
+  case $path in
+    "$HOME"/*) kept_paths="$kept_paths${path#"$HOME"/}
+" ;;
+  esac
+done
+only=$kept_paths
 
 git_dir=$(git rev-parse --git-dir) || exit 1
 base=$git_dir/resurrect-base
@@ -74,11 +90,19 @@ their() {
   awk -v want="$1" -v n="$2" '{ word = $n; sub(/^[^ ]+ [^ ]+ /, ""); if ($0 == want) { print word; exit } }' "$work/theirs"
 }
 
-# This device's shared files. Links are followed; nested git folders are left out.
-for path in $shared; do
-  [ -e "$HOME/$path" ] || continue
-  mkdir -p "$mine/$(dirname "$path")"
-  cp -RL --preserve=mode,timestamps "$HOME/$path" "$mine/$path"
+# Copies path $1 under the home folder into this device's files, or stops the save.
+take() {
+  mkdir -p "$mine/$(dirname "$1")" &&
+    cp -L --preserve=mode,timestamps "$HOME/$1" "$mine/$1" ||
+    { echo "could not read ~/$1"; exit 1; }
+}
+
+# This device's shared files, as pick.sh chooses them. Links are followed.
+# shellcheck disable=SC2086 # one path per line
+picked=$(RESURRECT_LEAVE_OUT=$(printf '%s\n' $only | sed -e '/^$/d' -e "s|^|$HOME/|") sh "$here/pick.sh" $shared) ||
+  { printf '%s\n' "$picked"; exit 1; }
+for path in $picked; do
+  take "$path"
 done
 
 # "<blob> <mode> <path>" for each shared file in <theirs>.
@@ -94,9 +118,8 @@ fi
   cut -d ' ' -f 2- "$base"
 } | sort -u | while read -r path; do
   [ -n "$path" ] && [ -f "$HOME/$path" ] && [ ! -e "$mine/$path" ] || continue
-  mkdir -p "$mine/$(dirname "$path")"
-  cp -L --preserve=mode,timestamps "$HOME/$path" "$mine/$path"
-done
+  take "$path"
+done || exit 1
 for path in $only; do
   rm -rf "${mine:?}/$path"
 done
@@ -145,6 +168,17 @@ mkdir -p shared/files
   cut -d ' ' -f 2- "$base"
 } | sort -u >"$work/paths"
 
+# Files only another device removed. Many at once is a mistake, such as a failed save
+# there: then none is removed here.
+removing=0
+while read -r path; do
+  [ -n "$path" ] && ! kept "$path" && [ -f "$mine/$path" ] && [ -z "$(their "$path" 1)" ] || continue
+  b=$(lookup "$base" "$path")
+  [ -n "$b" ] && [ "$(git hash-object "$mine/$path")" = "$b" ] && removing=$((removing + 1))
+done <"$work/paths"
+many_removed=false
+[ "$removing" -gt 20 ] && many_removed=true
+
 while read -r path; do
   [ -n "$path" ] || continue
   t=$(their "$path" 1)
@@ -166,7 +200,8 @@ while read -r path; do
     continue
   fi
 
-  if [ "$m" = "$t" ] || [ "$choice" = mine ] || { [ "$t" = "$b" ] && [ "$choice" != theirs ]; }; then
+  if [ "$m" = "$t" ] || [ "$choice" = mine ] || { [ "$t" = "$b" ] && [ "$choice" != theirs ]; } ||
+    { [ -z "$t" ] && [ -n "$m" ] && $many_removed && [ "$choice" != theirs ]; }; then
     # Same on both sides, or only this device changed it: this device's version is shared.
     [ -n "$m" ] && keep "$path" && echo "$m $path" >>"$work/base"
   elif { [ "$m" = "$b" ] && ! $is_held; } || [ "$choice" = theirs ]; then
@@ -223,6 +258,7 @@ if grep -q '^\.config/hypr/' "$work/applied" && command -v hyprctl >/dev/null &&
   fi
 fi
 
+$many_removed && echo "kept $removing files another device removed"
 mv "$work/base" "$base"
 mv "$work/held" "$held"
 [ -n "$resolve" ] && rm -f "$resolve"
