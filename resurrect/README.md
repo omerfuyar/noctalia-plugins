@@ -35,7 +35,8 @@ press **Save now** in the panel.
 - The panel shows when the setup was last saved, where, and how many packages, services,
   Noctalia plugins, dotfiles and steps of your own the last save held.
 - Choose the dotfiles in the settings, such as `~/.config/hypr` and `~/.config/kitty`.
-  Links are followed, so files kept elsewhere, as with GNU Stow, are saved themselves.
+  Links are followed, here and in Noctalia's config, so files kept elsewhere, as with GNU
+  Stow, are saved themselves.
 - To keep a copy off this computer, set **Push to** to a private git repository.
 - **Restore…** opens a terminal that asks before each step.
 
