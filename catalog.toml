@@ -50,13 +50,13 @@ tags = ["bar", "hyprland", "utility"]
 [[plugin]]
 id = "omerfuyar/resurrect"
 name = "Resurrect"
-version = "1.2.3"
-updated_at = 1793425509
+version = "2.0.0"
+updated_at = 1793429632
 added_at = 1793335076
 author = "omerfuyar"
 license = "MIT"
 icon = "lifebuoy"
-description = "Save your packages, dotfiles, services and Noctalia settings to a git repository, and restore them on a new install."
+description = "Save your packages, dotfiles, services and Noctalia settings to git, share them between devices, restore them."
 plugin_api = 43
 tags = ["bar", "system", "utility"]
 
