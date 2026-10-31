@@ -35,7 +35,7 @@ key = "share"
 type = "bool"
 label_key = "settings.share.label"
 description_key = "settings.share.description"
-default = false
+default = true
 
 [[setting]]
 key = "device_files"
@@ -89,7 +89,7 @@ id = "panel"
 entry = "panel.luau"
 width = 400
 height = "content"
-max_height = 600
+max_height = 720
 placement = "attached"
 position = "auto"
 open_near_click = true

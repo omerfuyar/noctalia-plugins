@@ -61,8 +61,9 @@ noctalia msg panel-toggle omerfuyar/resurrect:panel
 
 ### Sharing between devices
 
-Turn on **Share between devices** on each device that pushes to the same repository. Then
-each save, and each start of Noctalia, also takes in what the other devices changed:
+With **Share between devices** on, as it is by default, devices that push to the same
+repository share their setup. Each save, and each start of Noctalia, also takes in what the
+other devices changed:
 
 - A dotfile that only another device changed is put in place here. The file it replaces
   goes to `~/.local/state/resurrect/backup-<date>` first.
@@ -147,7 +148,7 @@ The panel's hooks button opens the folder and creates it when it is missing.
 | `folder`       | `folder`      | `~/resurrect`        | The git repository the setup is saved in. It is created when missing.      |
 | `remote`       | `string`      | `""`                 | A git remote to push each save to. Empty keeps the saves on this device.   |
 | `files`        | `string_list` | `["~/.config/hypr"]` | Files and folders in the home folder to save.                              |
-| `share`        | `bool`        | `false`              | Share the dotfiles with the other devices that push to the same remote.    |
+| `share`        | `bool`        | `true`               | Share the dotfiles with the other devices that push to the same remote.    |
 | `device_files` | `string_list` | `[]`                 | Shown when `share` is on. Files and folders saved but kept on this device. |
 | `daily`        | `bool`        | `true`               | Save once a day while Noctalia runs.                                       |
 | `packages`     | `bool`        | `true`               | Advanced. Save the list of installed packages.                             |

@@ -40,12 +40,8 @@ local function statusCard()
     color = "on_surface_variant",
     maxLines = 2,
   }))
-  if model.share then
-    table.insert(lines, ui.label({
-      text = model.remote ~= "" and noctalia.tr("status.shared") or noctalia.tr("status.share_needs_remote"),
-      color = model.remote ~= "" and "on_surface_variant" or "error",
-      maxLines = 2,
-    }))
+  if model.share and model.remote ~= "" then
+    table.insert(lines, ui.label({ text = noctalia.tr("status.shared"), color = "on_surface_variant", maxLines = 2 }))
   end
   return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container_high" }, lines)
 end
@@ -239,19 +235,23 @@ render = function()
     }))
     return
   end
-  local children = { header, statusCard() }
+  -- The cards scroll between the fixed header and buttons when they do not fit.
+  local cards = { statusCard() }
   local waitingCard = waiting()
   if waitingCard then
-    table.insert(children, waitingCard)
+    table.insert(cards, waitingCard)
   end
   local packagesCard = missingCard()
   if packagesCard then
-    table.insert(children, packagesCard)
+    table.insert(cards, packagesCard)
   end
-  table.insert(children, included())
-  table.insert(children, ui.separator({}))
-  table.insert(children, actions())
-  panel.render(ui.column({ gap = 14, padding = 16 }, children))
+  table.insert(cards, included())
+  panel.render(ui.column({ gap = 14, padding = 16 }, {
+    header,
+    ui.scroll({ gap = 14, flexGrow = 1 }, cards),
+    ui.separator({}),
+    actions(),
+  }))
 end
 
 noctalia.state.watch("resurrect.model", function(value)

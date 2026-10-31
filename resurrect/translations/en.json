@@ -102,7 +102,6 @@
     "remote": "Pushed to {remote}",
     "saved": "Saved {time}",
     "saving": "Saving…",
-    "share_needs_remote": "Sharing needs Push to: set it in the settings.",
     "shared": "Shared with your other devices that push here."
   },
   "waiting": {
