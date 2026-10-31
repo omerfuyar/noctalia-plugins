@@ -1,13 +1,16 @@
 #!/bin/sh
-# Saves this computer's setup into a git repository, for restore.sh to bring back.
-#   snapshot.sh <repo> <remote> <packages> <services> <noctalia> [path...]
-# <remote> may be empty. <packages>, <services> and <noctalia> are "true" or "false".
-# Each path is a full path to a file or folder under the home folder.
+# Saves this device's setup into a git repository, for restore.sh to bring back.
+#   snapshot.sh <repo> <remote> <packages> <services> <noctalia> <share> [path...] [-- path...]
+# <remote> may be empty. <packages>, <services>, <noctalia> and <share> are "true" or "false".
+# Each path is a full path to a file or folder under the home folder. Paths after -- are
+# kept on this device only.
 #
-# What the plugin saves goes into computers/<hostname>/, so computers sharing one repository
-# never overwrite each other, and nothing else in the repository is touched. Then every
-# executable file in hooks/save/ runs, in name order, for the owner's own steps.
-# Prints "count <what> <number>" lines, then "saved" or "unchanged", and "pushed".
+# What the plugin saves of this device goes into devices/<hostname>/, so devices sharing one
+# repository never overwrite each other. With <share>, the files go into shared/ instead,
+# except the ones kept on this device, and share.sh brings in what other devices changed.
+# Then every executable file in hooks/save/ runs, in name order, for the owner's own steps.
+# Prints "count <what> <number>" lines, share.sh's lines, then "saved" or "unchanged", and
+# "pushed".
 set -u
 
 repo=$1
@@ -15,11 +18,12 @@ remote=$2
 packages=$3
 services=$4
 noctalia=$5
-shift 5
+share=$6
+shift 6
 here=$(cd "$(dirname "$0")" && pwd)
-computer=$(uname -n)
+device=$(uname -n)
 
-# A new computer starts from the remote's saves, so all computers share one history.
+# A new device starts from the remote's saves, so all devices share one history.
 if [ ! -d "$repo/.git" ] && [ -n "$remote" ] && [ -z "$(ls -A "$repo" 2>/dev/null)" ] &&
   [ -n "$(git ls-remote "$remote" 2>/dev/null)" ]; then
   git clone -q "$remote" "$repo" || exit 2
@@ -27,6 +31,28 @@ fi
 mkdir -p "$repo" || exit 1
 cd "$repo" || exit 1
 [ -d .git ] || git init -q || exit 1
+
+# The other devices' latest saves, for share.sh: the remote's branch merged with this
+# repository's own, the remote's side winning where both changed a file.
+theirs=
+if [ -n "$remote" ]; then
+  if git remote get-url origin >/dev/null 2>&1; then
+    git remote set-url origin "$remote"
+  else
+    git remote add origin "$remote"
+  fi
+  branch=$(git symbolic-ref --short HEAD)
+  git fetch -q origin "$branch" 2>/dev/null
+fi
+if git rev-parse -q --verify HEAD >/dev/null; then
+  theirs=HEAD
+  if [ -n "$remote" ] && git rev-parse -q --verify "origin/$branch" >/dev/null; then
+    theirs=$(git merge-tree --write-tree -X theirs HEAD "origin/$branch" 2>/dev/null | head -n 1)
+    git cat-file -e "$theirs" 2>/dev/null || theirs=origin/$branch
+  fi
+elif [ -n "$remote" ] && git rev-parse -q --verify "origin/$branch" >/dev/null; then
+  theirs=origin/$branch
+fi
 
 # Version 1.0 saved at the top of the repository, with a README.md it wrote itself. Only
 # the files it wrote are removed: packages/exclude.txt and the like stay.
@@ -36,7 +62,22 @@ if head -n 1 README.md 2>/dev/null | grep -q '^Saved from '; then
   rmdir noctalia services packages 2>/dev/null || true
 fi
 
-dir=computers/$computer
+# Version 1 kept each device's save in computers/<name>/. A folder already moved by another
+# device is only removed: the next save of its device writes it again.
+if [ -d computers ]; then
+  for old in computers/*/; do
+    [ -d "$old" ] || continue
+    name=$(basename "$old")
+    if [ -e "devices/$name" ]; then
+      rm -rf "$old"
+    else
+      mkdir -p devices && mv "$old" "devices/$name"
+    fi
+  done
+  rmdir computers 2>/dev/null || true
+fi
+
+dir=devices/$device
 mkdir -p "$dir"
 
 # Prints "count <what> <lines in the files>".
@@ -76,6 +117,37 @@ if [ "$packages" = true ]; then
   count packages "$dir"/packages/*.txt
 fi
 
+# With sharing on: packages other devices saved that this one does not have, for each
+# package manager it uses. $dir/skip.txt lists the ones the owner leaves off this device;
+# $RESURRECT_SKIP, when set, holds names to add to it. Prints "missing <list> <name>".
+if [ "$share" = true ] && [ "$packages" = true ]; then
+  if [ -n "${RESURRECT_SKIP:-}" ] && [ -s "$RESURRECT_SKIP" ]; then
+    cat "$RESURRECT_SKIP" >>"$dir/skip.txt"
+    sort -u -o "$dir/skip.txt" "$dir/skip.txt"
+  fi
+  [ -n "${RESURRECT_SKIP:-}" ] && rm -f "$RESURRECT_SKIP"
+  skip=$(mktemp)
+  exclude=$(mktemp)
+  installed=$(mktemp)
+  entries "$dir/skip.txt" >"$skip"
+  entries packages/exclude.txt >"$exclude"
+  [ -s "$exclude" ] || echo '^$' >"$exclude"
+  for list in pacman aur apt dnf flatpak; do
+    [ -f "$dir/packages/$list.txt" ] && [ -n "$theirs" ] || continue
+    case $list in
+      pacman | aur) pacman -Qq ;;
+      apt) dpkg-query -W -f '${Package}\n' ;;
+      dnf) rpm -qa --qf '%{NAME}\n' ;;
+      flatpak) flatpak list --columns=application ;;
+    esac >"$installed" 2>/dev/null
+    git ls-tree --name-only "$theirs" devices/ 2>/dev/null | while read -r other; do
+      [ "$other" = "$dir" ] || git show "$theirs:$other/packages/$list.txt" 2>/dev/null
+    done | sort -u | grep -vxFf "$installed" | grep -vxFf "$skip" | grep -vxEf "$exclude" |
+      sed "s/^/missing $list /"
+  done
+  rm -f "$skip" "$exclude" "$installed"
+fi
+
 # Services that start by themselves, for the system and for this user.
 rm -rf "$dir/services"
 if [ "$services" = true ] && command -v systemctl >/dev/null; then
@@ -102,8 +174,15 @@ if [ "$noctalia" = true ]; then
 fi
 
 # Dotfiles, kept at their place under the home folder. Nested git folders are left out.
+# With sharing on, only the ones kept on this device are saved here.
 rm -rf "$dir/files"
+after=false
 for path in "$@"; do
+  if [ "$path" = -- ]; then
+    after=true
+    continue
+  fi
+  [ "$share" = true ] && ! $after && continue
   case $path in
     "$HOME"/*) ;;
     *) echo "skipped, not in the home folder: $path"; continue ;;
@@ -121,16 +200,42 @@ if [ -d "$dir/files" ]; then
 fi
 echo "count files $files"
 
+if [ "$share" = true ]; then
+  # Noctalia's config folder is shared like the dotfiles; its settings.toml one setting at
+  # a time, when python3 is there to read TOML.
+  if [ "$noctalia" = true ]; then
+    sh "$here/share.sh" "$theirs" "$HOME/.config/noctalia" "$@" || exit 1
+    if [ -f "$HOME/.local/state/noctalia/settings.toml" ] && command -v python3 >/dev/null; then
+      their_settings=$(mktemp)
+      [ -n "$theirs" ] && git show "$theirs:shared/noctalia/settings.toml" >"$their_settings" 2>/dev/null
+      result=$(python3 -I "$here/settings.py" "$HOME/.local/state/noctalia/settings.toml" \
+        "$their_settings" "$(git rev-parse --git-dir)/resurrect-settings") || {
+        rm -f "$their_settings"
+        echo "could not share Noctalia's settings"
+        exit 1
+      }
+      rm -f "$their_settings"
+      echo "$result"
+      case $result in
+        "settings applied 0"*) ;;
+        *) command -v noctalia >/dev/null && noctalia msg config-reload >/dev/null 2>&1 ;;
+      esac
+    fi
+  else
+    sh "$here/share.sh" "$theirs" "$@" || exit 1
+  fi
+fi
+
 cp "$here/restore.sh" restore.sh
 chmod +x restore.sh
 
-# The owner's own steps. Each gets the repository, this computer's name and its folder.
+# The owner's own steps. Each gets the repository, this device's name and its folder.
 hooks=0
 if [ -d hooks/save ]; then
   for hook in hooks/save/*; do
     [ -f "$hook" ] && [ -x "$hook" ] || continue
     hooks=$((hooks + 1))
-    RESURRECT_REPO=$(pwd) RESURRECT_COMPUTER=$computer RESURRECT_DIR=$(pwd)/$dir "$hook" ||
+    RESURRECT_REPO=$(pwd) RESURRECT_DEVICE=$device RESURRECT_DIR=$(pwd)/$dir "$hook" ||
       { echo "hook failed: $hook"; exit 3; }
   done
 fi
@@ -150,25 +255,21 @@ fi
 if git diff --cached --quiet; then
   echo "unchanged"
 else
-  git -c user.name="${USER:-resurrect}" -c user.email="${USER:-resurrect}@$computer" \
-    commit -q -m "Snapshot of $computer on $(date '+%Y-%m-%d %H:%M')" || exit 1
+  git -c user.name="${USER:-resurrect}" -c user.email="${USER:-resurrect}@$device" \
+    commit -q -m "Snapshot of $device on $(date '+%Y-%m-%d %H:%M')" || exit 1
   echo "saved"
 fi
 
 if [ -n "$remote" ]; then
-  if git remote get-url origin >/dev/null 2>&1; then
-    git remote set-url origin "$remote"
-  else
-    git remote add origin "$remote"
-  fi
-  # Other computers push to the same repository. Their saves are in their own folders, so
-  # this save goes on top of theirs; a file both changed keeps this computer's version.
+  # Other devices push to the same repository. Their saves are in their own folders, and
+  # share.sh already took in their shared files, so this save goes on top of theirs; a file
+  # both changed keeps this device's version.
   branch=$(git symbolic-ref --short HEAD)
   if git fetch -q origin "$branch" 2>/dev/null; then
-    if ! git -c user.name="${USER:-resurrect}" -c user.email="${USER:-resurrect}@$computer" \
+    if ! git -c user.name="${USER:-resurrect}" -c user.email="${USER:-resurrect}@$device" \
       rebase -q -X theirs "origin/$branch" >/dev/null 2>&1; then
       git rebase --abort 2>/dev/null
-      echo "could not combine this save with the other computers' saves; see git status in $repo"
+      echo "could not combine this save with the other devices' saves; see git status in $repo"
       exit 2
     fi
   fi
