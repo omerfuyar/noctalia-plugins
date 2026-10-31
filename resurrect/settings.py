@@ -10,9 +10,11 @@ agreed on; either may be a missing file. The script writes:
 
 Each setting is compared in three versions: this device's, theirs and the base. One that
 only another device changed is taken; otherwise this device's value stays. The list of
-enabled plugins is merged item by item. Settings tied to this device are never shared:
-idle, brightness, battery and wallpaper, Resurrect's own settings, and any table named
-after a monitor or placed on one. Plugin sources that are folders on this device stay too.
+enabled plugins is merged item by item. Settings tied to the hardware are never shared:
+brightness and battery, any table named after a monitor or placed on one (except the
+wallpaper's), and Resurrect's share and device_files. Plugin sources that are folders on
+this device stay too. A setting shared for the first time, with no agreed version yet,
+takes the value already shared, so the device that shared it first wins.
 
 Prints "settings applied <count>" and "count settings <number>".
 """
@@ -23,7 +25,9 @@ import re
 import sys
 import tomllib
 
-LOCAL_SECTIONS = {"idle", "brightness", "battery", "wallpaper"}
+LOCAL_SECTIONS = {"brightness", "battery"}
+# Resurrect's settings that belong to this device; the rest, such as its file list, is shared.
+LOCAL_RESURRECT = {"share", "device_files"}
 LOCAL_PLUGIN = "omerfuyar/resurrect"
 MONITOR = re.compile(r"^(eDP|DP|HDMI|DVI|VGA|LVDS|DSI|Virtual|HEADLESS|USB)(-[A-Z])?-\d+$")
 NAMES_MONITOR = re.compile(r"(^|[@:_.-])(eDP|DP|HDMI|DVI|VGA|LVDS|DSI)(-[A-Z])?-\d+($|[@:_.-])")
@@ -42,8 +46,8 @@ def is_local(path, table):
     """True for a table that holds settings of this device only."""
     if len(path) == 1 and path[0] in LOCAL_SECTIONS:
         return True
-    if path == ("plugin_settings", LOCAL_PLUGIN):
-        return True
+    if path[:1] == ("wallpaper",):
+        return False
     if path and NAMES_MONITOR.search(path[-1]):
         return True
     return any(isinstance(v, str) and MONITOR.match(v) for v in table.values())
@@ -66,6 +70,8 @@ def split(table, path=()):
             s, l = split(value, here)
             shared.update(s)
             local.update(l)
+        elif path == ("plugin_settings", LOCAL_PLUGIN) and key in LOCAL_RESURRECT:
+            local[here] = value
         elif here == ("plugins", "source") and isinstance(value, list):
             shared[here] = [v for v in value if not is_folder_source(v)]
             folders = [v for v in value if is_folder_source(v)]
@@ -116,6 +122,10 @@ def merge(mine, theirs, base):
             value = merge_list(*(None if v is MISSING else v for v in (m, t, b)))
             if m is MISSING or not same(value, m):
                 taken += 1
+        elif b is MISSING and t is not MISSING and not same(m, t):
+            # Shared for the first time here: the value another device shared first wins.
+            value = t
+            taken += 1
         elif same(m, t) or same(t, b) or m is not b and not same(m, b):
             value = m
         else:

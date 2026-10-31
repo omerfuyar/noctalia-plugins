@@ -77,12 +77,13 @@ other devices changed:
 List the files that differ by hardware in **Only this device**, such as a monitor layout or
 GPU variables. They are saved, but not shared.
 
-Noctalia's config folder is shared like the dotfiles. The settings changed in its settings
-window, such as the bar and the theme, are shared one setting at a time: a setting only
-another device changed is taken, and when two devices changed one, each keeps its own.
-Plugins turned on or off on one device are turned on or off on the others. Settings that
-belong to the hardware stay on each device: idle, brightness, battery, wallpaper,
-Resurrect's own settings, and anything placed on a monitor.
+Noctalia's config folder is shared like the dotfiles. All settings changed in its settings
+window are shared one setting at a time, such as the bar, the theme, the wallpaper and
+idle: a setting only another device changed is taken, and when two devices changed one,
+each keeps its own. A setting shared for the first time takes the value of the device that
+shared it first. Plugins turned on or off on one device are turned on or off on the others.
+Only settings tied to the hardware stay on each device: brightness, battery, widgets placed
+on a monitor, and Resurrect's **Share between devices** and **Only this device**.
 
 The panel also lists the packages your other devices have and this one does not.
 **Install…** opens a terminal that installs them all. **Not here** leaves a package off
