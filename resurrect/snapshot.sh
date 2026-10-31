@@ -170,7 +170,29 @@ fi
 echo "count files $files"
 
 if [ "$share" = true ]; then
-  sh "$here/share.sh" "$theirs" "$@" || exit 1
+  # Noctalia's config folder is shared like the dotfiles; its settings.toml one setting at
+  # a time, when python3 is there to read TOML.
+  if [ "$noctalia" = true ]; then
+    sh "$here/share.sh" "$theirs" "$HOME/.config/noctalia" "$@" || exit 1
+    if [ -f "$HOME/.local/state/noctalia/settings.toml" ] && command -v python3 >/dev/null; then
+      their_settings=$(mktemp)
+      [ -n "$theirs" ] && git show "$theirs:shared/noctalia/settings.toml" >"$their_settings" 2>/dev/null
+      result=$(python3 -I "$here/settings.py" "$HOME/.local/state/noctalia/settings.toml" \
+        "$their_settings" "$(git rev-parse --git-dir)/resurrect-settings") || {
+        rm -f "$their_settings"
+        echo "could not share Noctalia's settings"
+        exit 1
+      }
+      rm -f "$their_settings"
+      echo "$result"
+      case $result in
+        "settings applied 0"*) ;;
+        *) command -v noctalia >/dev/null && noctalia msg config-reload >/dev/null 2>&1 ;;
+      esac
+    fi
+  else
+    sh "$here/share.sh" "$theirs" "$@" || exit 1
+  fi
 fi
 
 cp "$here/restore.sh" restore.sh

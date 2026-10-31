@@ -126,7 +126,7 @@ local function lastLine(text)
   local found = nil
   for line in (text or ""):gmatch("[^\n]+") do
     if not line:match("^skipped") and not line:match("^applied ") and not line:match("^removed ")
-      and not line:match("^conflict ") and not line:match("^held ") then
+      and not line:match("^conflict ") and not line:match("^held ") and not line:match("^settings ") then
       found = line
     end
   end
@@ -182,6 +182,10 @@ local function poll()
       state.conflicts, state.held = conflicts, held
       if #applied > 0 then
         noctalia.notify(noctalia.trp("notify.applied", #applied), table.concat(applied, "\n"))
+      end
+      local settingsTaken = tonumber((log or ""):match("settings applied (%d+)") or "0") or 0
+      if settingsTaken > 0 then
+        noctalia.notify(noctalia.trp("notify.settings", settingsTaken))
       end
       if newlyHeld then
         noctalia.notifyError(noctalia.tr("notify.held"), table.concat(held, "\n"))

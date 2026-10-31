@@ -13,7 +13,11 @@
       "other": "{count} files came from your other devices"
     },
     "failed": "Resurrect could not save your setup",
-    "held": "Resurrect held back files that gave Hyprland config errors"
+    "held": "Resurrect held back files that gave Hyprland config errors",
+    "settings": {
+      "one": "1 Noctalia setting came from your other devices",
+      "other": "{count} Noctalia settings came from your other devices"
+    }
   },
   "panel": {
     "loading": "Loading…",

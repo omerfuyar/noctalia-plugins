@@ -25,6 +25,7 @@ your devices, and on a new install, bring it all back with one script.
 | `paru` or `yay`                        | Optional | Restore AUR packages. Without them, the AUR list stays in `packages/aur.txt`.                              |
 | `gitleaks`                             | Optional | Checks each save for passwords, tokens and keys before it is committed. Without it, saves are not checked. |
 | `hyprctl`                              | Optional | Checks Hyprland's config after shared files come in. Without it, they are not checked.                     |
+| `python3`                              | Optional | Shares Noctalia's settings one setting at a time. Without it, they stay on each device.                    |
 
 ## Usage
 
@@ -75,12 +76,19 @@ each save, and each start of Noctalia, also takes in what the other devices chan
 List the files that differ by hardware in **Only this device**, such as a monitor layout or
 GPU variables. They are saved, but not shared.
 
+Noctalia's config folder is shared like the dotfiles. The settings changed in its settings
+window, such as the bar and the theme, are shared one setting at a time: a setting only
+another device changed is taken, and when two devices changed one, each keeps its own.
+Plugins turned on or off on one device are turned on or off on the others. Settings that
+belong to the hardware stay on each device: idle, brightness, battery, wallpaper,
+Resurrect's own settings, and anything placed on a monitor.
+
 ### The repository
 
 | Path                   | What it holds                                                                                                                                  |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `devices/<name>/`      | What Resurrect saved on the device with that hostname. One repository can hold several devices.                                                |
-| `shared/files/`        | The dotfiles shared between devices, when sharing is on.                                                                                       |
+| `shared/`              | The dotfiles and Noctalia's settings shared between devices, when sharing is on.                                                               |
 | `packages/exclude.txt` | Optional, yours. Package names left out of every save: one regular expression per line, for the whole name, such as `linux.*` or `.*nvidia.*`. |
 | `packages/extra.txt`   | Optional, yours. Packages installed on restore besides the saved ones, one per line, such as ones pacman counts as dependencies.               |
 | `.gitleaksignore`      | Optional, yours. Findings of the secret check that may be committed.                                                                           |

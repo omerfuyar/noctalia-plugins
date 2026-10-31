@@ -6,7 +6,7 @@ author = "omerfuyar"
 license = "MIT"
 icon = "lifebuoy"
 description = "Save your packages, dotfiles, services and Noctalia settings to git, share them between devices, restore them."
-dependencies = ["git", "sh", "systemctl", "xdg-open", "gitleaks", "hyprctl"]
+dependencies = ["git", "sh", "systemctl", "xdg-open", "gitleaks", "hyprctl", "python3"]
 tags = ["bar", "system", "utility"]
 
 [[setting]]
