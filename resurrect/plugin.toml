@@ -1,6 +1,6 @@
 id = "omerfuyar/resurrect"
 name = "Resurrect"
-version = "2.0.2"
+version = "2.1.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
@@ -28,7 +28,14 @@ key = "files"
 type = "string_list"
 label_key = "settings.files.label"
 description_key = "settings.files.description"
-default = ["~/.config/hypr"]
+default = ["~/.config"]
+
+[[setting]]
+key = "leave_out"
+type = "string_list"
+label_key = "settings.leave_out.label"
+description_key = "settings.leave_out.description"
+default = []
 
 [[setting]]
 key = "share"

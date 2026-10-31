@@ -40,6 +40,9 @@ local choices = {}
 local skips = {}
 local running = false
 local again = false
+-- The file lists the running save started with. When the save takes in other ones from
+-- another device, it saves once more with them.
+local runLists = ""
 local reading = false
 local loaded = false
 
@@ -93,12 +96,17 @@ local function publish()
   })
 end
 
+local function lists()
+  return noctalia.json.encode({ list("files"), list("device_files"), list("leave_out") })
+end
+
 local function snapshot()
   if running or not noctalia.commandExists("git") then
     return
   end
   running = true
   again = false
+  runLists = lists()
   noctalia.mkdirAll(dataDir)
   -- "mine <path>" or "theirs <path>" per line; snapshot.sh removes the file once read.
   local lines = {}
@@ -109,9 +117,14 @@ local function snapshot()
   noctalia.writeFile(resolveFile, table.concat(lines, "\n") .. "\n")
   noctalia.writeFile(skipFile, #skips > 0 and table.concat(skips, "\n") .. "\n" or "")
   skips = {}
+  local leaveOut = {}
+  for _, path in ipairs(list("leave_out")) do
+    table.insert(leaveOut, noctalia.expandPath(path))
+  end
   local argv = {
     "sh", "-c", RUNNER, "resurrect", runPrefix,
     "env", "RESURRECT_RESOLVE=" .. resolveFile, "RESURRECT_SKIP=" .. skipFile,
+    "RESURRECT_LEAVE_OUT=" .. table.concat(leaveOut, "\n"),
     "sh", (noctalia.pluginDir() or "") .. "/snapshot.sh", repo(), noctalia.getConfig("remote") or "",
     tostring(noctalia.getConfig("packages") ~= false),
     tostring(noctalia.getConfig("services") ~= false),
@@ -136,7 +149,7 @@ local function lastLine(text)
   for line in (text or ""):gmatch("[^\n]+") do
     if not line:match("^skipped") and not line:match("^applied ") and not line:match("^removed ")
       and not line:match("^conflict ") and not line:match("^held ") and not line:match("^settings ")
-      and not line:match("^missing ") then
+      and not line:match("^missing ") and not line:match("^kept ") then
       found = line
     end
   end
@@ -229,6 +242,9 @@ local function poll()
       end
       save()
       publish()
+      if settingsTaken > 0 and lists() ~= runLists then
+        again = true
+      end
       if again then
         snapshot()
       end

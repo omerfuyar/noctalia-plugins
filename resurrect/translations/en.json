@@ -63,12 +63,16 @@
       "label": "Only this device"
     },
     "files": {
-      "description": "Files and folders in your home folder to save, such as ~/.config/hypr. Do not add files with passwords or keys if the repository is pushed.",
+      "description": "Files and folders in your home folder to save, such as ~/.config. Inside a folder, caches, logs, browser and app data, binary files and files over 1 MB are left out.",
       "label": "Dotfiles"
     },
     "folder": {
       "description": "The git repository the setup is saved in. It is created when missing.",
       "label": "Repository folder"
+    },
+    "leave_out": {
+      "label": "Leave out",
+      "description": "Files and folders inside the dotfiles not to save, such as ~/.config/gh/hosts.yml or ~/.config/kdeconnect. Use it for passwords, keys and anything big."
     },
     "noctalia": {
       "description": "Save Noctalia's config and the settings changed in its settings window.",
