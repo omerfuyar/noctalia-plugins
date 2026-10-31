@@ -56,29 +56,6 @@ elif [ -n "$remote" ] && git rev-parse -q --verify "origin/$branch" >/dev/null; 
   theirs=origin/$branch
 fi
 
-# Version 1.0 saved at the top of the repository, with a README.md it wrote itself. Only
-# the files it wrote are removed: packages/exclude.txt and the like stay.
-if head -n 1 README.md 2>/dev/null | grep -q '^Saved from '; then
-  rm -rf README.md files noctalia/config noctalia/state services/system.txt services/user.txt \
-    packages/pacman.txt packages/aur.txt packages/apt.txt packages/dnf.txt packages/flatpak.txt
-  rmdir noctalia services packages 2>/dev/null || true
-fi
-
-# Version 1 kept each device's save in computers/<name>/. A folder already moved by another
-# device is only removed: the next save of its device writes it again.
-if [ -d computers ]; then
-  for old in computers/*/; do
-    [ -d "$old" ] || continue
-    name=$(basename "$old")
-    if [ -e "devices/$name" ]; then
-      rm -rf "$old"
-    else
-      mkdir -p devices && mv "$old" "devices/$name"
-    fi
-  done
-  rmdir computers 2>/dev/null || true
-fi
-
 dir=devices/$device
 mkdir -p "$dir"
 

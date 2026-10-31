@@ -13,8 +13,8 @@
 # left alone on both sides and reported, until $RESURRECT_RESOLVE says "mine <path>" or
 # "theirs <path>". When files put in place give Hyprland config errors, they go back and
 # stay held in .git/resurrect-held until another device changes them again. When another
-# device removed more than 20 files at once, none is removed here; this device shares them
-# again. A file that cannot be read stops the save, so it never reads as removed.
+# device removed more than half of the shared files at once, none is removed here; this
+# device shares them again. A file that cannot be read stops the save, so it never reads as removed.
 #
 # Prints "applied <path>", "removed <path>", "conflict <path>", "held <path>",
 # "kept <number> files another device removed" and "count shared <number>".
@@ -168,8 +168,8 @@ mkdir -p shared/files
   cut -d ' ' -f 2- "$base"
 } | sort -u >"$work/paths"
 
-# Files only another device removed. Many at once is a mistake, such as a failed save
-# there: then none is removed here.
+# Files only another device removed. More than half of them at once is a mistake, such as
+# a failed save there: then none is removed here.
 removing=0
 while read -r path; do
   [ -n "$path" ] && ! kept "$path" && [ -f "$mine/$path" ] && [ -z "$(their "$path" 1)" ] || continue
@@ -177,7 +177,7 @@ while read -r path; do
   [ -n "$b" ] && [ "$(git hash-object "$mine/$path")" = "$b" ] && removing=$((removing + 1))
 done <"$work/paths"
 many_removed=false
-[ "$removing" -gt 20 ] && many_removed=true
+[ "$removing" -gt 0 ] && [ $((removing * 2)) -gt "$(grep -c . "$base")" ] && many_removed=true
 
 while read -r path; do
   [ -n "$path" ] || continue
