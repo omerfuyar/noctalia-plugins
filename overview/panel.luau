@@ -6,7 +6,7 @@
 local Layout = require("./lib/layout.luau")
 
 local CARD_WIDTH = 256
-local PER_ROW = 4
+local PER_ROW = 3
 local GAP = 4
 local DRAG_TYPE = "omerfuyar/overview:window"
 -- A card's title line and the gap below it.

@@ -1,6 +1,6 @@
 id = "omerfuyar/overview"
 name = "Overview"
-version = "1.4.0"
+version = "1.4.1"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
@@ -27,7 +27,7 @@ entry = "widget.luau"
 [[panel]]
 id = "panel"
 entry = "panel.luau"
-width = 1144
+width = 872
 height = "content"
 max_height = 900
 placement = "attached"
@@ -39,7 +39,7 @@ keyboard_focus = "exclusive"
 [[panel]]
 id = "center"
 entry = "panel.luau"
-width = 1144
+width = 872
 height = "content"
 max_height = 900
 placement = "floating"
