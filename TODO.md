@@ -9,12 +9,18 @@ Open questions and pending tasks. When one is settled, write the decision where 
 
 ## Plugins
 
-Plugins to build:
+Plugins to build or change:
 
 1. Display Layout. Arranges monitors by dragging, with snapping. It sets resolution, refresh rate, scale, VRR and HDR, keeps layout profiles, and maps workspaces to monitors.
 2. Phone Hub. Becomes the plugin on the `feature/phone-cam` branch: phone screen and phone as a webcam, both with scrcpy. When Iriun Webcam's camera is in use, Phone Hub leaves it alone and says so. Remind the owner: notifications need nothing of their own, since KDE Connect already sends the phone's notifications to Noctalia, and Phone Operate covers KDE Connect's actions; recommended scope is webcam and screen only.
 3. Keyboard. Remind the owner first. The built-in widget fails because fcitx5 runs a group of `keyboard-us` and `hangul` with hangul as default, and Hyprland's main keyboard is fcitx5's virtual one, so Noctalia reads that instead of the `us,tr` layouts. Recommended: one plugin that switches fcitx5 input methods when fcitx5 runs and the compositor's layouts otherwise, adds layouts, and shows an on-screen keyboard with `wvkbd`.
-4. Screen Capture. Remind the owner first. Noctalia already takes region, full screen, window and annotated screenshots. Recommended: one trigger that uses those for pictures and adds what is missing, video with `gpu-screen-recorder` or `wf-recorder` and text from the screen with `tesseract`, as an alternative to the official screen recorder.
+4. Resurrect shares the setup between devices, on the `feature/resurrect-share` branch. Decided with the owner:
+   - "Computer" becomes "device" everywhere: `devices/<name>/` in the repository, `RESURRECT_DEVICE` for hooks. A repository with `computers/` is moved on the first save.
+   - Every saved file is shared through `shared/files/`, except the paths in a new setting, "Only this device", such as monitor layouts and GPU variables. Each device gets the files the others share.
+   - On each save and when Noctalia starts, Resurrect fetches and applies what other devices changed, without asking. Each file is replaced in one step, after a backup. If Hyprland then reports config errors, the files go back and a notification says so. A file changed on two devices is not overwritten: the panel shows it, with "Keep mine" and "Take theirs".
+   - Noctalia's settings.toml is merged one setting at a time, against the version this device last applied; the list of enabled plugins item by item. Settings tied to one device stay on it: idle, brightness, wallpaper, Resurrect's own folder, remote and "Only this device", and anything that names a monitor. `config.toml` and palettes are shared as files.
+   - Packages that other devices have and this one does not are listed in the panel, with a button that installs them in a terminal and one that keeps a package off this device.
+5. Screen Capture. Remind the owner first. Noctalia already takes region, full screen, window and annotated screenshots. Recommended: one trigger that uses those for pictures and adds what is missing, video with `gpu-screen-recorder` or `wf-recorder` and text from the screen with `tesseract`, as an alternative to the official screen recorder.
 
 ## Contributions
 
