@@ -117,6 +117,37 @@ if [ "$packages" = true ]; then
   count packages "$dir"/packages/*.txt
 fi
 
+# With sharing on: packages other devices saved that this one does not have, for each
+# package manager it uses. $dir/skip.txt lists the ones the owner leaves off this device;
+# $RESURRECT_SKIP, when set, holds names to add to it. Prints "missing <list> <name>".
+if [ "$share" = true ] && [ "$packages" = true ]; then
+  if [ -n "${RESURRECT_SKIP:-}" ] && [ -s "$RESURRECT_SKIP" ]; then
+    cat "$RESURRECT_SKIP" >>"$dir/skip.txt"
+    sort -u -o "$dir/skip.txt" "$dir/skip.txt"
+  fi
+  [ -n "${RESURRECT_SKIP:-}" ] && rm -f "$RESURRECT_SKIP"
+  skip=$(mktemp)
+  exclude=$(mktemp)
+  installed=$(mktemp)
+  entries "$dir/skip.txt" >"$skip"
+  entries packages/exclude.txt >"$exclude"
+  [ -s "$exclude" ] || echo '^$' >"$exclude"
+  for list in pacman aur apt dnf flatpak; do
+    [ -f "$dir/packages/$list.txt" ] && [ -n "$theirs" ] || continue
+    case $list in
+      pacman | aur) pacman -Qq ;;
+      apt) dpkg-query -W -f '${Package}\n' ;;
+      dnf) rpm -qa --qf '%{NAME}\n' ;;
+      flatpak) flatpak list --columns=application ;;
+    esac >"$installed" 2>/dev/null
+    git ls-tree --name-only "$theirs" devices/ 2>/dev/null | while read -r other; do
+      [ "$other" = "$dir" ] || git show "$theirs:$other/packages/$list.txt" 2>/dev/null
+    done | sort -u | grep -vxFf "$installed" | grep -vxFf "$skip" | grep -vxEf "$exclude" |
+      sed "s/^/missing $list /"
+  done
+  rm -f "$skip" "$exclude" "$installed"
+fi
+
 # Services that start by themselves, for the system and for this user.
 rm -rf "$dir/services"
 if [ "$services" = true ] && command -v systemctl >/dev/null; then

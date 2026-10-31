@@ -7,6 +7,16 @@
   "error": {
     "unknown": "Saving stopped with an error."
   },
+  "missing": {
+    "install": "Install…",
+    "skip": "Not here",
+    "skip_all": "Leave all out",
+    "skip_tooltip": "Leave this package off this device",
+    "title": {
+      "one": "1 package from your other devices is not here",
+      "other": "{count} packages from your other devices are not here"
+    }
+  },
   "notify": {
     "applied": {
       "one": "1 file came from your other devices",

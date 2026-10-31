@@ -3,7 +3,8 @@
 -- once a day, when Noctalia starts with sharing on, and when asked, and opens restore.sh
 -- from that repository in a terminal. With sharing on, each save also takes in what other
 -- devices changed; files changed on two devices wait for the owner's choice, which goes to
--- snapshot.sh in RESOLVE_FILE.
+-- snapshot.sh in resolveFile. Packages other devices have and this one does not are listed;
+-- install.sh installs them in a terminal, and names the owner leaves out go in skipFile.
 --
 -- snapshot.sh runs detached, as a push can take longer than the 60 s limit of runAsync
 -- callbacks. RUNNER writes its output and exit code to the data directory; update() reads
@@ -26,12 +27,17 @@ local dataDir = noctalia.pluginDataDir() or ""
 local stateFile = dataDir .. "/state.json"
 local runPrefix = dataDir .. "/snapshot"
 local resolveFile = dataDir .. "/resolve"
+local skipFile = dataDir .. "/skip"
+local installFile = dataDir .. "/install.txt"
 
 -- result: "saved", "unchanged" or "pushed"; counts: what the last save held, by kind.
 -- conflicts and held: shared files that wait for the owner, by path under the home folder.
-local state = { lastMs = nil, result = nil, error = nil, counts = nil, conflicts = {}, held = {} }
+-- missing: packages other devices have, as { list = "pacman", name = "foo" }.
+local state = { lastMs = nil, result = nil, error = nil, counts = nil, conflicts = {}, held = {}, missing = {} }
 -- Choices not yet passed to a save: path -> "mine" or "theirs".
 local choices = {}
+-- Package names to leave off this device, not yet passed to a save.
+local skips = {}
 local running = false
 local again = false
 local reading = false
@@ -79,6 +85,7 @@ local function publish()
     conflicts = state.conflicts or {},
     held = state.held or {},
     choices = choices,
+    missing = state.missing or {},
     canRestore = noctalia.fileExists(repo() .. "/restore.sh"),
     counts = state.counts or {},
     hooks = repo() .. "/hooks",
@@ -100,9 +107,11 @@ local function snapshot()
   end
   choices = {}
   noctalia.writeFile(resolveFile, table.concat(lines, "\n") .. "\n")
+  noctalia.writeFile(skipFile, #skips > 0 and table.concat(skips, "\n") .. "\n" or "")
+  skips = {}
   local argv = {
     "sh", "-c", RUNNER, "resurrect", runPrefix,
-    "env", "RESURRECT_RESOLVE=" .. resolveFile,
+    "env", "RESURRECT_RESOLVE=" .. resolveFile, "RESURRECT_SKIP=" .. skipFile,
     "sh", (noctalia.pluginDir() or "") .. "/snapshot.sh", repo(), noctalia.getConfig("remote") or "",
     tostring(noctalia.getConfig("packages") ~= false),
     tostring(noctalia.getConfig("services") ~= false),
@@ -126,7 +135,8 @@ local function lastLine(text)
   local found = nil
   for line in (text or ""):gmatch("[^\n]+") do
     if not line:match("^skipped") and not line:match("^applied ") and not line:match("^removed ")
-      and not line:match("^conflict ") and not line:match("^held ") and not line:match("^settings ") then
+      and not line:match("^conflict ") and not line:match("^held ") and not line:match("^settings ")
+      and not line:match("^missing ") then
       found = line
     end
   end
@@ -178,8 +188,20 @@ local function poll()
           table.insert(applied, line.path)
         end
       end
+      local missing = {}
+      for _, line in ipairs(lines) do
+        if line.word == "missing" then
+          local listName, name = line.path:match("^(%S+) (%S+)$")
+          if listName then
+            table.insert(missing, { list = listName, name = name })
+          end
+        end
+      end
       local newlyHeld = #held > #(state.held or {})
       state.conflicts, state.held = conflicts, held
+      if code == 0 then
+        state.missing = missing
+      end
       if #applied > 0 then
         noctalia.notify(noctalia.trp("notify.applied", #applied), table.concat(applied, "\n"))
       end
@@ -209,6 +231,21 @@ local function poll()
   end)
 end
 
+-- Opens a terminal that installs every missing package, then saves again.
+local function install()
+  local lines = {}
+  for _, package in ipairs(state.missing or {}) do
+    table.insert(lines, package.list .. " " .. package.name)
+  end
+  if #lines == 0 then
+    return
+  end
+  noctalia.mkdirAll(dataDir)
+  noctalia.writeFile(installFile, table.concat(lines, "\n") .. "\n")
+  local script = (noctalia.pluginDir() or "") .. "/install.sh"
+  noctalia.runInTerminal("sh '" .. script:gsub("'", "'\\''") .. "' '" .. installFile:gsub("'", "'\\''") .. "'")
+end
+
 local function restore()
   local script = repo() .. "/restore.sh"
   if noctalia.fileExists(script) then
@@ -232,6 +269,30 @@ noctalia.state.watch("resurrect.command", function(command)
     else
       snapshot()
     end
+  elseif command.action == "skip" and type(command.names) == "table" then
+    -- Left off this device: gone from the list now, written to skip.txt with the next save.
+    local leave = {}
+    for _, name in ipairs(command.names) do
+      if type(name) == "string" then
+        table.insert(skips, name)
+        leave[name] = true
+      end
+    end
+    local kept = {}
+    for _, package in ipairs(state.missing or {}) do
+      if not leave[package.name] then
+        table.insert(kept, package)
+      end
+    end
+    state.missing = kept
+    save()
+    if running then
+      again = true
+    else
+      snapshot()
+    end
+  elseif command.action == "install" then
+    install()
   elseif command.action == "restore" then
     restore()
   elseif command.action == "open" and noctalia.commandExists("xdg-open") then
@@ -273,6 +334,7 @@ noctalia.readFileAsync(stateFile, function(text)
   running = noctalia.fileExists(runPrefix .. ".log") and not noctalia.fileExists(runPrefix .. ".exit")
   state.conflicts = state.conflicts or {}
   state.held = state.held or {}
+  state.missing = state.missing or {}
   loaded = true
   publish()
   noctalia.setUpdateInterval(2000)

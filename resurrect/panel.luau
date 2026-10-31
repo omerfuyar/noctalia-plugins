@@ -1,6 +1,6 @@
 --!nonstrict
 -- Resurrect panel: when the setup was last saved and where, shared files that wait for a
--- choice, what is saved, and the Save and Restore buttons. Renders "resurrect.model" and
+-- choice, packages other devices have, what is saved, and the Save and Restore buttons. Renders "resurrect.model" and
 -- sends actions on "resurrect.command".
 
 local model = nil
@@ -105,6 +105,47 @@ local function waiting()
   return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container_high" }, rows)
 end
 
+-- Packages other devices have and this one does not, with Install and Not here.
+local function missingCard()
+  local missing = model.missing or {}
+  if #missing == 0 then
+    return nil
+  end
+  local rows = {
+    ui.row({ gap = 8, align = "center" }, {
+      ui.glyph({ name = "package", size = 18, color = "primary" }),
+      ui.label({ text = noctalia.trp("missing.title", #missing), fontWeight = "semibold", flexGrow = 1 }),
+    }),
+  }
+  for index, package in ipairs(missing) do
+    if index > MAX_WAITING then
+      table.insert(rows, ui.label({ text = noctalia.tr("waiting.more", { count = #missing - MAX_WAITING }), color = "on_surface_variant" }))
+      break
+    end
+    table.insert(rows, ui.row({ gap = 6, align = "center" }, {
+      ui.label({ text = package.name, flexGrow = 1, maxLines = 1 }),
+      ui.label({ text = package.list, color = "on_surface_variant" }),
+      ui.button({ text = noctalia.tr("missing.skip"), variant = "ghost", controlSize = "sm",
+        tooltip = noctalia.tr("missing.skip_tooltip"),
+        onClick = function() send({ action = "skip", names = { package.name } }) end }),
+    }))
+  end
+  local names = {}
+  for _, package in ipairs(missing) do
+    table.insert(names, package.name)
+  end
+  table.insert(rows, ui.row({ gap = 8, justify = "end" }, {
+    ui.button({ text = noctalia.tr("missing.skip_all"), variant = "ghost", controlSize = "sm",
+      onClick = function() send({ action = "skip", names = names }) end }),
+    ui.button({ text = noctalia.tr("missing.install"), glyph = "terminal-2", variant = "primary", controlSize = "sm",
+      onClick = function()
+        send({ action = "install" })
+        panel.close()
+      end }),
+  }))
+  return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container_high" }, rows)
+end
+
 -- One kind of thing a save holds, with how many the last save had.
 local function includedRow(glyph, text, on, count)
   local children = {
@@ -202,6 +243,10 @@ render = function()
   local waitingCard = waiting()
   if waitingCard then
     table.insert(children, waitingCard)
+  end
+  local packagesCard = missingCard()
+  if packagesCard then
+    table.insert(children, packagesCard)
   end
   table.insert(children, included())
   table.insert(children, ui.separator({}))

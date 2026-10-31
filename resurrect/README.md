@@ -83,18 +83,23 @@ Plugins turned on or off on one device are turned on or off on the others. Setti
 belong to the hardware stay on each device: idle, brightness, battery, wallpaper,
 Resurrect's own settings, and anything placed on a monitor.
 
+The panel also lists the packages your other devices have and this one does not.
+**Install…** opens a terminal that installs them all. **Not here** leaves a package off
+this device, in `devices/<name>/skip.txt`; **Leave all out** does it for the whole list.
+
 ### The repository
 
-| Path                   | What it holds                                                                                                                                  |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `devices/<name>/`      | What Resurrect saved on the device with that hostname. One repository can hold several devices.                                                |
-| `shared/`              | The dotfiles and Noctalia's settings shared between devices, when sharing is on.                                                               |
-| `packages/exclude.txt` | Optional, yours. Package names left out of every save: one regular expression per line, for the whole name, such as `linux.*` or `.*nvidia.*`. |
-| `packages/extra.txt`   | Optional, yours. Packages installed on restore besides the saved ones, one per line, such as ones pacman counts as dependencies.               |
-| `.gitleaksignore`      | Optional, yours. Findings of the secret check that may be committed.                                                                           |
-| `hooks/save/`          | Your own steps for each save. Resurrect never changes this folder.                                                                             |
-| `hooks/restore/`       | Your own steps for restoring. Resurrect never changes this folder.                                                                             |
-| `restore.sh`           | The restore script, updated on each save.                                                                                                      |
+| Path                      | What it holds                                                                                                                                  |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `devices/<name>/`         | What Resurrect saved on the device with that hostname. One repository can hold several devices.                                                |
+| `devices/<name>/skip.txt` | Packages other devices have that this device leaves out, one per line. The panel's **Not here** adds to it.                                    |
+| `shared/`                 | The dotfiles and Noctalia's settings shared between devices, when sharing is on.                                                               |
+| `packages/exclude.txt`    | Optional, yours. Package names left out of every save: one regular expression per line, for the whole name, such as `linux.*` or `.*nvidia.*`. |
+| `packages/extra.txt`      | Optional, yours. Packages installed on restore besides the saved ones, one per line, such as ones pacman counts as dependencies.               |
+| `.gitleaksignore`         | Optional, yours. Findings of the secret check that may be committed.                                                                           |
+| `hooks/save/`             | Your own steps for each save. Resurrect never changes this folder.                                                                             |
+| `hooks/restore/`          | Your own steps for restoring. Resurrect never changes this folder.                                                                             |
+| `restore.sh`              | The restore script, updated on each save.                                                                                                      |
 
 Anything else in the repository is yours too: Resurrect only writes `devices/<name>/` of
 the device it runs on, `shared/` and `restore.sh`.
