@@ -80,16 +80,27 @@ for path in $shared; do
   mkdir -p "$mine/$(dirname "$path")"
   cp -RL --preserve=mode,timestamps "$HOME/$path" "$mine/$path"
 done
-for path in $only; do
-  rm -rf "${mine:?}/$path"
-done
-find "$mine" -name .git -prune -exec rm -rf {} +
 
 # "<blob> <mode> <path>" for each shared file in <theirs>.
 if [ -n "$theirs" ]; then
   git -c core.quotePath=false ls-tree -r "$theirs" -- shared/files |
     awk -F '\t' '{ split($1, f, " "); sub(/^shared\/files\//, "", $2); print f[3], f[1], $2 }' >"$work/theirs"
 fi
+
+# A file other devices share is this device's too when it is here, even outside the paths
+# it lists; otherwise its next save would read it as deleted.
+{
+  cut -d ' ' -f 3- "$work/theirs"
+  cut -d ' ' -f 2- "$base"
+} | sort -u | while read -r path; do
+  [ -n "$path" ] && [ -f "$HOME/$path" ] && [ ! -e "$mine/$path" ] || continue
+  mkdir -p "$mine/$(dirname "$path")"
+  cp -L --preserve=mode,timestamps "$HOME/$path" "$mine/$path"
+done
+for path in $only; do
+  rm -rf "${mine:?}/$path"
+done
+find "$mine" -name .git -prune -exec rm -rf {} +
 
 # Puts blob $2 with mode $3 at path $1 under the home folder, in one step.
 put() {
