@@ -1,13 +1,16 @@
 #!/bin/sh
 # Saves this device's setup into a git repository, for restore.sh to bring back.
-#   snapshot.sh <repo> <remote> <packages> <services> <noctalia> [path...]
-# <remote> may be empty. <packages>, <services> and <noctalia> are "true" or "false".
-# Each path is a full path to a file or folder under the home folder.
+#   snapshot.sh <repo> <remote> <packages> <services> <noctalia> <share> [path...] [-- path...]
+# <remote> may be empty. <packages>, <services>, <noctalia> and <share> are "true" or "false".
+# Each path is a full path to a file or folder under the home folder. Paths after -- are
+# kept on this device only.
 #
-# What the plugin saves goes into devices/<hostname>/, so devices sharing one repository
-# never overwrite each other, and nothing else in the repository is touched. Then every
-# executable file in hooks/save/ runs, in name order, for the owner's own steps.
-# Prints "count <what> <number>" lines, then "saved" or "unchanged", and "pushed".
+# What the plugin saves of this device goes into devices/<hostname>/, so devices sharing one
+# repository never overwrite each other. With <share>, the files go into shared/ instead,
+# except the ones kept on this device, and share.sh brings in what other devices changed.
+# Then every executable file in hooks/save/ runs, in name order, for the owner's own steps.
+# Prints "count <what> <number>" lines, share.sh's lines, then "saved" or "unchanged", and
+# "pushed".
 set -u
 
 repo=$1
@@ -15,7 +18,8 @@ remote=$2
 packages=$3
 services=$4
 noctalia=$5
-shift 5
+share=$6
+shift 6
 here=$(cd "$(dirname "$0")" && pwd)
 device=$(uname -n)
 
@@ -27,6 +31,28 @@ fi
 mkdir -p "$repo" || exit 1
 cd "$repo" || exit 1
 [ -d .git ] || git init -q || exit 1
+
+# The other devices' latest saves, for share.sh: the remote's branch merged with this
+# repository's own, the remote's side winning where both changed a file.
+theirs=
+if [ -n "$remote" ]; then
+  if git remote get-url origin >/dev/null 2>&1; then
+    git remote set-url origin "$remote"
+  else
+    git remote add origin "$remote"
+  fi
+  branch=$(git symbolic-ref --short HEAD)
+  git fetch -q origin "$branch" 2>/dev/null
+fi
+if git rev-parse -q --verify HEAD >/dev/null; then
+  theirs=HEAD
+  if [ -n "$remote" ] && git rev-parse -q --verify "origin/$branch" >/dev/null; then
+    theirs=$(git merge-tree --write-tree -X theirs HEAD "origin/$branch" 2>/dev/null | head -n 1)
+    git cat-file -e "$theirs" 2>/dev/null || theirs=origin/$branch
+  fi
+elif [ -n "$remote" ] && git rev-parse -q --verify "origin/$branch" >/dev/null; then
+  theirs=origin/$branch
+fi
 
 # Version 1.0 saved at the top of the repository, with a README.md it wrote itself. Only
 # the files it wrote are removed: packages/exclude.txt and the like stay.
@@ -117,8 +143,15 @@ if [ "$noctalia" = true ]; then
 fi
 
 # Dotfiles, kept at their place under the home folder. Nested git folders are left out.
+# With sharing on, only the ones kept on this device are saved here.
 rm -rf "$dir/files"
+after=false
 for path in "$@"; do
+  if [ "$path" = -- ]; then
+    after=true
+    continue
+  fi
+  [ "$share" = true ] && ! $after && continue
   case $path in
     "$HOME"/*) ;;
     *) echo "skipped, not in the home folder: $path"; continue ;;
@@ -135,6 +168,10 @@ if [ -d "$dir/files" ]; then
   files=$(find "$dir/files" -type f | wc -l)
 fi
 echo "count files $files"
+
+if [ "$share" = true ]; then
+  sh "$here/share.sh" "$theirs" "$@" || exit 1
+fi
 
 cp "$here/restore.sh" restore.sh
 chmod +x restore.sh
@@ -171,13 +208,9 @@ else
 fi
 
 if [ -n "$remote" ]; then
-  if git remote get-url origin >/dev/null 2>&1; then
-    git remote set-url origin "$remote"
-  else
-    git remote add origin "$remote"
-  fi
-  # Other devices push to the same repository. Their saves are in their own folders, so
-  # this save goes on top of theirs; a file both changed keeps this device's version.
+  # Other devices push to the same repository. Their saves are in their own folders, and
+  # share.sh already took in their shared files, so this save goes on top of theirs; a file
+  # both changed keeps this device's version.
   branch=$(git symbolic-ref --short HEAD)
   if git fetch -q origin "$branch" 2>/dev/null; then
     if ! git -c user.name="${USER:-resurrect}" -c user.email="${USER:-resurrect}@$device" \

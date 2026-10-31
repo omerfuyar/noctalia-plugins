@@ -1,6 +1,7 @@
 --!nonstrict
--- Resurrect panel: when the setup was last saved and where, what is saved, and the Save
--- and Restore buttons. Renders "resurrect.model" and sends actions on "resurrect.command".
+-- Resurrect panel: when the setup was last saved and where, shared files that wait for a
+-- choice, what is saved, and the Save and Restore buttons. Renders "resurrect.model" and
+-- sends actions on "resurrect.command".
 
 local model = nil
 local confirming = false
@@ -39,7 +40,69 @@ local function statusCard()
     color = "on_surface_variant",
     maxLines = 2,
   }))
+  if model.share then
+    table.insert(lines, ui.label({
+      text = model.remote ~= "" and noctalia.tr("status.shared") or noctalia.tr("status.share_needs_remote"),
+      color = model.remote ~= "" and "on_surface_variant" or "error",
+      maxLines = 2,
+    }))
+  end
   return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container_high" }, lines)
+end
+
+-- At most this many waiting files are listed; the rest are counted.
+local MAX_WAITING = 5
+
+-- One shared file that waits for the owner: changed on two devices, or held back because it
+-- gave Hyprland config errors here.
+local function waitingRow(path, isHeld)
+  local choice = model.choices and model.choices[path]
+  local children = {
+    ui.label({ text = path, maxLines = 2, flexGrow = 1 }),
+  }
+  if choice then
+    table.insert(children, ui.label({ text = noctalia.tr("waiting.chosen"), color = "on_surface_variant" }))
+  else
+    table.insert(children, ui.button({ text = noctalia.tr("waiting.mine"), variant = "ghost", controlSize = "sm",
+      onClick = function() send({ action = "resolve", path = path, choice = "mine" }) end }))
+    table.insert(children, ui.button({ text = noctalia.tr("waiting.theirs"), variant = "ghost", controlSize = "sm",
+      tooltip = isHeld and noctalia.tr("waiting.theirs_held") or nil,
+      onClick = function() send({ action = "resolve", path = path, choice = "theirs" }) end }))
+  end
+  return ui.row({ gap = 6, align = "center" }, children)
+end
+
+local function waiting()
+  local total = #model.conflicts + #model.held
+  if total == 0 then
+    return nil
+  end
+  local rows = {
+    ui.row({ gap = 8, align = "center" }, {
+      ui.glyph({ name = "git-merge", size = 18, color = "error" }),
+      ui.label({ text = noctalia.trp("waiting.title", total), fontWeight = "semibold", flexGrow = 1 }),
+    }),
+  }
+  local shown = 0
+  for _, path in ipairs(model.conflicts) do
+    if shown < MAX_WAITING then
+      table.insert(rows, waitingRow(path, false))
+      shown += 1
+    end
+  end
+  if #model.held > 0 and shown < MAX_WAITING then
+    table.insert(rows, ui.label({ text = noctalia.tr("waiting.held"), color = "on_surface_variant", maxLines = 2 }))
+    for _, path in ipairs(model.held) do
+      if shown < MAX_WAITING then
+        table.insert(rows, waitingRow(path, true))
+        shown += 1
+      end
+    end
+  end
+  if total > shown then
+    table.insert(rows, ui.label({ text = noctalia.tr("waiting.more", { count = total - shown }), color = "on_surface_variant" }))
+  end
+  return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container_high" }, rows)
 end
 
 -- One kind of thing a save holds, with how many the last save had.
@@ -67,7 +130,8 @@ local function included()
   return ui.column({ gap = 6 }, {
     ui.label({ text = noctalia.tr("saved.title"), color = "on_surface_variant" }),
     includedRow("package", noctalia.tr("saved.packages"), model.packages, counts.packages),
-    includedRow("file-text", noctalia.tr("saved.files", { files = files }), #model.files > 0, counts.files),
+    includedRow("file-text", noctalia.tr(model.share and "saved.files_shared" or "saved.files", { files = files }),
+      #model.files > 0, counts.files and (counts.files + (model.share and counts.shared or 0)) or nil),
     includedRow("settings", noctalia.tr("saved.services"), model.services, counts.services),
     includedRow("adjustments", noctalia.tr("saved.noctalia"), model.noctalia, counts.plugins),
     ui.row({ gap = 4, align = "center" }, hookRow),
@@ -134,13 +198,15 @@ render = function()
     }))
     return
   end
-  panel.render(ui.column({ gap = 14, padding = 16 }, {
-    header,
-    statusCard(),
-    included(),
-    ui.separator({}),
-    actions(),
-  }))
+  local children = { header, statusCard() }
+  local waitingCard = waiting()
+  if waitingCard then
+    table.insert(children, waitingCard)
+  end
+  table.insert(children, included())
+  table.insert(children, ui.separator({}))
+  table.insert(children, actions())
+  panel.render(ui.column({ gap = 14, padding = 16 }, children))
 end
 
 noctalia.state.watch("resurrect.model", function(value)

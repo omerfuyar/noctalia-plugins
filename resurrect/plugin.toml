@@ -5,8 +5,8 @@ plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
 icon = "lifebuoy"
-description = "Save your packages, dotfiles, services and Noctalia settings to a git repository, and restore them on a new install."
-dependencies = ["git", "sh", "systemctl", "xdg-open", "gitleaks"]
+description = "Save your packages, dotfiles, services and Noctalia settings to git, share them between devices, restore them."
+dependencies = ["git", "sh", "systemctl", "xdg-open", "gitleaks", "hyprctl"]
 tags = ["bar", "system", "utility"]
 
 [[setting]]
@@ -29,6 +29,21 @@ type = "string_list"
 label_key = "settings.files.label"
 description_key = "settings.files.description"
 default = ["~/.config/hypr"]
+
+[[setting]]
+key = "share"
+type = "bool"
+label_key = "settings.share.label"
+description_key = "settings.share.description"
+default = false
+
+[[setting]]
+key = "device_files"
+type = "string_list"
+label_key = "settings.device_files.label"
+description_key = "settings.device_files.description"
+default = []
+visible_when = { key = "share", values = ["true"] }
 
 [[setting]]
 key = "daily"

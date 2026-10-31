@@ -8,7 +8,12 @@
     "unknown": "Saving stopped with an error."
   },
   "notify": {
-    "failed": "Resurrect could not save your setup"
+    "applied": {
+      "one": "1 file came from your other devices",
+      "other": "{count} files came from your other devices"
+    },
+    "failed": "Resurrect could not save your setup",
+    "held": "Resurrect held back files that gave Hyprland config errors"
   },
   "panel": {
     "loading": "Loading…",
@@ -16,11 +21,12 @@
   },
   "restore": {
     "cancel": "Cancel",
-    "confirm": "A terminal opens and asks which device's save to use, then before each step: packages, dotfiles, Noctalia's settings and plugins, services, and your own steps. Files it replaces are backed up first.",
+    "confirm": "A terminal opens and asks which device's save to use, then before each step: packages, dotfiles, shared and this device's own, Noctalia's settings and plugins, services, and your own steps. Files it replaces are backed up first.",
     "start": "Open terminal"
   },
   "saved": {
     "files": "Dotfiles: {files}",
+    "files_shared": "Dotfiles, shared: {files}",
     "hooks": {
       "one": "1 step of your own, in hooks/",
       "other": "{count} steps of your own, in hooks/"
@@ -37,6 +43,10 @@
     "daily": {
       "description": "Save the setup once a day, as long as Noctalia runs.",
       "label": "Save every day"
+    },
+    "device_files": {
+      "description": "Files and folders that stay on this device, such as ~/.config/hypr/monitors.lua. They are saved, but not shared.",
+      "label": "Only this device"
     },
     "files": {
       "description": "Files and folders in your home folder to save, such as ~/.config/hypr. Do not add files with passwords or keys if the repository is pushed.",
@@ -61,6 +71,10 @@
     "services": {
       "description": "Save which system and user services start by themselves.",
       "label": "Save services"
+    },
+    "share": {
+      "description": "Share the dotfiles with your other devices that push to the same repository. What one device changes reaches the others on their next save. Needs Push to.",
+      "label": "Share between devices"
     }
   },
   "setup": {
@@ -73,7 +87,21 @@
     "never": "Not saved yet",
     "remote": "Pushed to {remote}",
     "saved": "Saved {time}",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "share_needs_remote": "Sharing needs Push to: set it in the settings.",
+    "shared": "Shared with your other devices that push here."
+  },
+  "waiting": {
+    "chosen": "On the next save",
+    "held": "Held back: these gave Hyprland config errors here.",
+    "mine": "Keep mine",
+    "more": "and {count} more",
+    "theirs": "Take theirs",
+    "theirs_held": "Takes it even though it gave config errors",
+    "title": {
+      "one": "1 file waits for you",
+      "other": "{count} files wait for you"
+    }
   },
   "widget": {
     "failed": "Resurrect: the last save failed. {error}",

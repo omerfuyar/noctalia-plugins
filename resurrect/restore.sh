@@ -81,8 +81,11 @@ if [ -d packages ] && ask "Install the saved packages?"; then
   fi
 fi
 
-if [ -d files ] && ask "Put back the saved dotfiles? Replaced files go to $backup"; then
-  put_back files "$HOME"
+# Files shared between devices first, then this device's own, which win.
+if { [ -d "$repo/shared/files" ] || [ -d files ]; } &&
+  ask "Put back the saved dotfiles? Replaced files go to $backup"; then
+  [ -d "$repo/shared/files" ] && put_back "$repo/shared/files" "$HOME"
+  [ -d files ] && put_back files "$HOME"
 fi
 
 if [ -d noctalia ] && ask "Put back Noctalia's settings?"; then

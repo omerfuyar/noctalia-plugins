@@ -1,8 +1,8 @@
 # Resurrect
 
 Save your system's setup to a git repository: the packages you installed, your dotfiles,
-the services that start by themselves and Noctalia's settings. On a new install, one
-script brings it all back.
+the services that start by themselves and Noctalia's settings. Share the dotfiles between
+your devices, and on a new install, bring it all back with one script.
 
 ![Resurrect panel](screenshots/panel.webp)
 
@@ -24,6 +24,7 @@ script brings it all back.
 | `pacman`, `apt-mark`, `dnf`, `flatpak` | Optional | List installed packages; each one the system has is used. Without any, no packages are saved.              |
 | `paru` or `yay`                        | Optional | Restore AUR packages. Without them, the AUR list stays in `packages/aur.txt`.                              |
 | `gitleaks`                             | Optional | Checks each save for passwords, tokens and keys before it is committed. Without it, saves are not checked. |
+| `hyprctl`                              | Optional | Checks Hyprland's config after shared files come in. Without it, they are not checked.                     |
 
 ## Usage
 
@@ -57,11 +58,29 @@ first.
 noctalia msg panel-toggle omerfuyar/resurrect:panel
 ```
 
+### Sharing between devices
+
+Turn on **Share between devices** on each device that pushes to the same repository. Then
+each save, and each start of Noctalia, also takes in what the other devices changed:
+
+- A dotfile that only another device changed is put in place here. The file it replaces
+  goes to `~/.local/state/resurrect/backup-<date>` first.
+- A dotfile that only this device changed reaches the others on their next save. A file
+  deleted on one device is deleted on the others, into the same backup.
+- A dotfile changed on two devices is left as it is on both. The panel lists it, with
+  **Keep mine** and **Take theirs**.
+- When files that came in give Hyprland config errors, they go back, and the panel lists
+  them as held back until another device changes them again.
+
+List the files that differ by hardware in **Only this device**, such as a monitor layout or
+GPU variables. They are saved, but not shared.
+
 ### The repository
 
 | Path                   | What it holds                                                                                                                                  |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `devices/<name>/`    | What Resurrect saved on the device with that hostname. One repository can hold several devices.                                            |
+| `devices/<name>/`      | What Resurrect saved on the device with that hostname. One repository can hold several devices.                                                |
+| `shared/files/`        | The dotfiles shared between devices, when sharing is on.                                                                                       |
 | `packages/exclude.txt` | Optional, yours. Package names left out of every save: one regular expression per line, for the whole name, such as `linux.*` or `.*nvidia.*`. |
 | `packages/extra.txt`   | Optional, yours. Packages installed on restore besides the saved ones, one per line, such as ones pacman counts as dependencies.               |
 | `.gitleaksignore`      | Optional, yours. Findings of the secret check that may be committed.                                                                           |
@@ -70,7 +89,7 @@ noctalia msg panel-toggle omerfuyar/resurrect:panel
 | `restore.sh`           | The restore script, updated on each save.                                                                                                      |
 
 Anything else in the repository is yours too: Resurrect only writes `devices/<name>/` of
-the device it runs on, and `restore.sh`.
+the device it runs on, `shared/` and `restore.sh`.
 
 ### Secrets
 
@@ -84,11 +103,11 @@ Put an executable script in `hooks/save/` to run it on every save, and one in
 `hooks/restore/` to offer it on restore. They run in name order, from the repository's
 folder, with these variables:
 
-| Variable             | Value                                                    |
-| -------------------- | -------------------------------------------------------- |
-| `RESURRECT_REPO`     | The repository's folder.                                 |
+| Variable           | Value                                                  |
+| ------------------ | ------------------------------------------------------ |
+| `RESURRECT_REPO`   | The repository's folder.                               |
 | `RESURRECT_DEVICE` | The hostname of the device whose save it is.           |
-| `RESURRECT_DIR`      | That device's folder in the repository, for its files. |
+| `RESURRECT_DIR`    | That device's folder in the repository, for its files. |
 
 Whatever a save step writes into the repository is committed with the save. A save step
 that fails stops the save, and the panel shows it. For example, to also save a database:
@@ -110,15 +129,17 @@ The panel's hooks button opens the folder and creates it when it is missing.
 
 ## Settings
 
-| Setting    | Type          | Default              | Description                                                                |
-| ---------- | ------------- | -------------------- | -------------------------------------------------------------------------- |
-| `folder`   | `folder`      | `~/resurrect`        | The git repository the setup is saved in. It is created when missing.      |
-| `remote`   | `string`      | `""`                 | A git remote to push each save to. Empty keeps the saves on this device. |
-| `files`    | `string_list` | `["~/.config/hypr"]` | Files and folders in the home folder to save.                              |
-| `daily`    | `bool`        | `true`               | Save once a day while Noctalia runs.                                       |
-| `packages` | `bool`        | `true`               | Advanced. Save the list of installed packages.                             |
-| `services` | `bool`        | `true`               | Advanced. Save which services start by themselves.                         |
-| `noctalia` | `bool`        | `true`               | Advanced. Save Noctalia's config and settings.                             |
+| Setting        | Type          | Default              | Description                                                                |
+| -------------- | ------------- | -------------------- | -------------------------------------------------------------------------- |
+| `folder`       | `folder`      | `~/resurrect`        | The git repository the setup is saved in. It is created when missing.      |
+| `remote`       | `string`      | `""`                 | A git remote to push each save to. Empty keeps the saves on this device.   |
+| `files`        | `string_list` | `["~/.config/hypr"]` | Files and folders in the home folder to save.                              |
+| `share`        | `bool`        | `false`              | Share the dotfiles with the other devices that push to the same remote.    |
+| `device_files` | `string_list` | `[]`                 | Shown when `share` is on. Files and folders saved but kept on this device. |
+| `daily`        | `bool`        | `true`               | Save once a day while Noctalia runs.                                       |
+| `packages`     | `bool`        | `true`               | Advanced. Save the list of installed packages.                             |
+| `services`     | `bool`        | `true`               | Advanced. Save which services start by themselves.                         |
+| `noctalia`     | `bool`        | `true`               | Advanced. Save Noctalia's config and settings.                             |
 
 ## IPC
 
@@ -134,6 +155,10 @@ noctalia msg plugin omerfuyar/resurrect:service all save
   is pushed, and push only to a private repository.
 - Only packages installed on purpose are saved, not their dependencies.
 - Each save is a git commit, so older setups stay in the repository's history.
-- With **Push to** set, a device without the repository folder clones it on its first save, so all devices share one history.
-- Several devices can push to one repository: before pushing, a save is put on top of the other devices' saves. A file both changed, such as a step in `hooks/`, keeps the version of the device that saves last.
-- Saves from version 1.0, at the top of the repository, move into `devices/<name>/` on the first save.
+- With **Push to** set, a device without the repository folder clones it on its first
+  save, so all devices share one history.
+- Several devices can push to one repository: before pushing, a save is put on top of the
+  other devices' saves. A file both changed, such as a step in `hooks/`, keeps the version
+  of the device that saves last.
+- Saves from version 1.0, at the top of the repository, and from version 1, in
+  `computers/<name>/`, move into `devices/<name>/` on the first save.
