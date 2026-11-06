@@ -6,8 +6,8 @@
 -- key. Renders "keyboard.model".
 --
 -- A click on the grip starts a move: the service spreads the layer over the whole monitor,
--- the keyboard's outline follows the pointer, and its "Put it here" button puts it down
--- there. The dock button puts it back at the bottom.
+-- the place the keyboard would take follows the pointer, and a click puts it there. The
+-- dock button puts it back at the bottom.
 
 local model = nil
 local shift, ctrl, alt = false, false, false
@@ -45,7 +45,6 @@ local render
 
 local PADDING, GAP, GRIP = 8, 5, 20
 
-local ghost = nil -- while moving: { x, y } of the outline's top left
 local wasMoving = false
 
 local function size()
@@ -187,85 +186,70 @@ local function keys()
   }, rows)
 end
 
--- The "Put it here" button in the middle of the outline.
-local DROP_WIDTH, DROP_HEIGHT = 160, 32
+-- While moving, the monitor is a grid of cells that never move, so the pointer is always
+-- read right. The cell under the pointer is where the keyboard's middle goes: the cells it
+-- would cover are tinted, and a click puts it there.
+local CELL = 60
 
--- The monitor while moving: the outline and the space around it. Each part around the
--- button is a graph that reports the pointer, so the outline follows it, with the button
--- under the pointer; a click on the button puts the keyboard there.
+local hovered = nil -- { column, row } of the cell under the pointer
+-- The layer grows to the whole monitor just after a move starts; a hover before that comes
+-- from the small layer and names the wrong cell.
+local SETTLE_MS = 250
+local movingSince = 0
+
 local function moving()
   local width, height = size()
   local outWidth, outHeight = outputSize()
-  if ghost == nil then
-    local place = model.oskPlace or { docked = true }
-    if place.docked then
-      ghost = { x = math.floor((outWidth - width) / 2), y = outHeight - height - 12 }
-    else
-      ghost = { x = place.x, y = place.y }
+  local columns = math.max(1, math.floor(outWidth / CELL))
+  local rows = math.max(1, math.floor(outHeight / CELL))
+  local cellWidth, cellHeight = outWidth / columns, outHeight / rows
+  -- The keyboard's top left with its middle on the cell <column, row>.
+  local function placeAt(column, row)
+    local cx, cy = (column - 0.5) * cellWidth, (row - 0.5) * cellHeight
+    return math.clamp(math.floor(cx - width / 2), 0, math.max(0, outWidth - width)),
+      math.clamp(math.floor(cy - height / 2), 0, math.max(0, outHeight - height))
+  end
+  local px, py = nil, nil
+  if hovered then
+    px, py = placeAt(hovered[1], hovered[2])
+  end
+  local lines = {}
+  for row = 1, rows do
+    local cells = {}
+    for column = 1, columns do
+      local cx, cy = (column - 0.5) * cellWidth, (row - 0.5) * cellHeight
+      local covered = px ~= nil and cx >= px and cx < px + width and cy >= py and cy < py + height
+      table.insert(cells, ui.button({
+        key = `cell-{column}-{row}`,
+        variant = covered and "primary" or "ghost",
+        opacity = covered and 0.45 or 1,
+        flexGrow = 1,
+        height = math.floor(cellHeight),
+        -- "true" when the pointer enters the cell. A leave is not used: it can come after
+        -- the next cell's enter.
+        onHover = function(state)
+          local settled = noctalia.nowMs() - movingSince >= SETTLE_MS
+          if settled and tostring(state) == "true" and (hovered == nil or hovered[1] ~= column or hovered[2] ~= row) then
+            hovered = { column, row }
+            render()
+          end
+        end,
+        onClick = function()
+          local x, y = placeAt(column, row)
+          send({ action = "osk_place", docked = false, x = x, y = y })
+        end,
+      }))
     end
+    table.insert(lines, ui.row({ key = `row-{row}` }, cells))
   end
-  local x, y = ghost.x, ghost.y
-  -- A pointer at <nx, ny> of a part with its top left at <left, top> and this size.
-  local function at(left, top, partWidth, partHeight)
-    return function(nx, ny)
-      local px = left + (tonumber(nx) or 0) * partWidth
-      local py = top + (tonumber(ny) or 0) * partHeight
-      ghost = {
-        x = math.clamp(math.floor(px - width / 2), 0, math.max(0, outWidth - width)),
-        y = math.clamp(math.floor(py - height / 2), 0, math.max(0, outHeight - height)),
-      }
-      render()
-    end
-  end
-  local function part(props, left, top, partWidth, partHeight)
-    props.values = {}
-    props.color = "primary/0"
-    props.onPointerMove = at(left, top, partWidth, partHeight)
-    return ui.graph(props)
-  end
-  local side = math.floor((width - DROP_WIDTH) / 2)
-  local above = math.floor((height - DROP_HEIGHT) / 2)
-  local below = height - above - DROP_HEIGHT
-  local row = {}
-  if x >= 1 then
-    table.insert(row, part({ key = "left", width = x }, 0, y, x, height))
-  end
-  table.insert(row, ui.column({
-    key = "ghost",
-    width = width,
-    fill = "surface_container/0.9",
-    border = "primary",
-    borderWidth = 2,
-    radius = 12,
-  }, {
-    part({ key = "ghost-top", height = above }, x, y, width, above),
-    ui.row({ key = "ghost-middle", height = DROP_HEIGHT }, {
-      part({ key = "ghost-left", width = side }, x, y + above, side, DROP_HEIGHT),
-      ui.button({
-        text = noctalia.tr("osk.drop_here"),
-        variant = "primary",
-        width = DROP_WIDTH,
-        height = DROP_HEIGHT,
-        onClick = function() send({ action = "osk_place", docked = false, x = x, y = y }) end,
-      }),
-      part({ key = "ghost-right", flexGrow = 1 }, x + side + DROP_WIDTH, y + above, width - side - DROP_WIDTH, DROP_HEIGHT),
-    }),
-    part({ key = "ghost-bottom", flexGrow = 1 }, x, y + above + DROP_HEIGHT, width, below),
-  }))
-  table.insert(row, part({ key = "right", flexGrow = 1 }, x + width, y, outWidth - x - width, height))
-  local column = {}
-  if y >= 1 then
-    table.insert(column, part({ key = "top", height = y }, 0, 0, outWidth, y))
-  end
-  table.insert(column, ui.row({ key = "middle", height = height }, row))
-  table.insert(column, part({ key = "bottom", flexGrow = 1 }, 0, y + height, outWidth, outHeight - y - height))
-  return ui.column({ flexGrow = 1, fill = "surface/0.4" }, column)
+  return ui.column({ flexGrow = 1, fill = "surface/0.4" }, lines)
 end
 
 render = function()
   local isMoving = model ~= nil and model.oskMoving == true
   if isMoving ~= wasMoving then
-    ghost = nil
+    hovered = nil
+    movingSince = noctalia.nowMs()
     wasMoving = isMoving
   end
   layer.render(isMoving and moving() or keys())

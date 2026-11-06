@@ -21,7 +21,7 @@ noctalia msg plugins disable omerfuyar/<plugin>
 noctalia msg plugins source remove omerfuyar
 ```
 
-A plugin keeps its data in `~/.local/state/noctalia/plugins/data/omerfuyar/<plugin>/`; delete that folder to remove it too.
+Nothing else is needed. Noctalia keeps each plugin's data, such as its saved state, in `~/.local/state/noctalia/plugins/data/omerfuyar/<plugin>/`; delete that folder to remove it too.
 
 Finished plugins are also offered to community-plugins, so people find them in Noctalia's plugin store by default
 
@@ -31,6 +31,7 @@ Finished plugins are also offered to community-plugins, so people find them in N
 - **Easy to configure.** Few settings, each with a clear label and a default. Rare settings are hidden as advanced. Leaving room for further configuration.
 - **Little to no setup or upkeep.** Few dependencies. When a plugin really needs something the user must install or set up once, it says so itself and offers to do it, from a place that is easy to reach. Stated explicitly.
 - **Better than the default.** A plugin adds what Noctalia lacks, or joins related controls that Noctalia keeps apart. It does not repeat or conflict what Noctalia already does well.
+- **Nothing to clean up.** Removing a plugin from Noctalia removes all of it: there is no uninstall step or script. What a plugin adds to the system, such as a key binding, lasts only while it runs, and what it keeps is in Noctalia's own folders. Packages it asked you to install may stay. What you make with it, such as downloads or backups, and settings you change through it, in Noctalia or another program, are yours and stay.
 - **Native look.** A plugin looks and feels like the rest of Noctalia and follows the user's theme. It never depends on one machine: no fixed monitor names, paths or screen sizes.
 
 ## Plugins
