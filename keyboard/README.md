@@ -32,6 +32,11 @@ Add the **Keyboard** widget to the bar. It shows the language you type in, such 
   Hangul, or that holds a layout Hyprland does not have.
 - Picking a layout switches every keyboard to it, and puts fcitx5 back on plain typing.
   Picking an input method switches fcitx5 to it.
+- Below the list, add a keyboard layout or an fcitx5 input method from the pickers, and
+  remove one with its ✕. Once you change the layouts here, Keyboard keeps its own list and
+  sets it in Hyprland while Noctalia runs, also after Hyprland reloads its config; your
+  Hyprland config is not changed. **Use Hyprland's layouts** gives the config's list back.
+  Input methods are added to fcitx5's group through fcitx5, which saves them itself.
 - Set **Switch key** in the settings, such as `SUPER + Space`, to switch from the keyboard.
   Keyboard adds it to Hyprland while Noctalia runs and leaves your config alone; a key that
   is already bound stays as it is.
@@ -56,7 +61,19 @@ noctalia msg plugin omerfuyar/keyboard:service all previous
 noctalia msg plugin omerfuyar/keyboard:service all set TR
 ```
 
+Add or remove a keyboard layout by its code, or an fcitx5 input method by its id, or give the
+layouts back to Hyprland's config:
+
+```sh
+noctalia msg plugin omerfuyar/keyboard:service all add-layout de
+noctalia msg plugin omerfuyar/keyboard:service all remove-layout de
+noctalia msg plugin omerfuyar/keyboard:service all add-im mozc
+noctalia msg plugin omerfuyar/keyboard:service all remove-im mozc
+noctalia msg plugin omerfuyar/keyboard:service all reset-layouts
+```
+
 ## Notes
 
 - Layouts come from Hyprland; on other compositors, only fcitx5's input methods are listed.
 - The active language is read every second, so a switch made with fcitx5's own key shows too.
+- The layouts Keyboard keeps are in `~/.local/state/noctalia/plugins/data/omerfuyar/keyboard/layouts.json`.
