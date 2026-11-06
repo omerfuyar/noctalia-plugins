@@ -85,3 +85,16 @@ icon = "hourglass"
 description = "Today's screen time in the bar, from Noctalia's own record, with your most used apps."
 plugin_api = 43
 tags = ["bar", "productivity", "time"]
+
+[[plugin]]
+id = "omerfuyar/keyboard"
+name = "Keyboard"
+version = "1.0.0"
+updated_at = 1793966332
+added_at = 1793966332
+author = "omerfuyar"
+license = "MIT"
+icon = "keyboard"
+description = "Switch between your keyboard layouts and fcitx5 input methods, such as Hangul, from one list."
+plugin_api = 43
+tags = ["bar", "hyprland", "language"]
