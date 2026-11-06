@@ -89,8 +89,8 @@ tags = ["bar", "productivity", "time"]
 [[plugin]]
 id = "omerfuyar/keyboard"
 name = "Keyboard"
-version = "1.0.0"
-updated_at = 1793966332
+version = "1.1.0"
+updated_at = 1793966640
 added_at = 1793966332
 author = "omerfuyar"
 license = "MIT"
