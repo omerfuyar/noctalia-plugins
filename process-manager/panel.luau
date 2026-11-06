@@ -1,12 +1,17 @@
 --!nonstrict
--- Process Manager panel: running apps grouped by name, with their CPU and memory now. A
--- group opens to its processes. End asks a process to stop; one that does not stop gets
+-- Process Manager panel: running apps grouped by name, with their CPU and memory now, in a
+-- list that scrolls. A group opens to its processes. End asks a process to stop; one that does not stop gets
 -- Force end. Renders "processes.model" and sends actions on "processes.command".
 
 local GROUP_HEIGHT = 48
 local PROCESS_HEIGHT = 52
-local MAX_LIST_HEIGHT = 460
-local MAX_GROUPS = 40
+-- The list scrolls past this height.
+local MAX_LIST_HEIGHT = 320
+-- Every row ends in these fixed columns, so CPU and memory line up under each other.
+local CPU_WIDTH = 56
+local MEMORY_WIDTH = 72
+local ACTION_WIDTH = 32
+local INDENT = 62
 
 local model = nil
 local query = ""
@@ -90,34 +95,35 @@ local function pidsOf(processes)
 end
 
 -- End, then Force end once it did not stop, and the administrator's versions of both
--- when the processes belong to someone else.
-local function actions(processes, stuck, denied)
+-- when the processes belong to someone else. Each is one glyph, so the columns stay aligned.
+local function action(processes, stuck, denied)
   local pids = pidsOf(processes)
-  local buttons = {}
+  local glyph, variant, tip, command
   if denied and model.canElevate then
-    table.insert(buttons, ui.button({
-      text = noctalia.tr(stuck and "action.force_admin" or "action.end_admin"),
-      variant = "destructive",
-      controlSize = "sm",
-      onClick = function() send({ action = stuck and "force" or "end", pids = pids, elevate = true }) end,
-    }))
+    glyph, variant = "shield-x", "destructive"
+    tip = stuck and "action.force_admin" or "action.end_admin"
+    command = { action = stuck and "force" or "end", pids = pids, elevate = true }
   elseif stuck then
-    table.insert(buttons, ui.button({
-      text = noctalia.tr("action.force"),
-      variant = "destructive",
-      controlSize = "sm",
-      onClick = function() send({ action = "force", pids = pids }) end,
-    }))
+    glyph, variant, tip = "skull", "destructive", "action.force"
+    command = { action = "force", pids = pids }
   else
-    table.insert(buttons, ui.button({
-      glyph = "x",
-      variant = "ghost",
-      controlSize = "sm",
-      tooltip = noctalia.tr(#pids > 1 and "action.end_all" or "action.end"),
-      onClick = function() send({ action = "end", pids = pids }) end,
-    }))
+    glyph, variant, tip = "x", "ghost", #pids > 1 and "action.end_all" or "action.end"
+    command = { action = "end", pids = pids }
   end
-  return buttons
+  return ui.button({
+    glyph = glyph,
+    variant = variant,
+    controlSize = "sm",
+    width = ACTION_WIDTH,
+    tooltip = noctalia.tr(tip),
+    onClick = function() send(command) end,
+  })
+end
+
+-- The CPU and memory columns.
+local function numbers(cpu, memory, color)
+  return ui.label({ text = cpuText(cpu), color = color, width = CPU_WIDTH, textAlign = "end" }),
+    ui.label({ text = memoryText(memory), color = color, width = MEMORY_WIDTH, textAlign = "end" })
 end
 
 -- What the state letter means, when it explains why a process does not end.
@@ -147,13 +153,15 @@ local function processRow(process)
       maxLines = 1,
     }),
   }
-  local children = {
+  local cpu, memory = numbers(process.cpu, process.memory, "on_surface_variant")
+  return ui.row({ key = "p" .. process.pid, gap = 8, align = "center", height = PROCESS_HEIGHT, paddingH = 4 }, {
+    -- Indented under the group's name: the width of its chevron and icon, and the gap between.
+    ui.spacer({ width = INDENT }),
     ui.column({ gap = 2, flexGrow = 1 }, detail),
-    ui.label({ text = cpuText(process.cpu), color = "on_surface_variant", width = 52 }),
-    ui.label({ text = memoryText(process.memory), color = "on_surface_variant", width = 64 }),
-  }
-  table.move(actions({ process }, process.stuck, process.denied), 1, 1, #children + 1, children)
-  return ui.row({ key = "p" .. process.pid, gap = 8, align = "center", height = PROCESS_HEIGHT, paddingH = 8 }, children)
+    cpu,
+    memory,
+    action({ process }, process.stuck, process.denied),
+  })
 end
 
 local function groupRow(group)
@@ -178,10 +186,11 @@ local function groupRow(group)
     icon and ui.image({ path = icon, width = 22, height = 22 })
       or ui.glyph({ name = "terminal", size = 20, color = "on_surface_variant" }),
     ui.label({ text = title, maxLines = 1, flexGrow = 1, color = group.stuck and "error" or "on_surface" }),
-    ui.label({ text = cpuText(group.cpu), width = 52 }),
-    ui.label({ text = memoryText(group.memory), width = 64 }),
   }
-  table.move(actions(group.processes, group.stuck, group.denied), 1, 1, #children + 1, children)
+  local cpu, memory = numbers(group.cpu, group.memory, "on_surface")
+  table.insert(children, cpu)
+  table.insert(children, memory)
+  table.insert(children, action(group.processes, group.stuck, group.denied))
   return ui.row({
     key = "g" .. group.name,
     gap = 8,
@@ -189,7 +198,8 @@ local function groupRow(group)
     height = GROUP_HEIGHT,
     paddingH = 4,
     radius = 8,
-    fill = open and "surface_container_high" or nil,
+    -- A light tint over the panel's own background, which may be translucent.
+    fill = open and "on_surface/0.06" or nil,
   }, children)
 end
 
@@ -224,10 +234,7 @@ render = function()
   local rows, height = {}, 0
   iconLookups = 0
   local list = groups()
-  for index, group in ipairs(list) do
-    if index > MAX_GROUPS then
-      break
-    end
+  for _, group in ipairs(list) do
     table.insert(rows, groupRow(group))
     height += GROUP_HEIGHT
     if expanded[group.name] then
