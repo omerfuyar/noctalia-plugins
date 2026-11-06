@@ -10,8 +10,14 @@
     "taken_title": "Keyboard: the key is taken"
   },
   "panel": {
+    "add_im": "Add an input method…",
+    "add_layout": "Add a keyboard layout…",
     "loading": "Loading…",
+    "managed": "Keyboard keeps these layouts and sets them in Hyprland while Noctalia runs; your Hyprland config is not changed.",
+    "no_more_ims": "fcitx5 has no other input methods. Install one, such as fcitx5-mozc for Japanese or fcitx5-chinese-addons for Chinese.",
     "none": "No keyboard layouts or input methods found. Keyboard reads Hyprland's layouts and fcitx5's input methods.",
+    "remove": "Remove",
+    "reset": "Use Hyprland's layouts",
     "title": "Keyboard"
   },
   "settings": {
