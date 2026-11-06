@@ -27,7 +27,7 @@ Before you propose or change anything, read README.md, the Contents of DESIGN.md
 
 ## Current stage
 
-Screen Control, Downloader, Overview, Resurrect, Process Manager, Screen Time and Keyboard are on `main`. Build or change one plugin at a time, in small milestones, and keep DESIGN.md in step with the code.
+Screen Control, Downloader, Overview, Resurrect, Process Manager, Screen Time, Keyboard and Plugin Hub are on `main`. Build or change one plugin at a time, in small milestones, and keep DESIGN.md in step with the code.
 
 ## How to work with the owner
 
