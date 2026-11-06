@@ -72,3 +72,16 @@ icon = "list-details"
 description = "Find a running app and end it, or force it to end when it does not stop. Grouped by app, with CPU and memory."
 plugin_api = 43
 tags = ["bar", "system", "utility"]
+
+[[plugin]]
+id = "omerfuyar/screen-time"
+name = "Screen Time"
+version = "1.0.0"
+updated_at = 1793965179
+added_at = 1793965179
+author = "omerfuyar"
+license = "MIT"
+icon = "hourglass"
+description = "Today's screen time in the bar, from Noctalia's own record, with your most used apps."
+plugin_api = 43
+tags = ["bar", "productivity", "time"]
