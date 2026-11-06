@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Live test of one plugin in the running Noctalia (DESIGN.md, section 13.2).
 #   live.sh <plugin>           load the plugin, put its widgets in the bar, take a screenshot
-#   live.sh --remove <plugin>  take its widgets out of the bar and disable it
+#   live.sh --remove <plugin>  take its widgets out of the bar, remove the "dev" source, and
+#                              enable the plugin again from its own source if it was enabled
 # Prints the screenshot path, then the plugin's new warnings and errors from Noctalia's log.
 # Otherwise prints only problems. Exits 1 when the plugin logged errors.
 set -euo pipefail
@@ -58,23 +59,32 @@ print("[" + ", ".join("\x27" + w + "\x27" for w in items) + "]")
   noctalia msg config-set "bar.$bar.end" "$updated" >/dev/null
 }
 
+# Whether the plugin was enabled from its own source before the test, kept until --remove.
+was_enabled="$root/ignore/live/.enabled-${id//\//_}"
+
 if $remove; then
   ((${#widgets[@]})) && place_widgets remove
   noctalia msg plugins disable "$id" >/dev/null
+  noctalia msg plugins source remove dev >/dev/null 2>&1 || true
+  if [[ -f $was_enabled ]]; then
+    rm -f "$was_enabled"
+    sleep 2
+    noctalia msg plugins enable "$id" >/dev/null
+  fi
   exit 0
 fi
 
-# The source "dev" is ignore/live/, which links to every plugin of the working tree.
+# The source "dev" is ignore/live/, which links only to the plugin under test: Noctalia
+# disables every plugin of a source when the source is removed, the owner's own too.
 # It is not the repository root: Noctalia reads only catalog.toml when a path source has
 # one, and the root's catalog.toml lists only what is on main.
 live="$root/ignore/live"
 mkdir -p "$live"
 find "$live" -maxdepth 1 -type l -delete
-for dir in "$root"/*/; do
-  if [[ -f $dir/plugin.toml ]]; then
-    ln -s "../../$(basename "$dir")" "$live/$(basename "$dir")"
-  fi
-done
+ln -s "../../$plugin" "$live/$plugin"
+if grep -v " \[dev\] " <<<"$(noctalia msg plugins list)" | grep -qE "^$id \[[^]]+\] [^ ]+ enabled( |$)"; then
+  touch "$was_enabled"
+fi
 if ! grep -qxF "dev path $live" <<<"$(noctalia msg plugins source list)"; then
   noctalia msg plugins source remove dev >/dev/null 2>&1 || true
   noctalia msg plugins source add dev path "$live" >/dev/null

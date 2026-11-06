@@ -160,9 +160,9 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 
 `.github/scripts/live.sh <plugin>` tests one plugin in the running Noctalia:
 
-1. The plugin source `dev` is the folder `ignore/live/`, which holds a link to each plugin directory of the working tree. It is not the repository root, because Noctalia reads only `catalog.toml` from a path source that has one, and the root's `catalog.toml` lists only what is on `main`.
+1. The plugin source `dev` is the folder `ignore/live/`, which holds a link to the plugin under test only, since Noctalia disables every plugin of a source when the source is removed. It is not the repository root, because Noctalia reads only `catalog.toml` from a path source that has one, and the root's `catalog.toml` lists only what is on `main`.
 2. It reloads Noctalia's config, then disables and enables the plugin, so that every entry loads again. `noctalia msg plugins enable` answers `ok` even for a plugin it cannot find, so the script checks `noctalia msg plugins list` instead.
-3. It puts the plugin's widgets at the start of the first bar's `end` section with `noctalia msg config-set`. Noctalia saves this in its settings overrides, so the widgets stay until `live.sh --remove <plugin>` takes them out and disables the plugin.
+3. It puts the plugin's widgets at the start of the first bar's `end` section with `noctalia msg config-set`. Noctalia saves this in its settings overrides, so the widgets stay until `live.sh --remove <plugin>` takes them out, disables the plugin and removes the `dev` source. When the plugin was enabled from its own source before the test, `--remove` enables it again.
 4. It takes a screenshot of the focused monitor into `ignore/shots/` and prints its path.
 5. It prints the plugin's new warnings and errors from Noctalia's log, `$XDG_CACHE_HOME/noctalia/noctalia.log`, and fails when there are errors. Plugin errors there have the form `[ERR] [luau] plugin <id>:<entry>: ...`.
 

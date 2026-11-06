@@ -35,6 +35,10 @@ local function parseKey(text)
     end
     mask += value
   end
+  -- A letter or digit alone would take that key from typing.
+  if mask == 0 and #key == 1 then
+    return nil
+  end
   return mask, key, table.concat(parts, " ") .. "," .. key
 end
 
@@ -49,12 +53,17 @@ end
 
 -- The binding of setting <setting> to shell command <command>.
 function Keybind.new(setting, command)
-  return setmetatable({ setting = setting, command = command, bound = nil, warned = nil }, Keybind)
+  return setmetatable({ setting = setting, command = command, bound = nil, warned = nil, checking = false, again = false }, Keybind)
 end
 
 -- Binds the setting's key, once, unless the key is taken.
 function Keybind:check()
   if not onHyprland() then
+    return
+  end
+  -- One check at a time; a change while one runs checks again after it.
+  if self.checking then
+    self.again = true
     return
   end
   local wanted = noctalia.string.trim(noctalia.getConfig(self.setting) or "")
@@ -73,7 +82,14 @@ function Keybind:check()
     end
     return
   end
+  self.checking = true
   noctalia.runAsync({ "hyprctl", "-j", "binds" }, function(result)
+    self.checking = false
+    if self.again or noctalia.string.trim(noctalia.getConfig(self.setting) or "") ~= wanted then
+      self.again = false
+      self:check()
+      return
+    end
     local binds = result.exitCode == 0 and noctalia.json.decode(result.stdout or "") or {}
     for _, bind in ipairs(type(binds) == "table" and binds or {}) do
       if bind.modmask == mask and tostring(bind.key):lower() == key:lower() then
@@ -84,12 +100,23 @@ function Keybind:check()
         return
       end
     end
-    -- Not bound: either never added, or dropped by a Hyprland reload.
+    -- Not bound: either never added, or dropped by a Hyprland reload. The check stays busy
+    -- until Hyprland has it, so the key is never bound twice.
     self.bound = wanted
+    self.checking = true
+    local function done()
+      self.checking = false
+      if self.again then
+        self.again = false
+        self:check()
+      end
+    end
     noctalia.runAsync({ "hyprctl", "eval", `hl.bind({quoted(wanted)}, hl.dsp.exec_cmd({quoted(self.command)}))` },
       function(lua)
         if noctalia.string.trim(lua.stdout or "") ~= "ok" then
-          noctalia.runAsync({ "hyprctl", "keyword", "bind", `{legacy},exec,{self.command}` })
+          noctalia.runAsync({ "hyprctl", "keyword", "bind", `{legacy},exec,{self.command}` }, done)
+        else
+          done()
         end
       end)
   end)

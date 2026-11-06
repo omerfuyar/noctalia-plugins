@@ -26,6 +26,9 @@ local POLL_MS = 1000
 local REFRESH_MS = 30000
 local IPC = "noctalia msg plugin omerfuyar/keyboard:service all "
 local keys = { Keybind.new("keybind", IPC .. "next"), Keybind.new("osk_key", IPC .. "osk") }
+-- Settings change with each typed letter, so the keys are checked once typing stops.
+local KEYS_DELAY_MS = 1500
+local keysDueMs = nil
 
 -- Hyprland's keyboards, then fcitx5's input method.
 local POLL = [[
@@ -81,6 +84,8 @@ gdbus call --session --dest org.fcitx.Fcitx5 --object-path /controller \
 ]=]
 
 local OSK = "osk"
+-- The docked keyboard's gap to the bottom edge, in pixels.
+local DOCK_MARGIN = 12
 -- wtype types the on-screen keyboard's keys; each system installs it its own way.
 local WTYPE_INSTALLERS = {
   { manager = "pacman", command = "sudo pacman -S --needed wtype" },
@@ -537,8 +542,8 @@ local function removeInputMethod(id)
   end
 end
 
--- The on-screen keyboard, on the focused monitor. Docked, it sits at the bottom in the middle
--- and windows move up out of its way; placed, it floats where it was dropped. While it is
+-- The on-screen keyboard, on the focused monitor, floating above the windows and never moving
+-- them. Docked, it sits at the bottom in the middle; placed, it floats where it was dropped. While it is
 -- moved, the layer covers the whole monitor, so the keyboard can follow the pointer.
 local function configureOsk()
   local size = oskSize()
@@ -546,7 +551,7 @@ local function configureOsk()
   if oskMoving then
     props = { anchors = { "top", "bottom", "left", "right" }, width = 0, height = 0, margins = {}, exclusiveZone = -1 }
   elseif oskPlace.docked then
-    props = { anchors = { "bottom" }, width = size.width, height = size.height, margins = {}, exclusiveZone = size.height }
+    props = { anchors = { "bottom" }, width = size.width, height = size.height, margins = { bottom = DOCK_MARGIN }, exclusiveZone = -1 }
   else
     props = {
       anchors = { "top", "left" },
@@ -705,12 +710,16 @@ function update()
       key:check()
     end
   end
+  if keysDueMs and now >= keysDueMs then
+    keysDueMs = nil
+    for _, key in ipairs(keys) do
+      key:check()
+    end
+  end
 end
 
 function onConfigChanged()
-  for _, key in ipairs(keys) do
-    key:check()
-  end
+  keysDueMs = noctalia.nowMs() + KEYS_DELAY_MS
   if oskOpen then
     configureOsk()
   end

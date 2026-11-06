@@ -43,15 +43,16 @@ Add the **Keyboard** widget to the bar. It shows the language you type in, such 
 
 - Turn on **On-screen keyboard** in the panel for a compact key grid at the bottom of the
   screen, in your theme. It never takes the keyboard focus, so each key goes to the window you
-  type in, and windows move up out of its way. Click its grip, move the pointer, and click
-  again to put it anywhere; dropped at the bottom edge, it docks again. It stays where you
-  put it. Its ✕ hides it. The keys follow the active language: Turkish for TR,
+  type in. It floats above the windows and never moves them. Click its grip, move the pointer, and click
+  **Put it here** to float it anywhere; the button at its left docks it again. It stays where
+  you put it. Its ✕ hides it. The keys follow the active language: Turkish for TR,
   English otherwise. Shift, Ctrl and Alt hold for the next key. Korean is typed with a real
   keyboard: fcitx5 composes Hangul only from it.
 - Set **Switch key** in the settings, such as `SUPER + Space`, to switch from the keyboard.
   Keyboard adds it to Hyprland while Noctalia runs and leaves your config alone; a key that
   is already bound stays as it is. Set **On-screen keyboard key** the same way to show and
-  hide the on-screen keyboard.
+  hide the on-screen keyboard. Each key needs a modifier, such as `SUPER`, unless it is not a
+  letter or digit, such as `F12`.
 
 ```sh
 noctalia msg panel-toggle omerfuyar/keyboard:panel

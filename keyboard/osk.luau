@@ -6,8 +6,8 @@
 -- key. Renders "keyboard.model".
 --
 -- A click on the grip starts a move: the service spreads the layer over the whole monitor,
--- the keyboard's outline follows the pointer, and a click puts it down there. Dropped at
--- the bottom edge, it docks again.
+-- the keyboard's outline follows the pointer, and its "Put it here" button puts it down
+-- there. The dock button puts it back at the bottom.
 
 local model = nil
 local shift, ctrl, alt = false, false, false
@@ -43,8 +43,6 @@ local SETS = {
 
 local render
 
--- Docks when dropped this close to the bottom edge, in pixels.
-local SNAP = 32
 local PADDING, GAP, GRIP = 8, 5, 20
 
 local ghost = nil -- while moving: { x, y } of the outline's top left
@@ -121,20 +119,27 @@ end
 
 local function keys()
   local _, height = size()
+  local docked = model == nil or model.oskPlace == nil or model.oskPlace.docked == true
   keyHeight = math.max(20, math.floor((height - 2 * PADDING - GRIP - 5 * GAP) / 5))
   local rows = {
-    -- The grip moves the keyboard; the button hides it.
+    -- The grip moves the keyboard, the first button docks it, the last hides it. They are
+    -- buttons, as a layer's rows take no clicks.
     ui.row({ gap = GAP, align = "center", height = GRIP }, {
-      ui.box({ width = 28 }),
-      ui.row({
+      docked and ui.box({ width = 28 }) or ui.button({
+        glyph = "layout-bottombar",
+        variant = "ghost",
+        controlSize = "sm",
+        width = 28,
+        height = GRIP,
+        onClick = function() send({ action = "osk_place", docked = true }) end,
+      }),
+      ui.button({
+        glyph = "grip-horizontal",
+        variant = "ghost",
+        controlSize = "sm",
         flexGrow = 1,
         height = GRIP,
-        align = "center",
-        justify = "center",
-        radius = 6,
         onClick = function() send({ action = "osk_move" }) end,
-      }, {
-        ui.glyph({ name = "grip-horizontal", size = 18, color = "on_surface_variant" }),
       }),
       ui.button({
         glyph = "x",
@@ -182,28 +187,24 @@ local function keys()
   }, rows)
 end
 
--- Where the outline is drawn: docked at the bottom when it is near the bottom edge.
-local function ghostPlace(width, height, outWidth, outHeight)
-  if ghost.y >= outHeight - height - SNAP then
-    return math.floor((outWidth - width) / 2), outHeight - height, true
-  end
-  return ghost.x, ghost.y, false
-end
+-- The "Put it here" button in the middle of the outline.
+local DROP_WIDTH, DROP_HEIGHT = 160, 32
 
--- The monitor while moving: the outline and the space around it, each part a graph that
--- reports the pointer, so the outline can follow it anywhere.
+-- The monitor while moving: the outline and the space around it. Each part around the
+-- button is a graph that reports the pointer, so the outline follows it, with the button
+-- under the pointer; a click on the button puts the keyboard there.
 local function moving()
   local width, height = size()
   local outWidth, outHeight = outputSize()
   if ghost == nil then
     local place = model.oskPlace or { docked = true }
     if place.docked then
-      ghost = { x = math.floor((outWidth - width) / 2), y = outHeight - height }
+      ghost = { x = math.floor((outWidth - width) / 2), y = outHeight - height - 12 }
     else
       ghost = { x = place.x, y = place.y }
     end
   end
-  local x, y, docked = ghostPlace(width, height, outWidth, outHeight)
+  local x, y = ghost.x, ghost.y
   -- A pointer at <nx, ny> of a part with its top left at <left, top> and this size.
   local function at(left, top, partWidth, partHeight)
     return function(nx, ny)
@@ -222,7 +223,9 @@ local function moving()
     props.onPointerMove = at(left, top, partWidth, partHeight)
     return ui.graph(props)
   end
-  local half = math.floor((height - 24) / 2)
+  local side = math.floor((width - DROP_WIDTH) / 2)
+  local above = math.floor((height - DROP_HEIGHT) / 2)
+  local below = height - above - DROP_HEIGHT
   local row = {}
   if x >= 1 then
     table.insert(row, part({ key = "left", width = x }, 0, y, x, height))
@@ -235,15 +238,19 @@ local function moving()
     borderWidth = 2,
     radius = 12,
   }, {
-    part({ key = "ghost-top", height = half }, x, y, width, half),
-    ui.label({
-      text = noctalia.tr(docked and "osk.drop_dock" or "osk.drop_here"),
-      height = 24,
-      textAlign = "center",
-      color = "primary",
-      fontWeight = "semibold",
+    part({ key = "ghost-top", height = above }, x, y, width, above),
+    ui.row({ key = "ghost-middle", height = DROP_HEIGHT }, {
+      part({ key = "ghost-left", width = side }, x, y + above, side, DROP_HEIGHT),
+      ui.button({
+        text = noctalia.tr("osk.drop_here"),
+        variant = "primary",
+        width = DROP_WIDTH,
+        height = DROP_HEIGHT,
+        onClick = function() send({ action = "osk_place", docked = false, x = x, y = y }) end,
+      }),
+      part({ key = "ghost-right", flexGrow = 1 }, x + side + DROP_WIDTH, y + above, width - side - DROP_WIDTH, DROP_HEIGHT),
     }),
-    part({ key = "ghost-bottom", flexGrow = 1 }, x, y + half + 24, width, height - half - 24),
+    part({ key = "ghost-bottom", flexGrow = 1 }, x, y + above + DROP_HEIGHT, width, below),
   }))
   table.insert(row, part({ key = "right", flexGrow = 1 }, x + width, y, outWidth - x - width, height))
   local column = {}
@@ -252,14 +259,7 @@ local function moving()
   end
   table.insert(column, ui.row({ key = "middle", height = height }, row))
   table.insert(column, part({ key = "bottom", flexGrow = 1 }, 0, y + height, outWidth, outHeight - y - height))
-  return ui.column({
-    flexGrow = 1,
-    fill = "surface/0.4",
-    onClick = function()
-      local dropX, dropY, dropDocked = ghostPlace(width, height, outWidth, outHeight)
-      send({ action = "osk_place", docked = dropDocked, x = dropX, y = dropY })
-    end,
-  }, column)
+  return ui.column({ flexGrow = 1, fill = "surface/0.4" }, column)
 end
 
 render = function()
@@ -271,9 +271,34 @@ render = function()
   layer.render(isMoving and moving() or keys())
 end
 
+-- What the keyboard shows of the model. The service publishes every second; the keyboard
+-- draws again only when this changes, so it does not flicker.
+local function shown(value)
+  if value == nil then
+    return ""
+  end
+  local place = value.oskPlace or {}
+  local size = value.oskSize or {}
+  local current = nil
+  for _, entry in ipairs(value.entries or {}) do
+    if entry.key == value.current then
+      current = entry.short
+    end
+  end
+  return table.concat({
+    tostring(current), tostring(value.oskMoving), tostring(place.docked), tostring(place.x), tostring(place.y),
+    tostring(size.width), tostring(size.height),
+  }, " ")
+end
+
+local lastShown = nil
 noctalia.state.watch("keyboard.model", function(value)
   model = value
-  render()
+  local now = shown(value)
+  if now ~= lastShown then
+    lastShown = now
+    render()
+  end
 end)
 model = noctalia.state.get("keyboard.model")
 render()
