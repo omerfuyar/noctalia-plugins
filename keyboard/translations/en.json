@@ -18,7 +18,7 @@
   },
   "panel": {
     "add": "Add a language",
-    "add_placeholder": "Pick a keyboard layout or input method…",
+    "add_placeholder": "Layout or input method…",
     "loading": "Loading…",
     "managed": "Keyboard keeps these layouts and sets them in Hyprland while Noctalia runs; your Hyprland config is not changed.",
     "no_more_ims": "fcitx5 has no other input methods. Install one, such as fcitx5-mozc for Japanese or fcitx5-chinese-addons for Chinese.",

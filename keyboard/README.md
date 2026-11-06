@@ -86,10 +86,11 @@ noctalia msg plugin omerfuyar/keyboard:service all remove-im mozc
 noctalia msg plugin omerfuyar/keyboard:service all reset-layouts
 ```
 
-Show or hide the on-screen keyboard:
+Show or hide the on-screen keyboard, or pick it up to move it, as its grip does:
 
 ```sh
 noctalia msg plugin omerfuyar/keyboard:service all osk
+noctalia msg plugin omerfuyar/keyboard:service all osk-move
 ```
 
 ## Notes

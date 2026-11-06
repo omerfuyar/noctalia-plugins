@@ -230,7 +230,7 @@ local function moving()
   table.insert(row, ui.column({
     key = "ghost",
     width = width,
-    fill = "primary/0.15",
+    fill = "surface_container/0.9",
     border = "primary",
     borderWidth = 2,
     radius = 12,
@@ -254,7 +254,7 @@ local function moving()
   table.insert(column, part({ key = "bottom", flexGrow = 1 }, 0, y + height, outWidth, outHeight - y - height))
   return ui.column({
     flexGrow = 1,
-    fill = "surface/0.3",
+    fill = "surface/0.4",
     onClick = function()
       local dropX, dropY, dropDocked = ghostPlace(width, height, outWidth, outHeight)
       send({ action = "osk_place", docked = dropDocked, x = dropX, y = dropY })

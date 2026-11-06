@@ -51,8 +51,8 @@ local function entryRow(entry)
   })
 end
 
--- What can be added: the layouts not in the list yet, then fcitx5's input methods, each
--- marked with its kind. One picker for both, like the list above it.
+-- What can be added: fcitx5's input methods, as there are few, then the layouts not in the
+-- list yet. One picker for both, like the list above it.
 local function addable(catalog)
   local have = {}
   for _, entry in ipairs(model.entries) do
@@ -61,6 +61,12 @@ local function addable(catalog)
     end
   end
   local items = {}
+  for _, im in ipairs(catalog.ims) do
+    table.insert(items, {
+      label = noctalia.tr("panel.option_im", { name = im.name }),
+      command = { action = "add_im", id = im.id },
+    })
+  end
   for _, layout in ipairs(catalog.layouts) do
     if not have[layout.code] then
       table.insert(items, {
@@ -68,12 +74,6 @@ local function addable(catalog)
         command = { action = "add_layout", code = layout.code },
       })
     end
-  end
-  for _, im in ipairs(catalog.ims) do
-    table.insert(items, {
-      label = noctalia.tr("panel.option_im", { name = im.name }),
-      command = { action = "add_im", id = im.id },
-    })
   end
   return items
 end
@@ -89,18 +89,19 @@ local function addBlock()
     return ui.column({ gap = 8 }, children)
   end
   local items = addable(catalog)
-  local options = {}
+  -- The first option is the prompt: the select shows its first option when none is picked.
+  local options = { noctalia.tr("panel.add_placeholder") }
   for _, item in ipairs(items) do
     table.insert(options, item.label)
   end
   table.insert(children, ui.select({
-    -- A new key after each change shows the placeholder again.
+    -- A new key after each change shows the prompt again.
     key = "add-" .. #items,
     options = options,
-    placeholder = noctalia.tr("panel.add_placeholder"),
+    selectedIndex = 0,
     enabled = #items > 0,
     onChange = function(index)
-      local item = items[(tonumber(index) or -1) + 1]
+      local item = items[tonumber(index) or 0]
       if item then
         send(item.command)
       end
@@ -110,13 +111,15 @@ local function addBlock()
     table.insert(children, ui.label({ text = noctalia.tr("panel.no_more_ims"), color = "on_surface_variant", fontSize = 11, maxLines = 3 }))
   end
   if model.managed then
-    table.insert(children, ui.row({ gap = 8, align = "center" }, {
-      ui.label({ text = noctalia.tr("panel.managed"), color = "on_surface_variant", fontSize = 11, flexGrow = 1, maxLines = 3 }),
-      ui.button({
-        text = noctalia.tr("panel.reset"),
-        variant = "ghost",
-        controlSize = "sm",
-        onClick = function() send({ action = "reset_layouts" }) end,
+    table.insert(children, ui.column({ gap = 4 }, {
+      ui.label({ text = noctalia.tr("panel.managed"), color = "on_surface_variant", fontSize = 11, maxLines = 3 }),
+      ui.row({}, {
+        ui.button({
+          text = noctalia.tr("panel.reset"),
+          variant = "ghost",
+          controlSize = "sm",
+          onClick = function() send({ action = "reset_layouts" }) end,
+        }),
       }),
     }))
   end

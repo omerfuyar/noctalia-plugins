@@ -317,7 +317,8 @@ local function readCatalog()
     end
     for line in (result.stdout or ""):gmatch("[^\n]+") do
       local code, name = line:match("^@@layout (%S+)\t(.+)$")
-      if code then
+      -- "custom" is a placeholder for a layout file of one's own.
+      if code and code ~= "custom" then
         table.insert(found.layouts, { code = code, name = name })
       end
       local im = line:match("^@@im (.+)$")
@@ -655,7 +656,7 @@ end)
 -- noctalia msg plugin omerfuyar/keyboard:service all add-layout|remove-layout <code, such as de>
 -- noctalia msg plugin omerfuyar/keyboard:service all add-im|remove-im <fcitx5 id, such as mozc>
 -- noctalia msg plugin omerfuyar/keyboard:service all reset-layouts
--- noctalia msg plugin omerfuyar/keyboard:service all osk
+-- noctalia msg plugin omerfuyar/keyboard:service all osk|osk-move
 function onIpc(event, payload)
   local value = payload and noctalia.string.trim(payload) or ""
   if event == "add-layout" and value ~= "" then
@@ -668,6 +669,11 @@ function onIpc(event, payload)
     end
   elseif event == "osk" then
     setOsk(not oskOpen)
+  elseif event == "osk-move" then
+    if not oskOpen then
+      setOsk(true)
+    end
+    moveOsk(nil)
   elseif event == "reset-layouts" then
     resetLayouts()
   elseif event == "add-im" and value ~= "" then
