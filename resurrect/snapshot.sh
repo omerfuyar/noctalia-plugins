@@ -304,8 +304,8 @@ echo "count hooks $hooks"
 git add -A
 
 # Nothing that looks like a password or key is committed, since saves may be pushed. Known
-# findings can be allowed in .gitleaksignore.
-if command -v gitleaks >/dev/null &&
+# findings can be allowed in .gitleaksignore. The secret_check setting turns this off.
+if [ "${RESURRECT_SECRET_CHECK:-true}" != false ] && command -v gitleaks >/dev/null &&
   ! found=$(gitleaks git --pre-commit --staged --redact --no-banner -v . 2>&1); then
   git reset -q
   echo "$found" | sed 's/\x1b\[[0-9;]*m//g' | sed -n 's/^File:[[:space:]]*/secret found in: /p' | sort -u

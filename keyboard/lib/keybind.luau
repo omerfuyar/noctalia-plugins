@@ -1,15 +1,13 @@
 --!nonstrict
--- The key binding from the "keybind" setting, such as "SUPER + Space". It is added to
--- Hyprland while Noctalia runs, never written to its config. A key that is already bound is
--- left alone, and Hyprland drops added bindings when it reloads, so check() runs again from
--- the service's update tick (DESIGN.md, section 10.7).
+-- Key bindings from settings, such as "SUPER + Space". Each is added to Hyprland while
+-- Noctalia runs, never written to its config. A key that is already bound is left alone, and
+-- Hyprland drops added bindings when it reloads, so check() runs again from the service's
+-- update tick (DESIGN.md, section 10.7).
 
 local Keybind = {}
+Keybind.__index = Keybind
 
 local MODIFIERS = { SHIFT = 1, CAPS = 2, CTRL = 4, CONTROL = 4, ALT = 8, MOD2 = 16, MOD3 = 32, SUPER = 64, MOD5 = 128 }
-
-local bound = nil -- the key this plugin bound, as written in the setting
-local warned = nil
 
 local function onHyprland()
   return noctalia.getenv("HYPRLAND_INSTANCE_SIGNATURE") ~= nil and noctalia.commandExists("hyprctl")
@@ -49,23 +47,28 @@ local function unbind(key)
   end)
 end
 
--- Binds the setting's key to shell command <command>, once, unless the key is taken.
-function Keybind.check(command)
+-- The binding of setting <setting> to shell command <command>.
+function Keybind.new(setting, command)
+  return setmetatable({ setting = setting, command = command, bound = nil, warned = nil }, Keybind)
+end
+
+-- Binds the setting's key, once, unless the key is taken.
+function Keybind:check()
   if not onHyprland() then
     return
   end
-  local wanted = noctalia.string.trim(noctalia.getConfig("keybind") or "")
-  if bound and bound ~= wanted then
-    unbind(bound)
-    bound = nil
+  local wanted = noctalia.string.trim(noctalia.getConfig(self.setting) or "")
+  if self.bound and self.bound ~= wanted then
+    unbind(self.bound)
+    self.bound = nil
   end
   if wanted == "" then
     return
   end
   local mask, key, legacy = parseKey(wanted)
   if mask == nil then
-    if warned ~= wanted then
-      warned = wanted
+    if self.warned ~= wanted then
+      self.warned = wanted
       noctalia.notifyError(noctalia.tr("keybind.invalid_title"), noctalia.tr("keybind.invalid", { key = wanted }))
     end
     return
@@ -74,29 +77,29 @@ function Keybind.check(command)
     local binds = result.exitCode == 0 and noctalia.json.decode(result.stdout or "") or {}
     for _, bind in ipairs(type(binds) == "table" and binds or {}) do
       if bind.modmask == mask and tostring(bind.key):lower() == key:lower() then
-        if bound ~= wanted and warned ~= wanted then
-          warned = wanted
+        if self.bound ~= wanted and self.warned ~= wanted then
+          self.warned = wanted
           noctalia.notifyError(noctalia.tr("keybind.taken_title"), noctalia.tr("keybind.taken", { key = wanted }))
         end
         return
       end
     end
     -- Not bound: either never added, or dropped by a Hyprland reload.
-    bound = wanted
-    noctalia.runAsync({ "hyprctl", "eval", `hl.bind({quoted(wanted)}, hl.dsp.exec_cmd({quoted(command)}))` },
+    self.bound = wanted
+    noctalia.runAsync({ "hyprctl", "eval", `hl.bind({quoted(wanted)}, hl.dsp.exec_cmd({quoted(self.command)}))` },
       function(lua)
         if noctalia.string.trim(lua.stdout or "") ~= "ok" then
-          noctalia.runAsync({ "hyprctl", "keyword", "bind", `{legacy},exec,{command}` })
+          noctalia.runAsync({ "hyprctl", "keyword", "bind", `{legacy},exec,{self.command}` })
         end
       end)
   end)
 end
 
 -- Takes the binding out again, when the plugin stops.
-function Keybind.release()
-  if bound then
-    unbind(bound)
-    bound = nil
+function Keybind:release()
+  if self.bound then
+    unbind(self.bound)
+    self.bound = nil
   end
 end
 

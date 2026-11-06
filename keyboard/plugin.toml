@@ -1,6 +1,6 @@
 id = "omerfuyar/keyboard"
 name = "Keyboard"
-version = "1.2.0"
+version = "1.3.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
@@ -17,13 +17,20 @@ description_key = "settings.keybind.description"
 default = ""
 
 [[setting]]
+key = "osk_key"
+type = "string"
+label_key = "settings.osk_key.label"
+description_key = "settings.osk_key.description"
+default = ""
+
+[[setting]]
 key = "osk_height"
 type = "int"
 label_key = "settings.osk_height.label"
 description_key = "settings.osk_height.description"
-default = 260
-min = 160
-max = 600
+default = 220
+min = 140
+max = 400
 step = 10
 advanced = true
 
@@ -49,8 +56,9 @@ open_near_click = true
 id = "osk"
 entry = "osk.luau"
 layer = "top"
-anchors = ["bottom", "left", "right"]
-height = 260
-exclusive_zone = 260
+anchors = ["bottom"]
+width = 660
+height = 220
+exclusive_zone = 220
 keyboard = "none"
 output = "focused"

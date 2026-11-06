@@ -89,6 +89,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 3. Long lists scroll inside the panel. A `ui.scroll` in a panel whose height follows its content gets an explicit `height`, or it shrinks to one row. Its `key` changes with that height, since a scroll keeps the height it was made with.
 4. It shows a placeholder while data loads, and never an empty frame.
 5. A panel that a bar widget opens has `placement = "attached"`, `position = "auto"` and `open_near_click = true`, so it opens next to the widget, as Noctalia's own panels do. Opened by IPC or a key binding, it follows the same settings.
+6. A row whose fill changes with its state sets a transparent fill, such as `primary/0`, when it is off, never `nil`, so the old fill does not stay.
 
 ## 7. Look and feel
 

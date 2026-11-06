@@ -1,7 +1,9 @@
 --!nonstrict
 -- Keyboard panel: every language you type in, from the compositor's layouts and fcitx5's
 -- input methods, with the active one marked. A click switches to it, ✕ removes it, and the
--- pickers below add a layout or an input method. Renders "keyboard.model" and sends actions
+-- picker below adds a layout or an input method. Buttons that may vanish under the pointer
+-- carry no tooltip: a tooltip opening as its row goes away has closed Noctalia's connection
+-- to the compositor. Renders "keyboard.model" and sends actions
 -- on "keyboard.command".
 
 local model = nil
@@ -20,7 +22,8 @@ local function entryRow(entry)
     paddingH = 8,
     paddingV = 6,
     radius = 8,
-    fill = active and "primary/0.12" or nil,
+    -- A transparent fill, not nil, so the highlight leaves the row that was active.
+    fill = active and "primary/0.12" or "primary/0",
     onClick = function() send({ action = "choose", key = entry.key }) end,
   }, {
     ui.label({ text = entry.short, width = 32, fontWeight = "semibold", color = active and "primary" or "on_surface" }),
@@ -37,7 +40,6 @@ local function entryRow(entry)
       glyph = "x",
       variant = "ghost",
       controlSize = "sm",
-      tooltip = noctalia.tr("panel.remove"),
       onClick = function()
         if entry.kind == "layout" then
           send({ action = "remove_layout", index = entry.index })
@@ -49,61 +51,67 @@ local function entryRow(entry)
   })
 end
 
--- A picker that adds the chosen one of <items> with <add>, then shows its placeholder again.
-local function picker(key, placeholder, items, label, add)
-  local options = {}
-  for _, item in ipairs(items) do
-    table.insert(options, label(item))
-  end
-  return ui.select({
-    key = key .. #items,
-    options = options,
-    placeholder = placeholder,
-    enabled = #items > 0,
-    onChange = function(index)
-      local item = items[(tonumber(index) or -1) + 1]
-      if item then
-        add(item)
-      end
-    end,
-  })
-end
-
--- Adding layouts and input methods, and giving the layouts back to Hyprland's config.
-local function addBlock()
-  local catalog = model.catalog
-  if catalog == nil then
-    return ui.label({ text = noctalia.tr("panel.loading"), color = "on_surface_variant" })
-  end
+-- What can be added: the layouts not in the list yet, then fcitx5's input methods, each
+-- marked with its kind. One picker for both, like the list above it.
+local function addable(catalog)
   local have = {}
   for _, entry in ipairs(model.entries) do
     if entry.kind == "layout" then
       have[entry.code] = true
     end
   end
-  local layouts = {}
+  local items = {}
   for _, layout in ipairs(catalog.layouts) do
     if not have[layout.code] then
-      table.insert(layouts, layout)
+      table.insert(items, {
+        label = noctalia.tr("panel.option_layout", { name = layout.name }),
+        command = { action = "add_layout", code = layout.code },
+      })
     end
   end
+  for _, im in ipairs(catalog.ims) do
+    table.insert(items, {
+      label = noctalia.tr("panel.option_im", { name = im.name }),
+      command = { action = "add_im", id = im.id },
+    })
+  end
+  return items
+end
+
+-- Adding a language, and giving the layouts back to Hyprland's config.
+local function addBlock()
+  local catalog = model.catalog
   local children = {
-    picker("add-layout", noctalia.tr("panel.add_layout"), layouts,
-      function(layout) return layout.name end,
-      function(layout) send({ action = "add_layout", code = layout.code }) end),
+    ui.label({ text = noctalia.tr("panel.add"), fontWeight = "semibold" }),
   }
-  if model.fcitx then
-    if #catalog.ims > 0 then
-      table.insert(children, picker("add-im", noctalia.tr("panel.add_im"), catalog.ims,
-        function(im) return im.name end,
-        function(im) send({ action = "add_im", id = im.id }) end))
-    else
-      table.insert(children, ui.label({ text = noctalia.tr("panel.no_more_ims"), color = "on_surface_variant", maxLines = 3 }))
-    end
+  if catalog == nil then
+    table.insert(children, ui.label({ text = noctalia.tr("panel.loading"), color = "on_surface_variant" }))
+    return ui.column({ gap = 8 }, children)
+  end
+  local items = addable(catalog)
+  local options = {}
+  for _, item in ipairs(items) do
+    table.insert(options, item.label)
+  end
+  table.insert(children, ui.select({
+    -- A new key after each change shows the placeholder again.
+    key = "add-" .. #items,
+    options = options,
+    placeholder = noctalia.tr("panel.add_placeholder"),
+    enabled = #items > 0,
+    onChange = function(index)
+      local item = items[(tonumber(index) or -1) + 1]
+      if item then
+        send(item.command)
+      end
+    end,
+  }))
+  if model.fcitx and #catalog.ims == 0 then
+    table.insert(children, ui.label({ text = noctalia.tr("panel.no_more_ims"), color = "on_surface_variant", fontSize = 11, maxLines = 3 }))
   end
   if model.managed then
     table.insert(children, ui.row({ gap = 8, align = "center" }, {
-      ui.label({ text = noctalia.tr("panel.managed"), color = "on_surface_variant", flexGrow = 1, maxLines = 3 }),
+      ui.label({ text = noctalia.tr("panel.managed"), color = "on_surface_variant", fontSize = 11, flexGrow = 1, maxLines = 3 }),
       ui.button({
         text = noctalia.tr("panel.reset"),
         variant = "ghost",
@@ -135,7 +143,10 @@ local function oskRow()
   end
   return ui.row({ gap = 8, align = "center" }, {
     ui.glyph({ name = "keyboard", size = 16, color = model.osk and "primary" or "on_surface_variant" }),
-    ui.label({ text = noctalia.tr("osk.title"), flexGrow = 1 }),
+    ui.column({ gap = 2, flexGrow = 1 }, {
+      ui.label({ text = noctalia.tr("osk.title") }),
+      (model.oskKey or "") ~= "" and ui.label({ text = model.oskKey, color = "on_surface_variant", fontSize = 11 }) or nil,
+    }),
     ui.toggle({
       checked = model.osk == true,
       onChange = function(value) send({ action = "osk", open = value == "true" }) end,

@@ -5,7 +5,7 @@ Open questions and pending tasks. When one is settled, write the decision where 
 ## Open questions
 
 1. Formatter for Luau: StyLua, with which settings?
-2. Why does dimming below the lowest brightness work on the owner's laptop only with gamma, not with the black layer, while the desktop works with both? Test again on the laptop's new install.
+. Removing a layout in the Keyboard panel once closed Noctalia: a tooltip popup opened as the panel shrank, and Hyprland rejected it ("popup: initial roundtrip failed (compositor protocol error)"). Keyboard's ✕ buttons now have no tooltip. Is it a Noctalia bug to report, and do the other panels' buttons that vanish under the pointer need the same?
 
 ## Tasks
 
