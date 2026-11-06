@@ -1,12 +1,12 @@
 id = "omerfuyar/resurrect"
 name = "Resurrect"
-version = "2.1.2"
+version = "2.1.3"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
 icon = "lifebuoy"
 description = "Save your packages, dotfiles, services and Noctalia settings to git, share them between devices, restore them."
-dependencies = ["git", "sh", "systemctl", "xdg-open", "pacman", "apt-mark", "dnf", "flatpak", "paru", "yay", "gitleaks", "hyprctl", "python3"]
+dependencies = ["git", "sh", "awk", "systemctl", "xdg-open", "pacman", "apt-mark", "dnf", "flatpak", "paru", "yay", "gitleaks", "hyprctl"]
 tags = ["bar", "system", "utility"]
 
 [[setting]]

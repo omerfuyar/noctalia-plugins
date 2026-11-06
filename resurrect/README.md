@@ -15,18 +15,17 @@ your devices, and on a new install, bring it all back with one script.
 
 ## Requirements
 
-| Command                       | Needed                     | What for                                                                                                   |
-| ----------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `git`                         | Required                   | Keeps each save as a commit, and pushes it when a remote is set. Without it, the panel says so.            |
-| `sh`                          | Required                   | Runs the plugin's save script. It comes with every Linux system.                                           |
-| `systemctl`                   | Required                   | Lists and restores the services that start by themselves. Without it, services are not saved.              |
-| `xdg-open`                    | Required                   | Opens the repository folder. Without it, that button is hidden.                                            |
-| `pacman`, `apt-mark` or `dnf` | Required                   | Lists the installed packages, with the system's package manager. Without one, no packages are saved.       |
-| `flatpak`                     | Optional                   | Lists the installed Flatpak apps too. Without it, none are saved.                                          |
-| `paru` or `yay`               | Required with AUR packages | Restores AUR packages. Without them, the AUR list stays in `packages/aur.txt`.                             |
-| `gitleaks`                    | Required                   | Checks each save for passwords, tokens and keys before it is committed. Without it, saves are not checked. |
-| `hyprctl`                     | Required on Hyprland       | Checks Hyprland's config after shared files come in. Without it, they are not checked.                     |
-| `python3`                     | Required                   | Shares Noctalia's settings one setting at a time. Without it, they stay on each device.                    |
+| Command                       | Needed                     | What for                                                                                                               |
+| ----------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `git`                         | Required                   | Keeps each save as a commit, and pushes it when a remote is set. Without it, the panel says so.                        |
+| `sh`, `awk`                   | Required                   | Run the plugin's save scripts, and share Noctalia's settings one setting at a time. They come with every Linux system. |
+| `systemctl`                   | Required                   | Lists and restores the services that start by themselves. Without it, services are not saved.                          |
+| `xdg-open`                    | Required                   | Opens the repository folder. Without it, that button is hidden.                                                        |
+| `pacman`, `apt-mark` or `dnf` | Required                   | Lists the installed packages, with the system's package manager. Without one, no packages are saved.                   |
+| `flatpak`                     | Optional                   | Lists the installed Flatpak apps too. Without it, none are saved.                                                      |
+| `paru` or `yay`               | Required with AUR packages | Restores AUR packages. Without them, the AUR list stays in `packages/aur.txt`.                                         |
+| `gitleaks`                    | Required                   | Checks each save for passwords, tokens and keys before it is committed. Without it, saves are not checked.             |
+| `hyprctl`                     | Required on Hyprland       | Checks Hyprland's config after shared files come in. Without it, they are not checked.                                 |
 
 ## Usage
 

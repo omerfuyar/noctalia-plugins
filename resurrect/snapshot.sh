@@ -191,13 +191,13 @@ echo "count files $files"
 
 if [ "$share" = true ]; then
   # Noctalia's config folder is shared like the dotfiles; its settings.toml one setting at
-  # a time, when python3 is there to read TOML. The settings come first, so a file list
-  # another device changed is in place for the plugin's next save.
+  # a time. The settings come first, so a file list another device changed is in place for
+  # the plugin's next save.
   if [ "$noctalia" = true ]; then
-    if [ -f "$HOME/.local/state/noctalia/settings.toml" ] && command -v python3 >/dev/null; then
+    if [ -f "$HOME/.local/state/noctalia/settings.toml" ]; then
       their_settings=$(mktemp)
       [ -n "$theirs" ] && git show "$theirs:shared/noctalia/settings.toml" >"$their_settings" 2>/dev/null
-      result=$(python3 -I "$here/settings.py" "$HOME/.local/state/noctalia/settings.toml" \
+      result=$(sh "$here/settings.sh" "$HOME/.local/state/noctalia/settings.toml" \
         "$their_settings" "$(git rev-parse --git-dir)/resurrect-settings") || {
         rm -f "$their_settings"
         echo "could not share Noctalia's settings"
