@@ -15,13 +15,13 @@ workspace can also keep its own dimming.
 
 ## Requirements
 
-| Command           | Needed   | What for                                                                                                                                                  |
-| ----------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `noctalia`        | Required | Sets brightness, night light and caffeine, which are Noctalia's own.                                                                                      |
-| `hyprsunset`      | Optional | Dims below the lowest brightness by lowering the gamma, on Hyprland. The plugin starts it when it is not running. Without it, a black layer dims instead. |
-| `hyprctl`         | Optional | Talks to hyprsunset, and finds the workspace on each monitor. Without it, a black layer dims, and each workspace cannot keep its own dimming.             |
-| `ddcutil`         | Optional | Reads the brightness of external monitors; Noctalia uses it too, when **Brightness → ddcutil** is on. Without it, external monitors can still be dimmed.  |
-| `systemd-inhibit` | Optional | Reads whether Noctalia's caffeine is on, so the panel matches Noctalia's own menu. Without it, the panel shows caffeine as it last set it.                |
+| Command           | Needed               | What for                                                                                                                                                  |
+| ----------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `noctalia`        | Required             | Sets brightness, night light and caffeine, which are Noctalia's own.                                                                                      |
+| `hyprsunset`      | Required on Hyprland | Dims below the lowest brightness by lowering the gamma, on Hyprland. The plugin starts it when it is not running. Without it, a black layer dims instead. |
+| `hyprctl`         | Required on Hyprland | Talks to hyprsunset, and finds the workspace on each monitor. Without it, a black layer dims, and each workspace cannot keep its own dimming.             |
+| `ddcutil`         | Optional             | Reads the brightness of external monitors; Noctalia uses it too, when **Brightness → ddcutil** is on. Without it, external monitors can still be dimmed.  |
+| `systemd-inhibit` | Required             | Reads whether Noctalia's caffeine is on, so the panel matches Noctalia's own menu. Without it, the panel shows caffeine as it last set it.                |
 
 ## Usage
 
