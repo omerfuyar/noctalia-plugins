@@ -114,7 +114,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 3. On start, the service checks each command the plugin cannot work without with `noctalia.commandExists`.
 4. When something is missing, the panel shows a setup card in place of its normal content. The card names what is missing and has one button that installs it in a terminal with `noctalia.runInTerminal`. The bar widget shows the setup state as section 5 says.
 5. One-time setup that needs root, such as loading a kernel module, uses the same card.
-6. A missing command that only one feature needs hides that feature.
+6. A missing command that only one feature needs hides that feature. When the command is required, the panel says so in one line that names it, with a button that installs it in a terminal with `noctalia.runInTerminal`.
 
 ## 10. Noctalia and external commands
 
