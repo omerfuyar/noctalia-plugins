@@ -1,11 +1,12 @@
 #!/bin/sh
 # Shares Noctalia's settings.toml between devices, one setting at a time. snapshot.sh runs it
 # from the repository's folder:
-#   settings.sh <settings.toml> <theirs> <base>
+#   settings.sh <settings.toml> <theirs> <base> [<local>]
 # <theirs> is the other devices' shared settings, <base> the shared settings this device last
 # agreed on; either may be a missing file. It writes:
 # - shared/noctalia/settings.toml, the shared settings;
 # - <base>, the same, for the next save;
+# - <local>, when given, the settings that stay on this device, or no file when there are none;
 # - <settings.toml>, when other devices changed something, in one step.
 #
 # Each setting is compared in three versions: this device's, theirs and the base. One that
@@ -23,6 +24,7 @@ here=$(cd "$(dirname "$0")" && pwd)
 settings=$1
 theirs=$2
 base=$3
+local=${4:-}
 
 for file in "$theirs" "$base"; do
   [ ! -e "$file" ] || [ -r "$file" ] || exit 1
@@ -43,6 +45,13 @@ replace() {
 
 replace "$work/shared" shared/noctalia/settings.toml || exit 1
 replace "$work/shared" "$base" || exit 1
+if [ -n "$local" ]; then
+  if [ -s "$work/local" ]; then
+    replace "$work/local" "$local" || exit 1
+  else
+    rm -f "$local"
+  fi
+fi
 
 applied=0
 # Noctalia may have written the file meanwhile; then this waits for the next save.

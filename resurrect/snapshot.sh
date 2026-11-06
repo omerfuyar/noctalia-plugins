@@ -6,9 +6,11 @@
 # kept on this device only.
 #
 # What the plugin saves of this device goes into devices/<hostname>/, so devices sharing one
-# repository never overwrite each other. With <share>, the files go into shared/ instead,
-# except the ones kept on this device, and share.sh brings in what other devices changed.
-# Then every executable file in hooks/save/ runs, in name order, for the owner's own steps.
+# repository never overwrite each other. With <share>, what the devices share goes into
+# shared/ instead: the dotfiles, Noctalia's config and settings, and the package and service
+# lists. share.sh, settings.sh and lists.sh bring in what other devices changed, and this
+# device's folder keeps only what differs. Then every executable file in hooks/save/ runs,
+# in name order, and in devices/<hostname>/hooks/save/, for the owner's own steps.
 # Prints "count <what> <number>" lines, share.sh's lines, then "saved" or "unchanged", and
 # "pushed".
 set -u
@@ -58,6 +60,9 @@ fi
 
 dir=devices/$device
 mkdir -p "$dir"
+git_dir=$(git rev-parse --git-dir)
+work=$(mktemp -d) || exit 1
+trap 'rm -rf "$work"' EXIT
 
 # Prints "count <what> <lines in the files>".
 count() {
@@ -71,84 +76,136 @@ entries() {
   sed 's/#.*//; s/[[:space:]]*$//; /^$/d' "$1" 2>/dev/null
 }
 
-# Package lists, by package manager. Only what was installed on purpose, without the names
-# that packages/exclude.txt matches: one regular expression per line, for the whole name.
-rm -rf "$dir/packages"
-if [ "$packages" = true ]; then
-  mkdir -p "$dir/packages"
-  exclude=$(mktemp)
-  entries packages/exclude.txt >"$exclude"
-  [ -s "$exclude" ] || echo '^$' >"$exclude"
-  if command -v pacman >/dev/null; then
-    pacman -Qqen | grep -vxEf "$exclude" >"$dir/packages/pacman.txt"
-    pacman -Qqem | grep -vxEf "$exclude" >"$dir/packages/aur.txt"
+# Where list $1 goes: packages, or services for system and user.
+kind() {
+  case $1 in
+    system | user) echo services ;;
+    *) echo packages ;;
+  esac
+}
+
+# Puts the other devices' version of folder $1 in place, so this save starts from it.
+from_theirs() {
+  rm -rf "$1"
+  [ -n "$theirs" ] || return 0
+  git -c core.quotePath=false ls-tree -r --name-only "$theirs" -- "$1" | while IFS= read -r file; do
+    mkdir -p "$(dirname "$file")" && git show "$theirs:$file" >"$file"
+  done
+}
+
+# Adds the lines of file $2, when it is set, to list $1, then removes $2.
+add_lines() {
+  [ -n "$2" ] || return 0
+  if [ -s "$2" ]; then
+    cat "$2" >>"$1"
+    sort -u -o "$1" "$1"
   fi
-  rm -f "$exclude"
+  rm -f "$2"
+}
+
+# This device's lists, in $work/lists: <list>.txt holds what was installed or turned on on
+# purpose, <list>.all every package installed, so a dependency never reads as removed.
+# Packages come by package manager, without the names that packages/exclude.txt matches: one
+# regular expression per line, for the whole name. Services come for the system and the user.
+mkdir -p "$work/lists"
+if [ "$packages" = true ]; then
+  entries packages/exclude.txt >"$work/exclude"
+  [ -s "$work/exclude" ] || echo '^$' >"$work/exclude"
+  if command -v pacman >/dev/null; then
+    pacman -Qqen | grep -vxEf "$work/exclude" >"$work/lists/pacman.txt"
+    pacman -Qqem | grep -vxEf "$work/exclude" >"$work/lists/aur.txt"
+    pacman -Qq >"$work/lists/pacman.all"
+    cp "$work/lists/pacman.all" "$work/lists/aur.all"
+  fi
   if command -v apt-mark >/dev/null; then
-    apt-mark showmanual >"$dir/packages/apt.txt"
+    apt-mark showmanual | grep -vxEf "$work/exclude" >"$work/lists/apt.txt"
+    dpkg-query -W -f '${Package}\n' >"$work/lists/apt.all" 2>/dev/null
   fi
   if command -v dnf >/dev/null; then
-    dnf repoquery --userinstalled --qf '%{name}\n' 2>/dev/null >"$dir/packages/dnf.txt"
+    dnf repoquery --userinstalled --qf '%{name}\n' 2>/dev/null | grep -vxEf "$work/exclude" >"$work/lists/dnf.txt"
+    rpm -qa --qf '%{NAME}\n' >"$work/lists/dnf.all" 2>/dev/null
   fi
   if command -v flatpak >/dev/null; then
-    flatpak list --app --columns=application >"$dir/packages/flatpak.txt"
+    flatpak list --app --columns=application | grep -vxEf "$work/exclude" >"$work/lists/flatpak.txt"
+    flatpak list --columns=application >"$work/lists/flatpak.all"
   fi
-  count packages "$dir"/packages/*.txt
+  count packages "$work"/lists/pacman.txt "$work"/lists/aur.txt "$work"/lists/apt.txt \
+    "$work"/lists/dnf.txt "$work"/lists/flatpak.txt
 fi
-
-# With sharing on: packages other devices saved that this one does not have, for each
-# package manager it uses. $dir/skip.txt lists the ones the owner leaves off this device;
-# $RESURRECT_SKIP, when set, holds names to add to it. Prints "missing <list> <name>".
-if [ "$share" = true ] && [ "$packages" = true ]; then
-  if [ -n "${RESURRECT_SKIP:-}" ] && [ -s "$RESURRECT_SKIP" ]; then
-    cat "$RESURRECT_SKIP" >>"$dir/skip.txt"
-    sort -u -o "$dir/skip.txt" "$dir/skip.txt"
-  fi
-  [ -n "${RESURRECT_SKIP:-}" ] && rm -f "$RESURRECT_SKIP"
-  skip=$(mktemp)
-  exclude=$(mktemp)
-  installed=$(mktemp)
-  entries "$dir/skip.txt" >"$skip"
-  entries packages/exclude.txt >"$exclude"
-  [ -s "$exclude" ] || echo '^$' >"$exclude"
-  for list in pacman aur apt dnf flatpak; do
-    [ -f "$dir/packages/$list.txt" ] && [ -n "$theirs" ] || continue
-    case $list in
-      pacman | aur) pacman -Qq ;;
-      apt) dpkg-query -W -f '${Package}\n' ;;
-      dnf) rpm -qa --qf '%{NAME}\n' ;;
-      flatpak) flatpak list --columns=application ;;
-    esac >"$installed" 2>/dev/null
-    git ls-tree --name-only "$theirs" devices/ 2>/dev/null | while read -r other; do
-      [ "$other" = "$dir" ] || git show "$theirs:$other/packages/$list.txt" 2>/dev/null
-    done | sort -u | grep -vxFf "$installed" | grep -vxFf "$skip" | grep -vxEf "$exclude" |
-      sed "s/^/missing $list /"
-  done
-  rm -f "$skip" "$exclude" "$installed"
-fi
-
-# Services that start by themselves, for the system and for this user.
-rm -rf "$dir/services"
 if [ "$services" = true ] && command -v systemctl >/dev/null; then
-  mkdir -p "$dir/services"
   systemctl list-unit-files --state=enabled --no-legend --type=service,timer,socket |
-    awk '{print $1}' >"$dir/services/system.txt"
+    awk '{print $1}' >"$work/lists/system.txt"
   systemctl --user list-unit-files --state=enabled --no-legend --type=service,timer,socket |
-    awk '{print $1}' >"$dir/services/user.txt"
-  count services "$dir/services/system.txt" "$dir/services/user.txt"
+    awk '{print $1}' >"$work/lists/user.txt"
+  count services "$work/lists/system.txt" "$work/lists/user.txt"
 fi
 
-# Noctalia's config, the settings changed in its settings window, and the plugins that are on.
-# Links are followed, as for the dotfiles.
-rm -rf "$dir/noctalia"
+rm -rf "$dir/packages" "$dir/services" "$dir/noctalia"
+if [ "$share" != true ]; then
+  # Without sharing, this device's lists are saved in its own folder.
+  for file in "$work"/lists/*.txt; do
+    [ -f "$file" ] || continue
+    mkdir -p "$dir/$(kind "$(basename "$file" .txt)")"
+    cp "$file" "$dir/$(kind "$(basename "$file" .txt)")/"
+  done
+else
+  # With sharing on, the devices share one list of each kind. This device's folder keeps
+  # only what differs: exclude.txt, shared names it leaves out, and extra.txt, "<list>
+  # <name>" lines it keeps only here. The panel's choices come in $RESURRECT_EXCLUDE,
+  # $RESURRECT_ONLY and $RESURRECT_AGAIN. Prints "missing <list> <name>" for each shared
+  # name this device does not have, and "left <list> <name>" for each one another device
+  # removed that this device still has.
+  if [ -f "$dir/skip.txt" ]; then
+    cat "$dir/skip.txt" >>"$dir/exclude.txt"
+    sort -u -o "$dir/exclude.txt" "$dir/exclude.txt"
+    rm -f "$dir/skip.txt"
+  fi
+  add_lines "$dir/exclude.txt" "${RESURRECT_EXCLUDE:-}"
+  add_lines "$dir/extra.txt" "${RESURRECT_ONLY:-}"
+  entries "$dir/exclude.txt" >"$work/excluded"
+  from_theirs shared/packages
+  from_theirs shared/services
+  for file in "$work"/lists/*.txt; do
+    [ -f "$file" ] || continue
+    list=$(basename "$file" .txt)
+    awk -v list="$list" '$1 == list { print $2 }' "$dir/extra.txt" >"$work/extra" 2>/dev/null
+    awk -v list="$list" '$1 == list { print $2 }' "${RESURRECT_AGAIN:-/dev/null}" >"$work/again" 2>/dev/null
+    sh "$here/lists.sh" "$list" "$file" "$work/lists/$list.all" "shared/$(kind "$list")/$list.txt" \
+      "$git_dir/resurrect-lists/$list.txt" "$work/excluded" "$work/extra" "$work/again" || exit 1
+    [ -s "shared/$(kind "$list")/$list.txt" ] || rm -f "shared/$(kind "$list")/$list.txt"
+    # A name kept only here leaves extra.txt once it is not installed or turned on here.
+    if [ -f "$dir/extra.txt" ]; then
+      awk -v list="$list" -v all="$work/lists/$list.all" -v here="$file" '
+        BEGIN {
+          while ((getline name <all) > 0) have[name] = 1
+          while ((getline name <here) > 0) have[name] = 1
+        }
+        $1 != list || $2 in have' "$dir/extra.txt" >"$work/extra.txt" &&
+        mv -f "$work/extra.txt" "$dir/extra.txt"
+    fi
+  done
+  [ -n "${RESURRECT_AGAIN:-}" ] && rm -f "$RESURRECT_AGAIN"
+  for file in "$dir/exclude.txt" "$dir/extra.txt"; do
+    [ -s "$file" ] || rm -f "$file"
+  done
+fi
+
+# Noctalia's config, the settings changed in its settings window, and the plugins that are
+# on. Links are followed, as for the dotfiles. With sharing on, the config folder is shared
+# like the dotfiles, the settings one at a time, and this device's folder keeps only the
+# settings tied to its hardware, in settings.toml.
+rm -f "$dir/settings.toml"
 if [ "$noctalia" = true ]; then
-  mkdir -p "$dir/noctalia/config" "$dir/noctalia/state"
-  [ -d "$HOME/.config/noctalia" ] && cp -RL --preserve=mode,timestamps "$HOME/.config/noctalia/." "$dir/noctalia/config/"
-  [ -f "$HOME/.local/state/noctalia/settings.toml" ] &&
-    cp -L --preserve=mode,timestamps "$HOME/.local/state/noctalia/settings.toml" "$dir/noctalia/state/"
+  if [ "$share" != true ]; then
+    mkdir -p "$dir/noctalia/config" "$dir/noctalia/state"
+    [ -d "$HOME/.config/noctalia" ] && cp -RL --preserve=mode,timestamps "$HOME/.config/noctalia/." "$dir/noctalia/config/"
+    [ -f "$HOME/.local/state/noctalia/settings.toml" ] &&
+      cp -L --preserve=mode,timestamps "$HOME/.local/state/noctalia/settings.toml" "$dir/noctalia/state/"
+  fi
   if command -v noctalia >/dev/null; then
-    noctalia msg plugins list 2>/dev/null | awk '$4 == "enabled" {print $1}' >"$dir/noctalia/plugins.txt"
-    count plugins "$dir/noctalia/plugins.txt"
+    noctalia msg plugins list 2>/dev/null | awk '$4 == "enabled" {print $1}' >"$work/plugins.txt"
+    count plugins "$work/plugins.txt"
+    [ "$share" != true ] && cp "$work/plugins.txt" "$dir/noctalia/plugins.txt"
   fi
 fi
 
@@ -198,7 +255,7 @@ if [ "$share" = true ]; then
       their_settings=$(mktemp)
       [ -n "$theirs" ] && git show "$theirs:shared/noctalia/settings.toml" >"$their_settings" 2>/dev/null
       result=$(sh "$here/settings.sh" "$HOME/.local/state/noctalia/settings.toml" \
-        "$their_settings" "$(git rev-parse --git-dir)/resurrect-settings") || {
+        "$their_settings" "$git_dir/resurrect-settings" "$dir/settings.toml") || {
         rm -f "$their_settings"
         echo "could not share Noctalia's settings"
         exit 1
@@ -218,17 +275,30 @@ fi
 
 cp "$here/restore.sh" restore.sh
 chmod +x restore.sh
+# restore.sh reads the shared settings with it.
+cp "$here/settings.awk" settings.awk
 
-# The owner's own steps. Each gets the repository, this device's name and its folder.
+# The owner's own steps: hooks/save/ on every device, then this device's own, in
+# devices/<name>/hooks/save/. Each gets the repository, this device's name and the folder
+# its files go in: with sharing on, shared/steps/ for the shared steps, else this device's.
 hooks=0
-if [ -d hooks/save ]; then
-  for hook in hooks/save/*; do
+run_hooks() {
+  [ -d "$1" ] || return 0
+  for hook in "$1"/*; do
     [ -f "$hook" ] && [ -x "$hook" ] || continue
     hooks=$((hooks + 1))
-    RESURRECT_REPO=$(pwd) RESURRECT_DEVICE=$device RESURRECT_DIR=$(pwd)/$dir "$hook" ||
+    mkdir -p "$2"
+    RESURRECT_REPO=$(pwd) RESURRECT_DEVICE=$device RESURRECT_DIR=$2 "$hook" ||
       { echo "hook failed: $hook"; exit 3; }
   done
+}
+if [ "$share" = true ]; then
+  from_theirs shared/steps
+  run_hooks hooks/save "$(pwd)/shared/steps"
+else
+  run_hooks hooks/save "$(pwd)/$dir"
 fi
+run_hooks "$dir/hooks/save" "$(pwd)/$dir"
 echo "count hooks $hooks"
 
 git add -A

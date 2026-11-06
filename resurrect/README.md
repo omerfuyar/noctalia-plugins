@@ -58,11 +58,12 @@ git clone <your repository> ~/resurrect
 ~/resurrect/restore.sh
 ```
 
-The script asks which device's save to use when there is no save of this device, then
-installs the saved packages, puts back the dotfiles and Noctalia's settings, turns on the
-saved Noctalia plugins and services, and runs your own steps. It asks before each of
-these, and copies any file it would replace to `~/.local/state/resurrect/backup-<date>`
-first.
+The script installs the saved packages, puts back the dotfiles and Noctalia's settings,
+turns on the saved Noctalia plugins and services, and runs your own steps. With sharing on,
+it brings back what your devices share, with what this device keeps for itself when it has
+a folder there. Without sharing, it asks which device's save to use when there is no save
+of this device. It asks before each step, and copies any file it would replace to
+`~/.local/state/resurrect/backup-<date>` first.
 
 ```sh
 noctalia msg panel-toggle omerfuyar/resurrect:panel
@@ -96,26 +97,51 @@ shared it first. Plugins turned on or off on one device are turned on or off on 
 Only settings tied to the hardware stay on each device: brightness, battery, widgets placed
 on a monitor, and Resurrect's **Share between devices** and **Only this device**.
 
-The panel also lists the packages your other devices have and this one does not.
-**Install…** opens a terminal that installs them all. **Not here** leaves a package off
-this device, in `devices/<name>/skip.txt`; **Leave all out** does it for the whole list.
+The devices also share one list of packages and one of services:
+
+- A package installed, or a service turned on, on one device joins the list. The other
+  devices' panels list it; **Install…** opens a terminal that installs the packages and
+  turns on the services. **Not here** leaves one off this device, in
+  `devices/<name>/exclude.txt`; **Leave all out** does it for the whole list.
+- One uninstalled or turned off on one device leaves the list. A device that still has it
+  does not put it back by itself: its panel lists it, with **Share again**, and **Only
+  here**, which keeps it on this device alone, in `devices/<name>/extra.txt`.
+- A package that is only a dependency here still counts as installed.
 
 ### The repository
 
-| Path                      | What it holds                                                                                                                                  |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `devices/<name>/`         | What Resurrect saved on the device with that hostname. One repository can hold several devices.                                                |
-| `devices/<name>/skip.txt` | Packages other devices have that this device leaves out, one per line. The panel's **Not here** adds to it.                                    |
-| `shared/`                 | The dotfiles and Noctalia's settings shared between devices, when sharing is on.                                                               |
-| `packages/exclude.txt`    | Optional, yours. Package names left out of every save: one regular expression per line, for the whole name, such as `linux.*` or `.*nvidia.*`. |
-| `packages/extra.txt`      | Optional, yours. Packages installed on restore besides the saved ones, one per line, such as ones pacman counts as dependencies.               |
-| `.gitleaksignore`         | Optional, yours. Findings of the secret check that may be committed.                                                                           |
-| `hooks/save/`             | Your own steps for each save. Resurrect never changes this folder.                                                                             |
-| `hooks/restore/`          | Your own steps for restoring. Resurrect never changes this folder.                                                                             |
-| `restore.sh`              | The restore script, updated on each save.                                                                                                      |
+With sharing on:
 
-Anything else in the repository is yours too: Resurrect only writes `devices/<name>/` of
-the device it runs on, `shared/` and `restore.sh`.
+| Path                            | What it holds                                                                                                   |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `shared/files/`                 | The dotfiles and Noctalia's config folder, at their place under the home folder.                                |
+| `shared/noctalia/settings.toml` | Noctalia's settings, without the ones tied to a device's hardware.                                              |
+| `shared/packages/<list>.txt`    | The packages of each package manager: `pacman`, `aur`, `apt`, `dnf` and `flatpak`.                              |
+| `shared/services/<list>.txt`    | The services that start by themselves: `system` and `user`.                                                     |
+| `shared/steps/`                 | What your shared steps save.                                                                                    |
+| `devices/<name>/settings.toml`  | The settings of the device with that hostname that stay on it: brightness, monitors, **Only this device**.      |
+| `devices/<name>/files/`         | Its files from **Only this device**.                                                                            |
+| `devices/<name>/exclude.txt`    | Shared packages and services it leaves out, one name per line. The panel's **Not here** adds to it.             |
+| `devices/<name>/extra.txt`      | Packages and services it keeps only for itself, as `<list> <name>` lines. The panel's **Only here** adds to it. |
+| `devices/<name>/hooks/`         | Yours. Its own steps, in `save/` and `restore/`.                                                                |
+
+Without sharing, `devices/<name>/` holds everything a device saves: its packages, services,
+files and Noctalia's config, settings and plugins.
+
+Either way:
+
+| Path                   | What it holds                                                                                                                                  |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/exclude.txt` | Optional, yours. Package names left out of every save: one regular expression per line, for the whole name, such as `linux.*` or `.*nvidia.*`. |
+| `packages/extra.txt`   | Optional, yours. Packages installed on restore besides the saved ones, one per line, such as ones pacman counts as dependencies.               |
+| `.gitleaksignore`      | Optional, yours. Findings of the secret check that may be committed.                                                                           |
+| `hooks/`               | Yours. The steps every device runs, in `save/` and `restore/`.                                                                                 |
+| `restore.sh`           | The restore script, updated on each save.                                                                                                      |
+| `settings.awk`         | What the restore script reads Noctalia's settings with, updated on each save.                                                                  |
+
+Anything else in the repository is yours too: Resurrect only writes `shared/`, the files it
+names in `devices/<name>/` of the device it runs on, `restore.sh` and `settings.awk`. A
+repository from an older version moves to this layout on each device's next save.
 
 ### Secrets
 
@@ -126,14 +152,15 @@ Take the file out of the dotfiles, or allow the finding in `.gitleaksignore`.
 ### Your own steps
 
 Put an executable script in `hooks/save/` to run it on every save, and one in
-`hooks/restore/` to offer it on restore. They run in name order, from the repository's
-folder, with these variables:
+`hooks/restore/` to offer it on restore. Every device runs these. Steps for one device only
+go in `devices/<name>/hooks/save/` and `devices/<name>/hooks/restore/`, and run after the
+others. They run in name order, from the repository's folder, with these variables:
 
-| Variable           | Value                                                  |
-| ------------------ | ------------------------------------------------------ |
-| `RESURRECT_REPO`   | The repository's folder.                               |
-| `RESURRECT_DEVICE` | The hostname of the device whose save it is.           |
-| `RESURRECT_DIR`    | That device's folder in the repository, for its files. |
+| Variable           | Value                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `RESURRECT_REPO`   | The repository's folder.                                                                                                  |
+| `RESURRECT_DEVICE` | The hostname of the device whose save it is.                                                                              |
+| `RESURRECT_DIR`    | The folder for the step's files: `shared/steps/` for a step every device runs, with sharing on; else the device's folder. |
 
 Whatever a save step writes into the repository is committed with the save. A save step
 that fails stops the save, and the panel shows it. For example, to also save a database:

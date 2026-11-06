@@ -1,7 +1,7 @@
 --!nonstrict
 -- Resurrect panel: when the setup was last saved and where, shared files that wait for a
--- choice, packages other devices have, what is saved, and the Save and Restore buttons. Renders "resurrect.model" and
--- sends actions on "resurrect.command".
+-- choice, packages and services other devices have or removed, what is saved, and the Save
+-- and Restore buttons. Renders "resurrect.model" and sends actions on "resurrect.command".
 
 local model = nil
 local confirming = false
@@ -101,7 +101,15 @@ local function waiting()
   return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container_high" }, rows)
 end
 
--- Packages other devices have and this one does not, with Install and Not here.
+-- The list a package or service comes from, as the panel names it.
+local function listName(list)
+  if list == "system" or list == "user" then
+    return noctalia.tr("lists." .. list)
+  end
+  return list
+end
+
+-- Packages and services other devices have and this one does not, with Install and Not here.
 local function missingCard()
   local missing = model.missing or {}
   if #missing == 0 then
@@ -120,7 +128,7 @@ local function missingCard()
     end
     table.insert(rows, ui.row({ gap = 6, align = "center" }, {
       ui.label({ text = package.name, flexGrow = 1, maxLines = 1 }),
-      ui.label({ text = package.list, color = "on_surface_variant" }),
+      ui.label({ text = listName(package.list), color = "on_surface_variant" }),
       ui.button({ text = noctalia.tr("missing.skip"), variant = "ghost", controlSize = "sm",
         tooltip = noctalia.tr("missing.skip_tooltip"),
         onClick = function() send({ action = "skip", names = { package.name } }) end }),
@@ -134,11 +142,52 @@ local function missingCard()
     ui.button({ text = noctalia.tr("missing.skip_all"), variant = "ghost", controlSize = "sm",
       onClick = function() send({ action = "skip", names = names }) end }),
     ui.button({ text = noctalia.tr("missing.install"), glyph = "terminal-2", variant = "primary", controlSize = "sm",
+      tooltip = noctalia.tr("missing.install_tooltip"),
       onClick = function()
         send({ action = "install" })
         panel.close()
       end }),
   }))
+  return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container_high" }, rows)
+end
+
+-- Packages and services another device removed and this one still has, with Share again
+-- and Only here.
+local function leftCard()
+  local left = model.left or {}
+  if #left == 0 then
+    return nil
+  end
+  local rows = {
+    ui.row({ gap = 8, align = "center" }, {
+      ui.glyph({ name = "package-off", size = 18, color = "primary" }),
+      ui.label({ text = noctalia.trp("left.title", #left), fontWeight = "semibold", flexGrow = 1, maxLines = 2 }),
+    }),
+  }
+  for index, item in ipairs(left) do
+    if index > MAX_WAITING then
+      table.insert(rows, ui.label({ text = noctalia.tr("waiting.more", { count = #left - MAX_WAITING }), color = "on_surface_variant" }))
+      break
+    end
+    table.insert(rows, ui.row({ gap = 6, align = "center" }, {
+      ui.label({ text = item.name, flexGrow = 1, maxLines = 1 }),
+      ui.label({ text = listName(item.list), color = "on_surface_variant" }),
+      ui.button({ text = noctalia.tr("left.again"), variant = "ghost", controlSize = "sm",
+        tooltip = noctalia.tr("left.again_tooltip"),
+        onClick = function() send({ action = "again", items = { item } }) end }),
+      ui.button({ text = noctalia.tr("left.only"), variant = "ghost", controlSize = "sm",
+        tooltip = noctalia.tr("left.only_tooltip"),
+        onClick = function() send({ action = "only", items = { item } }) end }),
+    }))
+  end
+  if #left > 1 then
+    table.insert(rows, ui.row({ gap = 8, justify = "end" }, {
+      ui.button({ text = noctalia.tr("left.again_all"), variant = "ghost", controlSize = "sm",
+        onClick = function() send({ action = "again", items = left }) end }),
+      ui.button({ text = noctalia.tr("left.only_all"), variant = "ghost", controlSize = "sm",
+        onClick = function() send({ action = "only", items = left }) end }),
+    }))
+  end
   return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container_high" }, rows)
 end
 
@@ -244,6 +293,10 @@ render = function()
   local packagesCard = missingCard()
   if packagesCard then
     table.insert(cards, packagesCard)
+  end
+  local removedCard = leftCard()
+  if removedCard then
+    table.insert(cards, removedCard)
   end
   table.insert(cards, included())
   panel.render(ui.column({ gap = 14, padding = 16 }, {

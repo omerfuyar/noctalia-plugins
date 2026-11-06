@@ -2,9 +2,9 @@
 #   awk -f settings.awk -v mine=<file> -v theirs=<file> -v base=<file> -v out=<folder>
 # <mine> is this device's settings.toml, <theirs> the other devices' shared settings and
 # <base> the shared settings this device last agreed on; a missing file counts as empty.
-# It writes <out>/shared, the new shared settings, and <out>/settings, this device's new
-# settings.toml, when it takes a setting from the others. It prints "taken <number>" and
-# "count <number>".
+# It writes <out>/shared, the new shared settings; <out>/local, the settings of <mine> that
+# stay on this device; and <out>/settings, this device's new settings.toml, when it takes a
+# setting from the others. It prints "taken <number>" and "count <number>".
 #
 # Each setting is a leaf: its path, the keys joined by dots, and its value as TOML text on
 # one line, written the same way whatever file it came from. The reader knows the TOML that
@@ -36,6 +36,19 @@ BEGIN {
   check(shared, MERGED, MERGED_LIST, merged_count)
   printf "%s", shared >(out "/shared")
   close(out "/shared")
+
+  local_count = 0
+  for (i = 1; i <= COUNT["mine"]; i++) {
+    path = LEAVES["mine", i]
+    if (("mine", path) in LOCAL) {
+      LOCAL_VALUES[path] = LOCAL["mine", path]
+      LOCAL_LIST[++local_count] = path
+    }
+  }
+  text = dump(LOCAL_VALUES, LOCAL_LIST, local_count)
+  check(text, LOCAL_VALUES, LOCAL_LIST, local_count)
+  printf "%s", text >(out "/local")
+  close(out "/local")
 
   if (taken > 0) {
     result()
