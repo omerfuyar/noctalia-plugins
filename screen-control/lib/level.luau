@@ -1,6 +1,7 @@
 --!nonstrict
--- One scale for each monitor, from 0 to 1, shared by the slider, scrolling and IPC.
--- The low part dims the screen below its lowest brightness; the rest is the brightness.
+-- One scale for each monitor, from 0 to 1, shared by scrolling and IPC. The low part dims
+-- the screen below its lowest brightness; the rest is the brightness. The panel shows the
+-- two parts as two sliders.
 --
 --   0 ─────── DIM_SPAN ──────────────────── 1
 --   darkest dim   lowest brightness   full brightness
@@ -46,6 +47,28 @@ function Level.toScreen(level, hasBrightness)
     return low, maxDim * (1 - level / DIM_SPAN)
   end
   return low + (level - DIM_SPAN) / (1 - DIM_SPAN) * (1 - low), 0
+end
+
+-- Where a brightness sits between the lowest and full brightness, from 0 to 1.
+function Level.share(brightness)
+  local low = Level.minBrightness()
+  return math.clamp((brightness - low) / (1 - low), 0, 1)
+end
+
+-- The brightness for a point between the lowest and full brightness.
+function Level.fromShare(share)
+  local low = Level.minBrightness()
+  return low + math.clamp(share, 0, 1) * (1 - low)
+end
+
+-- The lowest point a step can reach: the lowest brightness, so scrolling and keys never
+-- start dimming by accident, unless the setting allows it. A monitor without brightness
+-- control has only dimming, so it steps across the whole scale.
+function Level.stepFloor(hasBrightness)
+  if not hasBrightness or noctalia.getConfig("step_dims") == true then
+    return 0
+  end
+  return DIM_SPAN
 end
 
 -- "54%", or "Dim 30%".

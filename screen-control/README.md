@@ -31,10 +31,12 @@ is on, and turns the accent color while its monitor is dimmed.
 ![Screen Control in the bar, with night light on](screenshots/bar.webp)
 
 - Right click the widget to switch night light on, or off when it is on or scheduled.
-- Scroll on the widget to change the brightness of the monitor the bar is on. Below the
-  lowest brightness, scrolling down dims further.
-- Click it to open the panel. Each monitor has one slider: its right part is the
-  brightness, and its left part dims below the lowest brightness ("Dim 30%").
+- Scroll on the widget to change the brightness of the monitor the bar is on. Scrolling
+  down stops at the lowest brightness.
+- Click it to open the panel. Each monitor has a brightness slider. Once it is at the
+  lowest brightness, an **Extra dim** slider shows under it, to dim further ("Dim 30%").
+  Raising the brightness ends the extra dim. A monitor without brightness control has only
+  the extra dim slider.
 - Under **Night light**, pick **Off**, **Scheduled** or **On**, and set the warmth.
   **Scheduled** runs from sunset to sunrise where Noctalia's location is; turn on
   **Set the times myself** to type a start and end time instead, such as `21:30` and
@@ -52,11 +54,12 @@ noctalia msg panel-toggle omerfuyar/screen-control:panel
 | `max_dim`       | `int`    | `75`    | How dark the screens can get below their lowest brightness, in percent.                                                                                                     |
 | `dim_method`    | `select` | `gamma` | How the screens get darker below their lowest brightness: `gamma`, with hyprsunset, or `overlay`, a black layer. Gamma falls back to the layer where hyprsunset is missing. |
 | `per_workspace` | `bool`   | `false` | Each workspace keeps its own dimming. Needs Hyprland.                                                                                                                       |
+| `step_dims`     | `bool`   | `false` | Advanced. Scrolling on the widget and the brightness keys go on past the lowest brightness into extra dim.                                                                  |
 
 ## IPC
 
-Move the focused monitor up or down the same scale as the slider, by 5% or by the given
-percent. Bound to the brightness keys, this dims past the lowest brightness.
+Move the focused monitor's brightness up or down, by 5% or by the given percent. Down stops
+at the lowest brightness, unless **Scroll into extra dim** is on; up ends extra dim first.
 
 ```sh
 noctalia msg plugin omerfuyar/screen-control:service all up

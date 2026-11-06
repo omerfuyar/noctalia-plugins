@@ -190,8 +190,42 @@ end
 local function step(name, delta)
   local monitor = findMonitor(name)
   if monitor then
-    setLevel(name, Level.fromScreen(monitor.brightness, dims[dimKey(name)] or 0) + delta)
+    local dim = dims[dimKey(name)] or 0
+    local level = Level.fromScreen(monitor.brightness, dim)
+    -- A monitor dimmed with its slider steps up out of it, but no deeper into it.
+    local floor = math.min(Level.stepFloor(monitor.brightness ~= nil), level)
+    setLevel(name, math.max(level + delta, floor))
   end
+end
+
+-- The brightness slider: from the lowest to full brightness. Above the lowest, no dim.
+local function setShare(name, share)
+  local monitor = findMonitor(name)
+  if monitor == nil or monitor.brightness == nil then
+    return
+  end
+  local brightness = Level.fromShare(share)
+  if math.abs(brightness - monitor.brightness) > 0.001 then
+    setBrightness(monitor, brightness)
+  end
+  if share > 0.001 and dims[dimKey(name)] then
+    dims[dimKey(name)] = nil
+    save()
+  end
+end
+
+-- The extra dim slider: 1 is no dim, 0 the darkest. It keeps the lowest brightness.
+local function setDim(name, value)
+  local monitor = findMonitor(name)
+  if monitor == nil then
+    return
+  end
+  local dim = Level.maxDim() * (1 - math.clamp(value, 0, 1))
+  if monitor.brightness ~= nil and dim > 0.005 and math.abs(monitor.brightness - Level.minBrightness()) > 0.001 then
+    setBrightness(monitor, Level.minBrightness())
+  end
+  dims[dimKey(name)] = dim > 0.005 and dim or nil
+  save()
 end
 
 -- Settings are written one at a time, in order: each write reloads Noctalia's config.
@@ -430,10 +464,12 @@ local function handle(command)
     return
   end
   local action = command.action
-  if action == "level" and type(command.level) == "number" then
-    setLevel(command.output, command.level)
-  elseif action == "step" and type(command.delta) == "number" then
+  if action == "step" and type(command.delta) == "number" then
     step(command.output, command.delta)
+  elseif action == "brightness" and type(command.value) == "number" then
+    setShare(command.output, command.value)
+  elseif action == "dim" and type(command.value) == "number" then
+    setDim(command.output, command.value)
   elseif action == "night" then
     setNightMode(command.mode)
   elseif action == "caffeine" then
@@ -458,7 +494,8 @@ noctalia.state.watch("screen-control.command", handle)
 -- noctalia msg plugin omerfuyar/screen-control:service all down [percent]
 -- noctalia msg plugin omerfuyar/screen-control:service all night off|scheduled|on
 -- noctalia msg plugin omerfuyar/screen-control:service all caffeine
--- Moves the focused monitor along the scale; "down" goes on into dimming.
+-- Moves the focused monitor along the scale; "down" stops at the lowest brightness, unless
+-- the step_dims setting lets it go on into dimming.
 function onIpc(event, payload)
   if event == "caffeine" then
     setCaffeine(not caffeine)
