@@ -10,18 +10,21 @@
     "taken_title": "Keyboard: the key is taken"
   },
   "osk": {
+    "drop_dock": "Click to dock the keyboard at the bottom",
+    "drop_here": "Click to put the keyboard here",
     "install": "Install…",
     "needs_wtype": "The on-screen keyboard types with wtype, which is not installed.",
     "title": "On-screen keyboard"
   },
   "panel": {
-    "add_im": "Add an input method…",
-    "add_layout": "Add a keyboard layout…",
+    "add": "Add a language",
+    "add_placeholder": "Layout or input method…",
     "loading": "Loading…",
     "managed": "Keyboard keeps these layouts and sets them in Hyprland while Noctalia runs; your Hyprland config is not changed.",
     "no_more_ims": "fcitx5 has no other input methods. Install one, such as fcitx5-mozc for Japanese or fcitx5-chinese-addons for Chinese.",
     "none": "No keyboard layouts or input methods found. Keyboard reads Hyprland's layouts and fcitx5's input methods.",
-    "remove": "Remove",
+    "option_im": "{name} (fcitx5 input method)",
+    "option_layout": "{name}",
     "reset": "Use Hyprland's layouts",
     "title": "Keyboard"
   },
@@ -31,8 +34,12 @@
       "label": "Switch key"
     },
     "osk_height": {
-      "description": "How tall the on-screen keyboard is, in pixels. Windows move up out of its way.",
+      "description": "How tall the on-screen keyboard is, in pixels. It is three times as wide.",
       "label": "On-screen keyboard height"
+    },
+    "osk_key": {
+      "description": "A key that shows or hides the on-screen keyboard, such as SUPER + K. Empty adds no key binding.",
+      "label": "On-screen keyboard key"
     }
   }
 }

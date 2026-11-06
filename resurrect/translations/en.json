@@ -95,6 +95,10 @@
       "description": "Save Noctalia's config and the settings changed in its settings window.",
       "label": "Save Noctalia's settings"
     },
+    "secret_check": {
+      "description": "Check each save with gitleaks for passwords, tokens and keys before it is committed.",
+      "label": "Check saves for secrets"
+    },
     "packages": {
       "description": "Save the list of packages you installed, from pacman, the AUR, apt, dnf and Flatpak.",
       "label": "Save packages"

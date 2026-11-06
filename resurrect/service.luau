@@ -154,6 +154,7 @@ local function snapshot()
     "env", "RESURRECT_RESOLVE=" .. resolveFile, "RESURRECT_EXCLUDE=" .. excludeFile,
     "RESURRECT_AGAIN=" .. againFile, "RESURRECT_ONLY=" .. onlyFile,
     "RESURRECT_LEAVE_OUT=" .. table.concat(leaveOut, "\n"),
+    "RESURRECT_SECRET_CHECK=" .. tostring(noctalia.getConfig("secret_check") ~= false),
     "sh", (noctalia.pluginDir() or "") .. "/snapshot.sh", repo(), noctalia.getConfig("remote") or "",
     tostring(noctalia.getConfig("packages") ~= false),
     tostring(noctalia.getConfig("services") ~= false),

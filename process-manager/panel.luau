@@ -199,7 +199,7 @@ local function groupRow(group)
     paddingH = 4,
     radius = 8,
     -- A light tint over the panel's own background, which may be translucent.
-    fill = open and "on_surface/0.06" or nil,
+    fill = open and "on_surface/0.06" or "on_surface/0",
   }, children)
 end
 

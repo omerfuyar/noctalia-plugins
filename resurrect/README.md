@@ -24,7 +24,7 @@ your devices, and on a new install, bring it all back with one script.
 | `pacman`, `apt-mark` or `dnf` | Required                   | Lists the installed packages, with the system's package manager. Without one, no packages are saved.                   |
 | `flatpak`                     | Optional                   | Lists the installed Flatpak apps too. Without it, none are saved.                                                      |
 | `paru` or `yay`               | Required with AUR packages | Restores AUR packages. Without them, the AUR list stays in `packages/aur.txt`.                                         |
-| `gitleaks`                    | Required                   | Checks each save for passwords, tokens and keys before it is committed. Without it, saves are not checked.             |
+| `gitleaks`                    | Optional                   | Checks each save for passwords, tokens and keys before it is committed. Without it, saves are not checked.             |
 | `hyprctl`                     | Required on Hyprland       | Checks Hyprland's config after shared files come in. Without it, they are not checked.                                 |
 
 ## Usage
@@ -147,7 +147,8 @@ repository from an older version moves to this layout on each device's next save
 
 When `gitleaks` is installed, each save is checked before it is committed. If something
 looks like a password, token or key, nothing is committed, and the panel names the file.
-Take the file out of the dotfiles, or allow the finding in `.gitleaksignore`.
+Take the file out of the dotfiles, or allow the finding in `.gitleaksignore`. Turn off
+**Check saves for secrets** in the advanced settings to commit saves without the check.
 
 ### Your own steps
 
@@ -194,6 +195,7 @@ The panel's hooks button opens the folder and creates it when it is missing.
 | `packages`     | `bool`        | `true`          | Advanced. Save the list of installed packages.                             |
 | `services`     | `bool`        | `true`          | Advanced. Save which services start by themselves.                         |
 | `noctalia`     | `bool`        | `true`          | Advanced. Save Noctalia's config and settings.                             |
+| `secret_check` | `bool`        | `true`          | Advanced. Check each save with `gitleaks` before it is committed.          |
 
 ## IPC
 

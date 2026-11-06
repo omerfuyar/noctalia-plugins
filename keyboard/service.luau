@@ -10,7 +10,7 @@
 -- The active one is read every second; the lists and their names when the service starts,
 -- every 30 seconds, and when the panel asks.
 --
--- The on-screen keyboard is the "osk" layer, shown and hidden here.
+-- The on-screen keyboard is the "osk" layer, shown, hidden and moved here.
 --
 -- The panel adds and removes layouts and input methods. Once the owner changes the layouts
 -- here, the plugin keeps its own list in its data folder and sets it in Hyprland while
@@ -24,7 +24,8 @@ local Keybind = require("./lib/keybind.luau")
 
 local POLL_MS = 1000
 local REFRESH_MS = 30000
-local NEXT = "noctalia msg plugin omerfuyar/keyboard:service all next"
+local IPC = "noctalia msg plugin omerfuyar/keyboard:service all "
+local keys = { Keybind.new("keybind", IPC .. "next"), Keybind.new("osk_key", IPC .. "osk") }
 
 -- Hyprland's keyboards, then fcitx5's input method.
 local POLL = [[
@@ -89,9 +90,13 @@ local WTYPE_INSTALLERS = {
 }
 
 local oskOpen = false
+local oskMoving = false
+-- Where the on-screen keyboard is: docked at the bottom, or at x, y from the output's top left.
+local oskPlace: { docked: boolean, x: number?, y: number? } = { docked = true }
 
 local dataDir = noctalia.pluginDataDir() or ""
 local layoutsFile = dataDir .. "/layouts.json"
+local oskFile = dataDir .. "/osk.json"
 
 local model = { ready = false, entries = {}, current = nil, fcitx = false }
 -- The plugin's own layouts, once the owner changed them here: { layouts = { { code, variant } },
@@ -121,6 +126,12 @@ end
 
 local function upper(text)
   return (text or ""):upper()
+end
+
+-- The on-screen keyboard's size: as tall as the setting says, three times as wide.
+local function oskSize()
+  local height = math.clamp(tonumber(noctalia.getConfig("osk_height")) or 220, 140, 400)
+  return { width = height * 3, height = height }
 end
 
 -- fcitx5's keyboard input methods are "keyboard-<layout>" or "keyboard-<layout>-<variant>".
@@ -180,6 +191,10 @@ local function build()
     managed = stored ~= nil,
     catalog = catalog,
     osk = oskOpen,
+    oskMoving = oskMoving,
+    oskPlace = oskPlace,
+    oskSize = oskSize(),
+    oskKey = noctalia.string.trim(noctalia.getConfig("osk_key") or ""),
     wtype = noctalia.commandExists("wtype"),
   }
   publish()
@@ -302,7 +317,8 @@ local function readCatalog()
     end
     for line in (result.stdout or ""):gmatch("[^\n]+") do
       local code, name = line:match("^@@layout (%S+)\t(.+)$")
-      if code then
+      -- "custom" is a placeholder for a layout file of one's own.
+      if code and code ~= "custom" then
         table.insert(found.layouts, { code = code, name = name })
       end
       local im = line:match("^@@im (.+)$")
@@ -358,9 +374,9 @@ local function refresh()
         local parsed = readInputMethod(im)
         if parsed.id then
           found[parsed.id] = parsed
-          local code = keyboardLayout(parsed.id)
-          if code and parsed.lang ~= "" and parsed.id == "keyboard-" .. code then
-            layoutLangs[code] = parsed.lang
+          local imLayout = keyboardLayout(parsed.id)
+          if imLayout and parsed.lang ~= "" and parsed.id == "keyboard-" .. imLayout then
+            layoutLangs[imLayout] = parsed.lang
           end
         end
       end
@@ -521,21 +537,53 @@ local function removeInputMethod(id)
   end
 end
 
--- The on-screen keyboard: shown on the focused monitor, as tall as the setting says, and
--- windows move up out of its way.
+-- The on-screen keyboard, on the focused monitor. Docked, it sits at the bottom in the middle
+-- and windows move up out of its way; placed, it floats where it was dropped. While it is
+-- moved, the layer covers the whole monitor, so the keyboard can follow the pointer.
 local function configureOsk()
-  local height = math.clamp(tonumber(noctalia.getConfig("osk_height")) or 260, 160, 600)
-  noctalia.layer.configure(OSK, { height = height, exclusiveZone = height, output = "focused" })
+  local size = oskSize()
+  local props
+  if oskMoving then
+    props = { anchors = { "top", "bottom", "left", "right" }, width = 0, height = 0, margins = {}, exclusiveZone = -1 }
+  elseif oskPlace.docked then
+    props = { anchors = { "bottom" }, width = size.width, height = size.height, margins = {}, exclusiveZone = size.height }
+  else
+    props = {
+      anchors = { "top", "left" },
+      width = size.width,
+      height = size.height,
+      margins = { top = oskPlace.y, left = oskPlace.x },
+      exclusiveZone = -1,
+    }
+  end
+  props.output = "focused"
+  noctalia.layer.configure(OSK, props)
 end
 
 local function setOsk(open)
   oskOpen = open
+  oskMoving = false
   if open then
     configureOsk()
     noctalia.layer.show(OSK)
   else
     noctalia.layer.hide(OSK)
   end
+  build()
+end
+
+-- Starts moving the keyboard, or puts it down: docked, or with its top left at x, y.
+local function moveOsk(place)
+  if not oskOpen then
+    return
+  end
+  if place then
+    oskPlace = place.docked and { docked = true } or { docked = false, x = math.max(0, math.floor(place.x)), y = math.max(0, math.floor(place.y)) }
+    noctalia.mkdirAll(dataDir)
+    noctalia.writeFile(oskFile, noctalia.json.encode(oskPlace) or "")
+  end
+  oskMoving = place == nil
+  configureOsk()
   build()
 end
 
@@ -581,6 +629,10 @@ noctalia.state.watch("keyboard.command", function(command)
     else
       setOsk(not oskOpen)
     end
+  elseif command.action == "osk_move" then
+    moveOsk(nil)
+  elseif command.action == "osk_place" and (command.docked == true or (type(command.x) == "number" and type(command.y) == "number")) then
+    moveOsk(command)
   elseif command.action == "install_wtype" then
     installWtype()
   elseif command.action == "open" then
@@ -604,7 +656,7 @@ end)
 -- noctalia msg plugin omerfuyar/keyboard:service all add-layout|remove-layout <code, such as de>
 -- noctalia msg plugin omerfuyar/keyboard:service all add-im|remove-im <fcitx5 id, such as mozc>
 -- noctalia msg plugin omerfuyar/keyboard:service all reset-layouts
--- noctalia msg plugin omerfuyar/keyboard:service all osk
+-- noctalia msg plugin omerfuyar/keyboard:service all osk|osk-move
 function onIpc(event, payload)
   local value = payload and noctalia.string.trim(payload) or ""
   if event == "add-layout" and value ~= "" then
@@ -617,6 +669,11 @@ function onIpc(event, payload)
     end
   elseif event == "osk" then
     setOsk(not oskOpen)
+  elseif event == "osk-move" then
+    if not oskOpen then
+      setOsk(true)
+    end
+    moveOsk(nil)
   elseif event == "reset-layouts" then
     resetLayouts()
   elseif event == "add-im" and value ~= "" then
@@ -644,22 +701,35 @@ function update()
   end
   if lastRefreshMs == nil or now - lastRefreshMs >= REFRESH_MS then
     refresh()
-    Keybind.check(NEXT)
+    for _, key in ipairs(keys) do
+      key:check()
+    end
   end
 end
 
 function onConfigChanged()
-  Keybind.check(NEXT)
+  for _, key in ipairs(keys) do
+    key:check()
+  end
   if oskOpen then
     configureOsk()
   end
+  build()
 end
 
 function onExit()
-  Keybind.release()
+  for _, key in ipairs(keys) do
+    key:release()
+  end
 end
 
 noctalia.setUpdateInterval(250)
+noctalia.readFileAsync(oskFile, function(text)
+  local saved = text and noctalia.json.decode(text)
+  if type(saved) == "table" and (saved.docked == true or (type(saved.x) == "number" and type(saved.y) == "number")) then
+    oskPlace = saved.docked and { docked = true } or { docked = false, x = saved.x, y = saved.y }
+  end
+end)
 noctalia.readFileAsync(layoutsFile, function(text)
   local saved = text and noctalia.json.decode(text)
   if type(saved) == "table" and type(saved.layouts) == "table" and #saved.layouts > 0 then

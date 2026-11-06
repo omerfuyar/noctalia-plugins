@@ -1,6 +1,6 @@
 id = "omerfuyar/resurrect"
 name = "Resurrect"
-version = "2.2.1"
+version = "2.3.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
@@ -80,6 +80,14 @@ key = "noctalia"
 type = "bool"
 label_key = "settings.noctalia.label"
 description_key = "settings.noctalia.description"
+default = true
+advanced = true
+
+[[setting]]
+key = "secret_check"
+type = "bool"
+label_key = "settings.secret_check.label"
+description_key = "settings.secret_check.description"
 default = true
 advanced = true
 
