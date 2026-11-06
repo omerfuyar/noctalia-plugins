@@ -24,6 +24,20 @@
   "process": {
     "detail": "PID {pid} · {user}"
   },
+  "settings": {
+    "admin": {
+      "description": "How to end another user's process. pkexec asks for the password in a window and needs a polkit agent; a terminal asks with sudo.",
+      "label": "End as admin with",
+      "options": {
+        "pkexec": "pkexec",
+        "terminal": "sudo in a terminal"
+      }
+    },
+    "interval": {
+      "description": "How often the list updates while the panel is open, in milliseconds. Lower is more current and uses more CPU.",
+      "label": "Refresh every"
+    }
+  },
   "sort": {
     "cpu": "CPU",
     "memory": "Memory",

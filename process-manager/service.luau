@@ -1,11 +1,11 @@
 --!nonstrict
--- Process Manager service: while the panel is open, reads every process every 2 seconds,
--- works out each one's CPU use since the last read, and ends processes when asked: first
--- politely, then by force when one does not stop.
+-- Process Manager service: while the panel is open, reads every process as often as the
+-- interval setting says, works out each one's CPU use since the last read, and ends
+-- processes when asked: first politely, then by force when one does not stop. Another
+-- user's process is ended with pkexec, or with sudo in a terminal, as the admin setting says.
 --
 -- Publishes "processes.model" and takes commands on "processes.command".
 
-local INTERVAL_MS = 2000
 -- A process that still runs this long after End is shown as not responding.
 local STUCK_MS = 3000
 
@@ -40,10 +40,19 @@ local previous = {} -- by pid: { ticks, start }
 local ending = {} -- by pid: { sentMs, start, force }
 local denied = {} -- by pid: true when ending it needs an administrator
 
+-- Milliseconds between reads, from the settings.
+local function interval()
+  return math.max(tonumber(noctalia.getConfig("interval")) or 1000, 250)
+end
+
+local function adminInTerminal()
+  return noctalia.getConfig("admin") == "terminal"
+end
+
 local function publish(processes)
   noctalia.state.set("processes.model", {
     ready = noctalia.commandExists("ps") and noctalia.commandExists("kill"),
-    canElevate = noctalia.commandExists("pkexec"),
+    canElevate = adminInTerminal() or noctalia.commandExists("pkexec"),
     myUid = myUid,
     processes = processes,
   })
@@ -114,12 +123,17 @@ end
 
 -- signal is "TERM" to ask a process to end, "KILL" to end it at once.
 local function signal(pid, name, elevate)
+  local before = previous[pid]
+  ending[pid] = { sentMs = noctalia.nowMs(), start = before and before.start, force = name == "KILL" }
+  if elevate and adminInTerminal() then
+    -- The pid is a number, so the command needs no quoting.
+    noctalia.runInTerminal(string.format("sudo kill -%s %d", name, pid))
+    return
+  end
   local argv = { "kill", "-" .. name, tostring(pid) }
   if elevate then
     argv = { "pkexec", "kill", "-" .. name, tostring(pid) }
   end
-  local before = previous[pid]
-  ending[pid] = { sentMs = noctalia.nowMs(), start = before and before.start, force = name == "KILL" }
   noctalia.runAsync(argv, function(result)
     if result.exitCode ~= 0 and not elevate and (result.stderr or ""):find("not permitted") then
       denied[pid] = true
@@ -150,9 +164,13 @@ end)
 
 
 function update()
-  if watching and noctalia.nowMs() - lastReadMs >= INTERVAL_MS then
+  if watching and noctalia.nowMs() - lastReadMs >= interval() then
     read()
   end
+end
+
+function onConfigChanged()
+  noctalia.setUpdateInterval(math.min(interval(), 500))
 end
 
 noctalia.runAsync({ "sh", "-c", "getconf CLK_TCK; getconf PAGESIZE; id -u" }, function(result)
@@ -166,4 +184,4 @@ noctalia.runAsync({ "sh", "-c", "getconf CLK_TCK; getconf PAGESIZE; id -u" }, fu
   publish({})
 end)
 noctalia.mkdirAll(dataDir)
-noctalia.setUpdateInterval(500)
+noctalia.setUpdateInterval(math.min(interval(), 500))
