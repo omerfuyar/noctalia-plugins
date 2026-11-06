@@ -63,8 +63,8 @@ tags = ["bar", "system", "utility"]
 [[plugin]]
 id = "omerfuyar/process-manager"
 name = "Process Manager"
-version = "1.1.0"
-updated_at = 1793963638
+version = "1.1.1"
+updated_at = 1793965576
 added_at = 1793364329
 author = "omerfuyar"
 license = "MIT"
