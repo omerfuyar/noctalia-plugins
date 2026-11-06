@@ -1,8 +1,8 @@
 # Plugin Hub
 
-Every plugin you use in one panel. Switch a plugin on or off, open its panels, run its
-commands and give any of them a key, without keeping its widget in the bar. Noctalia's own
-panels and commands of your own are in the same list, and in the launcher.
+Every plugin you use in one panel. Switch a plugin on or off, change its settings, open its
+panels, run its commands and give any of them a key, without keeping its widget in the bar.
+Noctalia's own panels and commands of your own are in the same list, and in the launcher.
 
 ![Plugin Hub](screenshots/panel.webp)
 
@@ -31,12 +31,26 @@ by IPC or a key:
 noctalia msg panel-toggle omerfuyar/plugin-hub:panel
 ```
 
+Open one plugin's settings page directly, such as from a key:
+
+```sh
+noctalia msg panel-toggle omerfuyar/plugin-hub:panel omerfuyar/keyboard
+```
+
 The panel lists Noctalia, each plugin you use, and your own commands. Search filters them
 all.
 
 - **Plugins.** Each enabled plugin is listed, and each one the hub saw enabled before, so a
   plugin you switch off here can be switched on again. The switch turns a plugin on or off,
   and the gear opens its settings.
+- **Settings.** A plugin's settings page holds all of them, wherever Noctalia keeps them:
+  the plugin's own, and those of each of its widgets on a bar, the desktop or the lock
+  screen. A switch or a choice is saved at once, and a text or number when you press Enter.
+  Lists, maps and passwords open in Noctalia's settings, as does the **Noctalia** button for
+  the whole page. Advanced settings show with the switch at the bottom.
+
+  ![A plugin's settings in Plugin Hub](screenshots/settings.webp)
+
 - **Actions.** A plugin's actions are its panels, from its manifest, and the
   `noctalia msg` commands its README shows, named by the comment after them when there is
   one. Noctalia's are its launcher, control center tabs, wallpapers, clipboard, session
@@ -66,3 +80,5 @@ noctalia msg plugin omerfuyar/plugin-hub:service all refresh
 - Keys, your commands and the plugins seen are in
   `~/.local/state/noctalia/plugins/data/omerfuyar/plugin-hub/hub.json`.
 - The list is read again every 30 seconds and when the panel opens.
+- Settings are saved with `noctalia msg config-set`, which checks each value against the
+  plugin's manifest, into Noctalia's `settings.toml`, as Noctalia's own settings do.

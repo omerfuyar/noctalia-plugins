@@ -12,9 +12,12 @@
 --
 -- Keys, own commands and the plugins seen are kept in hub.json in the data folder.
 --
--- Publishes "hub.model" and takes commands on "hub.command".
+-- A plugin's settings are read when its settings page opens, and saved one change at a time.
+--
+-- Publishes "hub.model" and "hub.settings", and takes commands on "hub.command".
 
 local Binds = require("./lib/binds.luau")
+local Settings = require("./lib/settings.luau")
 
 local SYNC_MS = 30000
 
@@ -60,7 +63,7 @@ while [ $# -ge 3 ]; do
   fi
   printf '%s\n' "$manifest" | awk -v id="$id" '
     /^\[\[panel\]\]/ { section = "panel"; next }
-    /^\[\[setting\]\]/ { print "@@settings " id; section = "other"; next }
+    /^[[:space:]]*\[\[([a-z_]+\.)?setting\]\]/ { print "@@settings " id; section = "other"; next }
     /^\[/ { section = "other"; next }
     /^[[:space:]]*(name|id)[[:space:]]*=/ {
       value = $0; sub(/^[^=]*=[[:space:]]*"/, "", value); sub(/".*$/, "", value)
@@ -228,6 +231,120 @@ local function refresh()
   end, 10000)
 end
 
+-- The open settings page: { id, sections, errors = { ["<section>/<key>"] = text } }.
+local page = nil
+
+local function publishSettings()
+  noctalia.state.set("hub.settings", page and {
+    id = page.id,
+    loading = page.loading,
+    error = page.error,
+    sections = page.sections,
+    errors = page.errors,
+    n = noctalia.nowMs(),
+  } or nil)
+end
+
+local function findPlugin(id)
+  for _, plugin in ipairs(plugins) do
+    if plugin.id == id then
+      return plugin
+    end
+  end
+  return nil
+end
+
+local function loadSettings(id)
+  local plugin = findPlugin(id)
+  if plugin == nil then
+    return
+  end
+  -- Opening the same page again keeps what it shows while it reads again.
+  local same = page ~= nil and page.id == id
+  page = {
+    id = id,
+    loading = not same or page.loading,
+    sections = same and page.sections or {},
+    errors = same and page.errors or {},
+  }
+  publishSettings()
+  Settings.load(plugin, function(sections, err)
+    if page == nil or page.id ~= id then
+      return
+    end
+    page.loading = false
+    page.sections = sections or {}
+    page.error = err
+    publishSettings()
+  end)
+end
+
+-- <text>, as the panel sends it, as a value of <field>; or nil and why not.
+local function valueFor(field, text)
+  text = tostring(text or "")
+  local kind = field.type
+  if kind == "bool" then
+    return text == "true"
+  elseif kind == "int" or kind == "double" then
+    local number = tonumber(noctalia.string.trim(text))
+    local inRange = number ~= nil
+      and (kind == "double" or number == math.floor(number))
+      and (field.min == nil or number >= field.min)
+      and (field.max == nil or number <= field.max)
+    if not inRange then
+      if field.min ~= nil and field.max ~= nil then
+        return nil, noctalia.tr("page.range", { min = field.min, max = field.max })
+      end
+      return nil, noctalia.tr(kind == "int" and "page.whole_number" or "page.number")
+    end
+    return number
+  elseif kind == "select" then
+    for _, option in ipairs(field.options) do
+      if option.value == text then
+        return text
+      end
+    end
+    return nil, noctalia.tr("page.not_an_option")
+  elseif kind == "string" or kind == "file" or kind == "folder" or kind == "glyph" or kind == "color" then
+    return text
+  end
+  return nil, noctalia.tr("page.not_here")
+end
+
+local function saveSetting(command)
+  local section = page and page.id == command.id and page.sections[tonumber(command.section) or 0]
+  if not section then
+    return
+  end
+  local field
+  for _, item in ipairs(section.fields) do
+    if item.key == command.key then
+      field = item
+    end
+  end
+  if field == nil or field.secret then
+    return
+  end
+  local where = `{command.section}/{field.key}`
+  local value, problem = valueFor(field, command.value)
+  if value == nil then
+    page.errors[where] = problem
+    publishSettings()
+    return
+  end
+  page.errors[where] = nil
+  local before = field.value
+  field.value = value
+  publishSettings()
+  Settings.save(page.id, section, field.key, value, field.type, function(err)
+    if err then
+      field.value = before
+      page.errors[where] = err
+    end
+    publishSettings()
+  end)
+end
+
 local function run(command)
   if not safe(command) then
     return
@@ -294,6 +411,17 @@ noctalia.state.watch("hub.command", function(command)
     refresh()
   elseif command.action == "settings" and type(command.id) == "string" then
     noctalia.runAsync({ "noctalia", "msg", "settings-open-plugin", command.id })
+  elseif command.action == "load_settings" and type(command.id) == "string" then
+    loadSettings(command.id)
+  elseif command.action == "close_settings" then
+    page = nil
+    publishSettings()
+  elseif command.action == "save_setting" and type(command.key) == "string" then
+    saveSetting(command)
+  elseif command.action == "open_widget" and type(command.instance) == "string" then
+    noctalia.runAsync({ "noctalia", "msg", "settings-open-widget", tostring(command.bar or ""), command.instance })
+  elseif command.action == "open_desktop" then
+    noctalia.runAsync({ "noctalia", "msg", command.lockscreen and "lockscreen-widgets-edit" or "desktop-widgets-edit" })
   elseif command.action == "refresh" then
     refresh()
   end
@@ -303,6 +431,13 @@ end)
 function onIpc(event)
   if event == "refresh" then
     refresh()
+  end
+end
+
+-- A change to the settings shown, from the hub or from anywhere else.
+function onConfigChanged()
+  if page ~= nil and not page.loading then
+    loadSettings(page.id)
   end
 end
 

@@ -11,7 +11,6 @@ Open questions and pending tasks. When one is settled, write the decision where 
 ## Tasks
 
 1. Every plugin shows a missing required command in its panel, as [DESIGN.md](.claude/docs/DESIGN.md), section 9.6, says.
-2. Plugin Hub: each plugin's settings in its group, wherever Noctalia keeps them: the plugin's own and its panels', each bar widget's and each desktop widget's. The hub reads the `[[setting]]`, `[[panel.setting]]`, `[[widget.setting]]` and `[[desktop_widget.setting]]` blocks and their labels from the plugin's manifest and translations, and the values with `noctalia msg config-get` (`plugin_settings.<id>`, `widget.<instance>`, `desktop_widgets.widget.<instance>`). It saves a change with `noctalia msg config-set`, one at a time. A plugin id has a slash, so its path is written as an inline table: `config-set plugin_settings '{ "<id>" = { <key> = <value> } }'`. Lists and maps open Noctalia's own settings with `settings-open-plugin` or `settings-open-widget`. Test the writes on the owner's machine only after the owner agrees.
 
 ## Plugins
 

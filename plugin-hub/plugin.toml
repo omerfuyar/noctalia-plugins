@@ -1,11 +1,11 @@
 id = "omerfuyar/plugin-hub"
 name = "Plugin Hub"
-version = "1.0.0"
+version = "1.1.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
 icon = "apps"
-description = "Every plugin in one panel: enable it, open its panels, run its commands and give any of them a key."
+description = "Every plugin in one panel: enable it, change its settings, open its panels, run its commands and give any of them a key."
 dependencies = ["hyprctl", "sh", "awk", "git"]
 tags = ["hyprland", "launcher", "shortcut", "utility"]
 
