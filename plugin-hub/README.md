@@ -8,11 +8,11 @@ Noctalia's own panels and commands of your own are in the same list, and in the 
 
 ## Plugin
 
-| Field           | Value                                                        |
-| --------------- | ------------------------------------------------------------ |
-| ID              | `omerfuyar/plugin-hub`                                       |
-| Entries         | Panel: `panel`; service: `service`; launcher provider: `hub` |
-| Launcher prefix | `/hub`                                                       |
+| Field           | Value                                                                              |
+| --------------- | ---------------------------------------------------------------------------------- |
+| ID              | `omerfuyar/plugin-hub`                                                             |
+| Entries         | Bar widget: `widget`; panel: `panel`; service: `service`; launcher provider: `hub` |
+| Launcher prefix | `/hub`                                                                             |
 
 ## Requirements
 
@@ -24,8 +24,9 @@ Noctalia's own panels and commands of your own are in the same list, and in the 
 
 ## Usage
 
-Open the hub from Noctalia's launcher: type `/hub` and pick **Open Plugin Hub**, or open it
-by IPC or a key:
+Add the **Plugin Hub** widget to your bar and click it to open the hub. You can also open it
+from Noctalia's launcher, where you type `/hub` and pick **Open Plugin Hub**, or by IPC or a
+key:
 
 ```sh
 noctalia msg panel-toggle omerfuyar/plugin-hub:panel

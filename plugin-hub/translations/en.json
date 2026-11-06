@@ -69,5 +69,8 @@
   "plugin": {
     "nothing": "No panels or commands found.",
     "off": "Off. Switch it on to use it."
+  },
+  "widget": {
+    "tooltip": "Plugin Hub"
   }
 }

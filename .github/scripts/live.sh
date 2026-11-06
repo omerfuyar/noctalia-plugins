@@ -67,9 +67,19 @@ if $remove; then
   noctalia msg plugins disable "$id" >/dev/null
   noctalia msg plugins source remove dev >/dev/null 2>&1 || true
   if [[ -f $was_enabled ]]; then
-    rm -f "$was_enabled"
-    sleep 2
-    noctalia msg plugins enable "$id" >/dev/null
+    # Removing the source finishes in the background, and an enable sent before it is
+    # lost, so enable again until the plugin is on.
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+      sleep 1
+      noctalia msg plugins enable "$id" >/dev/null
+      sleep 1
+      if grep -qE "^$id \[[^]]+\] [^ ]+ enabled( |$)" <<<"$(noctalia msg plugins list)"; then
+        rm -f "$was_enabled"
+        exit 0
+      fi
+    done
+    echo "$id is still disabled; enable it with: noctalia msg plugins enable $id" >&2
+    exit 1
   fi
   exit 0
 fi
