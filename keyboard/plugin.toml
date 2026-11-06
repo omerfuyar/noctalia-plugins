@@ -1,0 +1,35 @@
+id = "omerfuyar/keyboard"
+name = "Keyboard"
+version = "1.0.0"
+plugin_api = 43
+author = "omerfuyar"
+license = "MIT"
+icon = "keyboard"
+description = "Switch between your keyboard layouts and fcitx5 input methods, such as Hangul, from one list."
+dependencies = ["hyprctl", "fcitx5-remote", "gdbus"]
+tags = ["bar", "hyprland", "language"]
+
+[[setting]]
+key = "keybind"
+type = "string"
+label_key = "settings.keybind.label"
+description_key = "settings.keybind.description"
+default = ""
+
+[[service]]
+id = "service"
+entry = "service.luau"
+
+[[widget]]
+id = "widget"
+entry = "widget.luau"
+
+[[panel]]
+id = "panel"
+entry = "panel.luau"
+width = 340
+height = "content"
+max_height = 520
+placement = "attached"
+position = "auto"
+open_near_click = true
