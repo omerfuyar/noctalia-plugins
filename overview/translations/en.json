@@ -16,6 +16,10 @@
     "keybind": {
       "description": "A key that opens Overview, such as SUPER + Tab. It is added to Hyprland while Noctalia runs; a key that is already bound is left alone. Empty adds none.",
       "label": "Key binding"
+    },
+    "previews": {
+      "description": "Show a small picture of each window, taken with grim. Off, each window shows its app's icon and title, for systems where grim fails or is slow.",
+      "label": "Window previews"
     }
   },
   "widget": {

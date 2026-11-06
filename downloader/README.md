@@ -53,13 +53,14 @@ noctalia msg panel-toggle omerfuyar/downloader:panel
 
 ## Settings
 
-| Setting          | Type     | Default       | Description                                                                                                                           |
-| ---------------- | -------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `folder`         | `folder` | `~/Downloads` | Where downloads are saved.                                                                                                            |
-| `video_quality`  | `select` | `1080`        | Highest video resolution. A smaller video is used when the site has nothing this large.                                               |
-| `audio_format`   | `select` | `mp3`         | File type for audio downloads. `best` (Original) keeps the site's format without converting.                                          |
-| `notify`         | `bool`   | `true`        | Notify when a download finishes or fails.                                                                                             |
-| `whole_playlist` | `bool`   | `false`       | Advanced. For a link to a video in a playlist, download the whole playlist. A link to the playlist itself always downloads all of it. |
+| Setting          | Type     | Default       | Description                                                                                                                                                 |
+| ---------------- | -------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `folder`         | `folder` | `~/Downloads` | Where downloads are saved.                                                                                                                                  |
+| `video_quality`  | `select` | `1080`        | Highest video resolution. A smaller video is used when the site has nothing this large.                                                                     |
+| `audio_format`   | `select` | `mp3`         | File type for audio downloads. `best` (Original) keeps the site's format without converting.                                                                |
+| `notify`         | `bool`   | `true`        | Notify when a download finishes or fails.                                                                                                                   |
+| `whole_playlist` | `bool`   | `false`       | Advanced. For a link to a video in a playlist, download the whole playlist. A link to the playlist itself always downloads all of it.                       |
+| `extra_args`     | `string` | `""`          | Advanced. More yt-dlp arguments, separated by spaces, such as `--cookies-from-browser firefox` for videos that need a sign-in. They come last, so they win. |
 
 ## IPC
 
