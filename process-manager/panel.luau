@@ -156,7 +156,7 @@ local function processRow(process)
   local cpu, memory = numbers(process.cpu, process.memory, "on_surface_variant")
   return ui.row({ key = "p" .. process.pid, gap = 8, align = "center", height = PROCESS_HEIGHT, paddingH = 4 }, {
     -- Indented under the group's name: the width of its chevron and icon, and the gap between.
-    ui.spacer({ width = INDENT }),
+    ui.box({ width = INDENT }),
     ui.column({ gap = 2, flexGrow = 1 }, detail),
     cpu,
     memory,
