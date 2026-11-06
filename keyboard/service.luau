@@ -92,7 +92,7 @@ local WTYPE_INSTALLERS = {
 local oskOpen = false
 local oskMoving = false
 -- Where the on-screen keyboard is: docked at the bottom, or at x, y from the output's top left.
-local oskPlace = { docked = true }
+local oskPlace: { docked: boolean, x: number?, y: number? } = { docked = true }
 
 local dataDir = noctalia.pluginDataDir() or ""
 local layoutsFile = dataDir .. "/layouts.json"
@@ -374,9 +374,9 @@ local function refresh()
         local parsed = readInputMethod(im)
         if parsed.id then
           found[parsed.id] = parsed
-          local code = keyboardLayout(parsed.id)
-          if code and parsed.lang ~= "" and parsed.id == "keyboard-" .. code then
-            layoutLangs[code] = parsed.lang
+          local imLayout = keyboardLayout(parsed.id)
+          if imLayout and parsed.lang ~= "" and parsed.id == "keyboard-" .. imLayout then
+            layoutLangs[imLayout] = parsed.lang
           end
         end
       end
