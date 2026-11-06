@@ -581,6 +581,16 @@ function merge_list(path,   nm, nt, nb, i, n, removed) {
   return join(OUT_ITEMS, n)
 }
 
+# Whether lists <a> and <b> hold the same items, in any order.
+function same_items(a, b,   na, nb, i) {
+  na = items(a, SAME_ITEMS_A)
+  nb = items(b, SAME_ITEMS_B)
+  if (na != nb) return 0
+  for (i = 1; i <= na; i++) if (!contains(SAME_ITEMS_B, nb, SAME_ITEMS_A[i])) return 0
+  for (i = 1; i <= nb; i++) if (!contains(SAME_ITEMS_A, na, SAME_ITEMS_B[i])) return 0
+  return 1
+}
+
 function contains(LIST_ITEMS, n, item,   i) {
   for (i = 1; i <= n; i++) if (LIST_ITEMS[i] == item) return 1
   return 0
@@ -600,7 +610,9 @@ function merge(   tags, t, i, path, has, value, seen) {
       if (path == "plugins.enabled") {
         value = merge_list(path)
         has = 1
-        if (!(("mine", path) in SHARED) || !same(value, SHARED["mine", path])) taken++
+        # The same plugins in another order are not a change: this device's order stays.
+        if (("mine", path) in SHARED && same_items(value, SHARED["mine", path])) value = SHARED["mine", path]
+        else taken++
       } else if (!(("base", path) in SHARED) && ("theirs", path) in SHARED && !agree("mine", "theirs", path)) {
         # Shared for the first time here: the value another device shared first wins.
         has = 1
