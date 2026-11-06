@@ -9,6 +9,11 @@
     "taken": "{key} is already bound, so Keyboard left it alone. Pick another key in its settings.",
     "taken_title": "Keyboard: the key is taken"
   },
+  "osk": {
+    "install": "Install…",
+    "needs_wtype": "The on-screen keyboard types with wtype, which is not installed.",
+    "title": "On-screen keyboard"
+  },
   "panel": {
     "add_im": "Add an input method…",
     "add_layout": "Add a keyboard layout…",
@@ -24,6 +29,10 @@
     "keybind": {
       "description": "A key that switches to the next language, such as SUPER + Space. Empty adds no key binding.",
       "label": "Switch key"
+    },
+    "osk_height": {
+      "description": "How tall the on-screen keyboard is, in pixels. Windows move up out of its way.",
+      "label": "On-screen keyboard height"
     }
   }
 }

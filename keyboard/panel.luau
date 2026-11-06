@@ -115,6 +115,34 @@ local function addBlock()
   return ui.column({ gap = 8 }, children)
 end
 
+-- The on-screen keyboard's switch, or what it needs first.
+local function oskRow()
+  if not model.wtype then
+    return ui.row({ gap = 8, align = "center" }, {
+      ui.glyph({ name = "alert-triangle", size = 16, color = "error" }),
+      ui.label({ text = noctalia.tr("osk.needs_wtype"), color = "on_surface_variant", flexGrow = 1, maxLines = 3 }),
+      ui.button({
+        text = noctalia.tr("osk.install"),
+        glyph = "terminal-2",
+        variant = "primary",
+        controlSize = "sm",
+        onClick = function()
+          send({ action = "install_wtype" })
+          panel.close()
+        end,
+      }),
+    })
+  end
+  return ui.row({ gap = 8, align = "center" }, {
+    ui.glyph({ name = "keyboard", size = 16, color = model.osk and "primary" or "on_surface_variant" }),
+    ui.label({ text = noctalia.tr("osk.title"), flexGrow = 1 }),
+    ui.toggle({
+      checked = model.osk == true,
+      onChange = function(value) send({ action = "osk", open = value == "true" }) end,
+    }),
+  })
+end
+
 local function render()
   if model == nil then
     panel.render(ui.column({ padding = 16 }, {
@@ -139,6 +167,8 @@ local function render()
   end
   table.insert(children, ui.separator({}))
   table.insert(children, addBlock())
+  table.insert(children, ui.separator({}))
+  table.insert(children, oskRow())
   panel.render(ui.column({ gap = 12, padding = 16 }, children))
 end
 
