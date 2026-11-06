@@ -6,18 +6,19 @@ compositor's layouts.
 
 ## Plugin
 
-| Field   | Value                                                    |
-| ------- | -------------------------------------------------------- |
-| ID      | `omerfuyar/keyboard`                                     |
-| Entries | Bar widget: `widget`; panel: `panel`; service: `service` |
+| Field   | Value                                                                  |
+| ------- | ---------------------------------------------------------------------- |
+| ID      | `omerfuyar/keyboard`                                                   |
+| Entries | Bar widget: `widget`; panel: `panel`; service: `service`; layer: `osk` |
 
 ## Requirements
 
-| Command         | Needed               | What for                                                                                      |
-| --------------- | -------------------- | --------------------------------------------------------------------------------------------- |
-| `hyprctl`       | Required on Hyprland | Reads the keyboard layouts and switches every keyboard between them, and adds the switch key. |
-| `fcitx5-remote` | Required with fcitx5 | Reads and switches fcitx5's input method. Without fcitx5, the list holds only the layouts.    |
-| `gdbus`         | Required with fcitx5 | Reads fcitx5's input methods and their names. It comes with GLib.                             |
+| Command         | Needed                              | What for                                                                                                          |
+| --------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `hyprctl`       | Required on Hyprland                | Reads the keyboard layouts and switches every keyboard between them, and adds the switch key.                     |
+| `fcitx5-remote` | Required with fcitx5                | Reads and switches fcitx5's input method. Without fcitx5, the list holds only the layouts.                        |
+| `gdbus`         | Required with fcitx5                | Reads fcitx5's input methods and their names. It comes with GLib.                                                 |
+| `wtype`         | Required for the on-screen keyboard | Types each key of the on-screen keyboard into the window you type in. Without it, the panel offers to install it. |
 
 ## Usage
 
@@ -37,6 +38,13 @@ Add the **Keyboard** widget to the bar. It shows the language you type in, such 
   sets it in Hyprland while Noctalia runs, also after Hyprland reloads its config; your
   Hyprland config is not changed. **Use Hyprland's layouts** gives the config's list back.
   Input methods are added to fcitx5's group through fcitx5, which saves them itself.
+![The on-screen keyboard](screenshots/osk.webp)
+
+- Turn on **On-screen keyboard** in the panel for a key grid at the bottom of the screen, in
+  your theme. It never takes the keyboard focus, so each key goes to the window you type in,
+  and windows move up out of its way. The keys follow the active language: Turkish for TR,
+  English otherwise. Shift, Ctrl and Alt hold for the next key. Korean is typed with a real
+  keyboard: fcitx5 composes Hangul only from it.
 - Set **Switch key** in the settings, such as `SUPER + Space`, to switch from the keyboard.
   Keyboard adds it to Hyprland while Noctalia runs and leaves your config alone; a key that
   is already bound stays as it is.
@@ -47,9 +55,10 @@ noctalia msg panel-toggle omerfuyar/keyboard:panel
 
 ## Settings
 
-| Setting   | Type     | Default | Description                                                                           |
-| --------- | -------- | ------- | ------------------------------------------------------------------------------------- |
-| `keybind` | `string` | `""`    | A key that switches to the next language, such as `SUPER + Space`. Empty adds no key. |
+| Setting      | Type     | Default | Description                                                                           |
+| ------------ | -------- | ------- | ------------------------------------------------------------------------------------- |
+| `osk_height` | `int`    | `260`   | Advanced. How tall the on-screen keyboard is, in pixels, from 160 to 600.             |
+| `keybind`    | `string` | `""`    | A key that switches to the next language, such as `SUPER + Space`. Empty adds no key. |
 
 ## IPC
 
@@ -70,6 +79,12 @@ noctalia msg plugin omerfuyar/keyboard:service all remove-layout de
 noctalia msg plugin omerfuyar/keyboard:service all add-im mozc
 noctalia msg plugin omerfuyar/keyboard:service all remove-im mozc
 noctalia msg plugin omerfuyar/keyboard:service all reset-layouts
+```
+
+Show or hide the on-screen keyboard:
+
+```sh
+noctalia msg plugin omerfuyar/keyboard:service all osk
 ```
 
 ## Notes

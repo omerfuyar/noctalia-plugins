@@ -1,12 +1,12 @@
 id = "omerfuyar/keyboard"
 name = "Keyboard"
-version = "1.1.0"
+version = "1.2.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
 icon = "keyboard"
 description = "Switch between your keyboard layouts and fcitx5 input methods, such as Hangul, from one list."
-dependencies = ["hyprctl", "fcitx5-remote", "gdbus"]
+dependencies = ["hyprctl", "fcitx5-remote", "gdbus", "wtype"]
 tags = ["bar", "hyprland", "language"]
 
 [[setting]]
@@ -15,6 +15,17 @@ type = "string"
 label_key = "settings.keybind.label"
 description_key = "settings.keybind.description"
 default = ""
+
+[[setting]]
+key = "osk_height"
+type = "int"
+label_key = "settings.osk_height.label"
+description_key = "settings.osk_height.description"
+default = 260
+min = 160
+max = 600
+step = 10
+advanced = true
 
 [[service]]
 id = "service"
@@ -33,3 +44,13 @@ max_height = 520
 placement = "attached"
 position = "auto"
 open_near_click = true
+
+[[layer]]
+id = "osk"
+entry = "osk.luau"
+layer = "top"
+anchors = ["bottom", "left", "right"]
+height = 260
+exclusive_zone = 260
+keyboard = "none"
+output = "focused"

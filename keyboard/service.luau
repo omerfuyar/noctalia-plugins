@@ -10,6 +10,8 @@
 -- The active one is read every second; the lists and their names when the service starts,
 -- every 30 seconds, and when the panel asks.
 --
+-- The on-screen keyboard is the "osk" layer, shown and hidden here.
+--
 -- The panel adds and removes layouts and input methods. Once the owner changes the layouts
 -- here, the plugin keeps its own list in its data folder and sets it in Hyprland while
 -- Noctalia runs, also after Hyprland reloads its config; it never writes Hyprland's config.
@@ -76,6 +78,17 @@ gdbus call --session --dest org.fcitx.Fcitx5 --object-path /controller \
   --method org.fcitx.Fcitx.Controller1.AvailableInputMethods 2>/dev/null |
   sed 's/), (/)\n(/g' | sed 's/^[[(]*//' | grep -v "^'keyboard-" | sed 's/^/@@im /'
 ]=]
+
+local OSK = "osk"
+-- wtype types the on-screen keyboard's keys; each system installs it its own way.
+local WTYPE_INSTALLERS = {
+  { manager = "pacman", command = "sudo pacman -S --needed wtype" },
+  { manager = "apt", command = "sudo apt install wtype" },
+  { manager = "dnf", command = "sudo dnf install wtype" },
+  { manager = "zypper", command = "sudo zypper install wtype" },
+}
+
+local oskOpen = false
 
 local dataDir = noctalia.pluginDataDir() or ""
 local layoutsFile = dataDir .. "/layouts.json"
@@ -166,6 +179,8 @@ local function build()
     fcitx = #inputMethods > 0,
     managed = stored ~= nil,
     catalog = catalog,
+    osk = oskOpen,
+    wtype = noctalia.commandExists("wtype"),
   }
   publish()
 end
@@ -506,6 +521,33 @@ local function removeInputMethod(id)
   end
 end
 
+-- The on-screen keyboard: shown on the focused monitor, as tall as the setting says, and
+-- windows move up out of its way.
+local function configureOsk()
+  local height = math.clamp(tonumber(noctalia.getConfig("osk_height")) or 260, 160, 600)
+  noctalia.layer.configure(OSK, { height = height, exclusiveZone = height, output = "focused" })
+end
+
+local function setOsk(open)
+  oskOpen = open
+  if open then
+    configureOsk()
+    noctalia.layer.show(OSK)
+  else
+    noctalia.layer.hide(OSK)
+  end
+  build()
+end
+
+local function installWtype()
+  for _, installer in ipairs(WTYPE_INSTALLERS) do
+    if noctalia.commandExists(installer.manager) then
+      noctalia.runInTerminal(installer.command)
+      return
+    end
+  end
+end
+
 -- Moves along the list by <step>, round.
 local function cycle(step)
   local entries = model.entries
@@ -533,6 +575,14 @@ noctalia.state.watch("keyboard.command", function(command)
     cycle(-1)
   elseif command.action == "refresh" then
     refresh()
+  elseif command.action == "osk" then
+    if type(command.open) == "boolean" then
+      setOsk(command.open)
+    else
+      setOsk(not oskOpen)
+    end
+  elseif command.action == "install_wtype" then
+    installWtype()
   elseif command.action == "open" then
     wantCatalog = true
     refresh()
@@ -554,6 +604,7 @@ end)
 -- noctalia msg plugin omerfuyar/keyboard:service all add-layout|remove-layout <code, such as de>
 -- noctalia msg plugin omerfuyar/keyboard:service all add-im|remove-im <fcitx5 id, such as mozc>
 -- noctalia msg plugin omerfuyar/keyboard:service all reset-layouts
+-- noctalia msg plugin omerfuyar/keyboard:service all osk
 function onIpc(event, payload)
   local value = payload and noctalia.string.trim(payload) or ""
   if event == "add-layout" and value ~= "" then
@@ -564,6 +615,8 @@ function onIpc(event, payload)
         removeLayout(index - 1)
       end
     end
+  elseif event == "osk" then
+    setOsk(not oskOpen)
   elseif event == "reset-layouts" then
     resetLayouts()
   elseif event == "add-im" and value ~= "" then
@@ -597,6 +650,9 @@ end
 
 function onConfigChanged()
   Keybind.check(NEXT)
+  if oskOpen then
+    configureOsk()
+  end
 end
 
 function onExit()
