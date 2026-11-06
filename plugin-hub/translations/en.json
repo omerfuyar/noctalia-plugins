@@ -1,0 +1,53 @@
+{
+  "action": {
+    "panel": "Open its panel",
+    "panel_named": "Open the {name} panel"
+  },
+  "custom": {
+    "placeholder": "Add a command, such as panel-toggle wallpaper"
+  },
+  "group": {
+    "custom": "Your commands",
+    "noctalia": "Noctalia"
+  },
+  "key": {
+    "invalid": "Not a key",
+    "placeholder": "SUPER + K",
+    "taken": "Taken"
+  },
+  "launcher": {
+    "open": "Open Plugin Hub"
+  },
+  "noctalia": {
+    "audio": "Audio",
+    "bluetooth": "Bluetooth",
+    "calendar": "Calendar",
+    "clipboard": "Clipboard",
+    "control_center": "Control center",
+    "dnd": "Do not disturb",
+    "emoji": "Emoji",
+    "launcher": "Launcher",
+    "media": "Media",
+    "network": "Network",
+    "notifications": "Notifications",
+    "panels": "Panels",
+    "power": "Power",
+    "screen_time": "Screen time",
+    "session": "Session menu",
+    "settings": "Settings",
+    "system": "System",
+    "wallpaper": "Wallpapers",
+    "weather": "Weather"
+  },
+  "panel": {
+    "loading": "Loading…",
+    "no_keys": "Keys need Hyprland. The actions still run from here and from the launcher.",
+    "no_match": "Nothing matches.",
+    "search": "Search",
+    "title": "Plugin Hub"
+  },
+  "plugin": {
+    "nothing": "No panels or commands found.",
+    "off": "Off. Switch it on to use it."
+  }
+}

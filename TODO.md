@@ -11,6 +11,7 @@ Open questions and pending tasks. When one is settled, write the decision where 
 ## Tasks
 
 1. Every plugin shows a missing required command in its panel, as [DESIGN.md](.claude/docs/DESIGN.md), section 9.6, says.
+2. Plugin Hub: each plugin's settings in its group, wherever Noctalia keeps them: the plugin's own and its panels', each bar widget's and each desktop widget's. The hub reads the `[[setting]]`, `[[panel.setting]]`, `[[widget.setting]]` and `[[desktop_widget.setting]]` blocks and their labels from the plugin's manifest and translations, and the values with `noctalia msg config-get` (`plugin_settings.<id>`, `widget.<instance>`, `desktop_widgets.widget.<instance>`). It saves a change with `noctalia msg config-set`, one at a time. A plugin id has a slash, so its path is written as an inline table: `config-set plugin_settings '{ "<id>" = { <key> = <value> } }'`. Lists and maps open Noctalia's own settings with `settings-open-plugin` or `settings-open-widget`. Test the writes on the owner's machine only after the owner agrees.
 
 ## Plugins
 
@@ -20,8 +21,7 @@ Plugins to build:
 2. Phone Hub. Becomes the plugin on the `feature/phone-cam` branch: phone screen and phone as a webcam, both with scrcpy. When Iriun Webcam's camera is in use, Phone Hub leaves it alone and says so. Remind the owner: notifications need nothing of their own, since KDE Connect already sends the phone's notifications to Noctalia, and Phone Operate covers KDE Connect's actions; recommended scope is webcam and screen only.
 3. Screen Capture. Remind the owner first. Noctalia already takes region, full screen, window and annotated screenshots. Recommended: one trigger that uses those for pictures and adds what is missing, video with `gpu-screen-recorder` or `wf-recorder` and text from the screen with `tesseract`, as an alternative to the official screen recorder.
 4. System Defaults. One place for the defaults a system keeps in XDG files: the app for each file type and link, the user folders such as Downloads and Pictures, and the default terminal. The community plugin Default Apps already sets the apps for file types; check what it lacks before building, and offer its author the rest first ([DESIGN.md](.claude/docs/DESIGN.md), section 14.3).
-5. Plugin Launcher. Reach any plugin without a bar widget: each enabled plugin's panels and IPC events show in Noctalia's launcher, and a key can be bound to each, added to the compositor as [DESIGN.md](.claude/docs/DESIGN.md), section 10.7, says. Check first whether Noctalia already binds keys or lists panels in its launcher.
-6. Wallpaper. The owner decides later. Noctalia's official Wallhaven plugin already browses Wallhaven; a plugin here would only add what it lacks, such as Wallhaven's seed, top range, colors and collections, and new wallpapers for Noctalia's own rotation.
+5. Wallpaper. The owner decides later. Noctalia's official Wallhaven plugin already browses Wallhaven; a plugin here would only add what it lacks, such as Wallhaven's seed, top range, colors and collections, and new wallpapers for Noctalia's own rotation.
 
 ## Contributions
 
