@@ -1,6 +1,6 @@
 id = "omerfuyar/screen-control"
 name = "Screen Control"
-version = "1.3.2"
+version = "1.4.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
@@ -35,6 +35,14 @@ type = "bool"
 label_key = "settings.per_workspace.label"
 description_key = "settings.per_workspace.description"
 default = false
+
+[[setting]]
+key = "step_dims"
+type = "bool"
+label_key = "settings.step_dims.label"
+description_key = "settings.step_dims.description"
+default = false
+advanced = true
 
 [[service]]
 id = "service"

@@ -8,6 +8,7 @@
   },
   "monitor": {
     "builtin": "Built-in display",
+    "dim": "Extra dim",
     "workspace": "Workspace {name}"
   },
   "night": {
@@ -18,7 +19,7 @@
     "off": "Off",
     "on": "On",
     "scheduled": "Scheduled",
-    "sunset_to_sunrise": "From sunset to sunrise, where Noctalia's location is:",
+    "sunset_to_sunrise": "From sunset to sunrise, {place}",
     "title": "Night light",
     "until": "until",
     "warmth": "Warmth"
@@ -44,6 +45,10 @@
     "per_workspace": {
       "description": "Each workspace keeps its own dimming. Needs Hyprland.",
       "label": "Dim each workspace on its own"
+    },
+    "step_dims": {
+      "description": "Scrolling on the widget and the brightness keys go on past the lowest brightness into extra dim. Off, they stop there, and extra dim has its own slider in the panel.",
+      "label": "Scroll into extra dim"
     }
   }
 }

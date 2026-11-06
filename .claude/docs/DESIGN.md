@@ -104,6 +104,8 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 2. A plugin has few settings. Rarely used ones are `advanced`.
 3. A setting that only matters for one choice of another setting uses `visible_when`.
 4. Settings that change how the bar widget looks are widget settings. All others are plugin settings.
+5. What a plugin takes from the system and can differ between systems, such as the command that does a job, its arguments, a path, a device or a detection, has an advanced setting that overrides it. Its default is what the plugin finds by itself. So when something does not work on one system, the user fixes it in the settings.
+6. A safeguard against a mistake, such as starting extra dim by scrolling, can be turned off with an advanced setting.
 
 ## 9. Dependencies and setup
 

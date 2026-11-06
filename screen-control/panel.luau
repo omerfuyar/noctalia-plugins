@@ -1,6 +1,6 @@
 --!nonstrict
--- Screen Control panel: one slider for each monitor, from dimmed through full brightness,
--- then night light. Renders "screen-control.model" and sends actions on "screen-control.command".
+-- Screen Control panel: a brightness slider for each monitor, and an extra dim slider once
+-- it is at its lowest brightness, then night light. Renders "screen-control.model" and sends actions on "screen-control.command".
 
 local Level = require("./lib/level.luau")
 
@@ -15,6 +15,7 @@ end
 
 local function monitorBlock(monitor)
   local dimmed = monitor.dim > 0
+  local hasBrightness = monitor.brightness ~= nil
   local title = { ui.label({ text = monitor.label, maxLines = 1 }) }
   if monitor.workspace then
     table.insert(title, ui.label({
@@ -23,23 +24,44 @@ local function monitorBlock(monitor)
       maxLines = 1,
     }))
   end
-  return ui.column({ key = monitor.name, gap = 6 }, {
+  local children = {
     ui.row({ gap = 8, align = "center" }, {
       ui.glyph({ name = monitor.internal and "device-laptop" or "device-desktop", size = 18,
         color = "on_surface_variant" }),
       ui.column({ gap = 2, flexGrow = 1 }, title),
       ui.label({ text = Level.text(monitor.brightness, monitor.dim), color = dimmed and "primary" or "on_surface" }),
     }),
-    ui.slider({
+  }
+  if hasBrightness then
+    table.insert(children, ui.slider({
       min = 0,
       max = 1,
       step = 0.01,
-      value = Level.fromScreen(monitor.brightness, monitor.dim),
+      value = Level.share(monitor.brightness),
       onChange = function(value)
-        send({ action = "level", output = monitor.name, level = tonumber(value) })
+        send({ action = "brightness", output = monitor.name, value = tonumber(value) })
       end,
-    }),
-  })
+    }))
+  end
+  -- Dimming below the lowest brightness has a slider of its own, shown once the
+  -- brightness is at its lowest, so the brightness slider never starts it by accident.
+  if not hasBrightness or dimmed or Level.share(monitor.brightness) <= 0.001 then
+    table.insert(children, ui.row({ gap = 8, align = "center" }, {
+      ui.glyph({ name = "moon-stars", size = 16, color = dimmed and "primary" or "on_surface_variant" }),
+      ui.label({ text = noctalia.tr("monitor.dim"), color = "on_surface_variant" }),
+      ui.slider({
+        min = 0,
+        max = 1,
+        step = 0.01,
+        flexGrow = 1,
+        value = 1 - math.clamp(monitor.dim / Level.maxDim(), 0, 1),
+        onChange = function(value)
+          send({ action = "dim", output = monitor.name, value = tonumber(value) })
+        end,
+      }),
+    }))
+  end
+  return ui.column({ key = monitor.name, gap = 6 }, children)
 end
 
 local function modeButton(mode)
@@ -87,10 +109,10 @@ local function scheduleBlock()
     }))
     table.insert(children, ui.label({ text = noctalia.tr("night.dark_mode_note"), color = "on_surface_variant" }))
   elseif night.place and night.place ~= "" then
-    table.insert(children, ui.label({ text = noctalia.tr("night.sunset_to_sunrise"), color = "on_surface_variant" }))
-    table.insert(children, ui.row({ gap = 6, align = "center" }, {
-      ui.glyph({ name = "map-pin", size = 14, color = "on_surface_variant" }),
-      ui.label({ text = night.place, color = "on_surface_variant", maxLines = 1 }),
+    table.insert(children, ui.label({
+      text = noctalia.tr("night.sunset_to_sunrise", { place = night.place }),
+      color = "on_surface_variant",
+      maxLines = 2,
     }))
   else
     table.insert(children, ui.label({ text = noctalia.tr("night.no_place"), color = "on_surface_variant" }))
