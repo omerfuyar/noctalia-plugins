@@ -48,7 +48,7 @@ noctalia msg panel-toggle omerfuyar/process-manager:panel
 
 | Setting    | Type     | Default  | Description                                                                                                 |
 | ---------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------- |
-| `interval` | `int`    | `1000`   | How often the list updates while the panel is open, in milliseconds, from 250 to 10000.                     |
+| `interval` | `int`    | `2000`   | How often the list updates while the panel is open, in milliseconds, from 250 to 10000.                     |
 | `admin`    | `select` | `pkexec` | Advanced. How to end another user's process: `pkexec`, which needs a polkit agent, or `sudo` in a terminal. |
 
 ## Notes

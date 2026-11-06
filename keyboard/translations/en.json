@@ -10,8 +10,7 @@
     "taken_title": "Keyboard: the key is taken"
   },
   "osk": {
-    "drop_dock": "Click to dock the keyboard at the bottom",
-    "drop_here": "Click to put the keyboard here",
+    "drop_here": "Put it here",
     "install": "Install…",
     "needs_wtype": "The on-screen keyboard types with wtype, which is not installed.",
     "title": "On-screen keyboard"

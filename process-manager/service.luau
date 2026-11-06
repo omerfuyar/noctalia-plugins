@@ -42,7 +42,7 @@ local denied = {} -- by pid: true when ending it needs an administrator
 
 -- Milliseconds between reads, from the settings.
 local function interval()
-  return math.max(tonumber(noctalia.getConfig("interval")) or 1000, 250)
+  return math.max(tonumber(noctalia.getConfig("interval")) or 2000, 250)
 end
 
 local function adminInTerminal()
