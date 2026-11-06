@@ -10,6 +10,10 @@ Open questions and pending tasks. When one is settled, write the decision where 
 ## Tasks
 
 1. Every plugin shows a missing required command in its panel, as [DESIGN.md](.claude/docs/DESIGN.md), section 9.6, says.
+2. Give each plugin the overrides that [DESIGN.md](.claude/docs/DESIGN.md), section 8.5, asks for. Ask the owner which first. Recommended:
+   - Downloader: extra yt-dlp arguments, such as `--cookies-from-browser firefox` for videos that need a sign-in.
+   - Overview: window previews on or off, for systems where grim fails or is slow.
+   - Screen Control: monitors to leave out, for a monitor whose brightness control misbehaves.
 
 ## Plugins
 
