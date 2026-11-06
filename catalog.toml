@@ -89,8 +89,8 @@ tags = ["bar", "productivity", "time"]
 [[plugin]]
 id = "omerfuyar/keyboard"
 name = "Keyboard"
-version = "1.4.0"
-updated_at = 1793982104
+version = "1.4.1"
+updated_at = 1793985304
 added_at = 1793966332
 author = "omerfuyar"
 license = "MIT"
@@ -102,8 +102,8 @@ tags = ["bar", "hyprland", "language"]
 [[plugin]]
 id = "omerfuyar/plugin-hub"
 name = "Plugin Hub"
-version = "1.1.0"
-updated_at = 1793983907
+version = "1.2.0"
+updated_at = 1793985396
 added_at = 1793983092
 author = "omerfuyar"
 license = "MIT"
