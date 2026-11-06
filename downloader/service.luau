@@ -152,6 +152,11 @@ local function downloadArgs(job)
     table.insert(args, "mp4/mkv")
   end
 
+  -- The owner's own yt-dlp arguments come last, so they win over the ones above.
+  for word in (noctalia.getConfig("extra_args") or ""):gmatch("%S+") do
+    table.insert(args, word)
+  end
+
   -- "--" keeps a link that starts with "-" from being read as an option.
   table.insert(args, "--")
   table.insert(args, job.url)

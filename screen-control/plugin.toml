@@ -1,6 +1,6 @@
 id = "omerfuyar/screen-control"
 name = "Screen Control"
-version = "1.4.0"
+version = "1.5.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
@@ -42,6 +42,14 @@ type = "bool"
 label_key = "settings.step_dims.label"
 description_key = "settings.step_dims.description"
 default = false
+advanced = true
+
+[[setting]]
+key = "skip_monitors"
+type = "string_list"
+label_key = "settings.skip_monitors.label"
+description_key = "settings.skip_monitors.description"
+default = []
 advanced = true
 
 [[service]]

@@ -130,6 +130,15 @@ end
 -- toplevel id. The old pictures stay on screen until the new ones are all there; each round
 -- has new file names, so the panel never shows a cached picture.
 local function capture(model)
+  -- With previews off, the pictures taken so far go too, and windows show their icon.
+  if noctalia.getConfig("previews") == false then
+    for _, path in pairs(pictures) do
+      noctalia.removeFile(path)
+    end
+    pictures = {}
+    capturedFor = nil
+    return
+  end
   local key = layoutKey(model)
   if capturing or key == capturedFor or not noctalia.commandExists("grim") then
     return

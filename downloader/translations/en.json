@@ -49,6 +49,10 @@
         "opus": "Opus"
       }
     },
+    "extra_args": {
+      "description": "More yt-dlp arguments, separated by spaces, such as --cookies-from-browser firefox for videos that need a sign-in. They come after the plugin's own, so they win.",
+      "label": "Extra yt-dlp arguments"
+    },
     "folder": {
       "description": "Where downloads are saved.",
       "label": "Download folder"

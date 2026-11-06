@@ -49,9 +49,10 @@ noctalia msg panel-toggle omerfuyar/overview:panel
 
 ## Settings
 
-| Setting   | Type     | Default | Description                                                                  |
-| --------- | -------- | ------- | ---------------------------------------------------------------------------- |
-| `keybind` | `string` | `""`    | A key that opens Overview, such as `SUPER + Tab`. Empty adds no key binding. |
+| Setting    | Type     | Default | Description                                                                                              |
+| ---------- | -------- | ------- | -------------------------------------------------------------------------------------------------------- |
+| `keybind`  | `string` | `""`    | A key that opens Overview, such as `SUPER + Tab`. Empty adds no key binding.                             |
+| `previews` | `bool`   | `true`  | Advanced. A small picture of each window, taken with grim. Off, windows show their app's icon and title. |
 
 ## Notes
 

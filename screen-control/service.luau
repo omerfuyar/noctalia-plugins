@@ -403,6 +403,18 @@ local function isInternal(name)
   return name:match("^eDP") or name:match("^LVDS") or name:match("^DSI")
 end
 
+-- A monitor the owner left out in the settings, by its connector or part of its name.
+local function skipped(output)
+  for _, entry in ipairs(noctalia.getConfig("skip_monitors") or {}) do
+    local wanted = noctalia.string.trim(entry):lower()
+    if wanted ~= "" and (output.name:lower() == wanted
+      or (output.description or ""):lower():find(wanted, 1, true)) then
+      return true
+    end
+  end
+  return false
+end
+
 local function loadOutputs()
   local old = {}
   for _, monitor in ipairs(monitors) do
@@ -410,6 +422,9 @@ local function loadOutputs()
   end
   monitors = {}
   for _, output in ipairs(noctalia.outputs()) do
+    if skipped(output) then
+      continue
+    end
     local internal = isInternal(output.name) and true or false
     local label = internal and noctalia.tr("monitor.builtin")
       or (output.description ~= "" and output.description or output.name)
@@ -544,8 +559,16 @@ function update()
   end
 end
 
+local skipText = nil
+
 function onConfigChanged()
   noctalia.setUpdateInterval(perWorkspace() and 300 or 1000)
+  -- The monitors are read again only when the list to leave out changed.
+  local text = table.concat(noctalia.getConfig("skip_monitors") or {}, "\n")
+  if text ~= skipText then
+    skipText = text
+    loadOutputs()
+  end
   readWorkspaces()
   publish()
 end

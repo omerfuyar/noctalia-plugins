@@ -46,6 +46,10 @@
       "description": "Each workspace keeps its own dimming. Needs Hyprland.",
       "label": "Dim each workspace on its own"
     },
+    "skip_monitors": {
+      "description": "Monitors to leave out, by connector, such as HDMI-A-1, or part of their name, such as Legion. Use it for a monitor whose brightness control misbehaves.",
+      "label": "Leave out monitors"
+    },
     "step_dims": {
       "description": "Scrolling on the widget and the brightness keys go on past the lowest brightness into extra dim. Off, they stop there, and extra dim has its own slider in the panel.",
       "label": "Scroll into extra dim"

@@ -49,12 +49,13 @@ noctalia msg panel-toggle omerfuyar/screen-control:panel
 
 ## Settings
 
-| Setting         | Type     | Default | Description                                                                                                                                                                 |
-| --------------- | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `max_dim`       | `int`    | `75`    | How dark the screens can get below their lowest brightness, in percent.                                                                                                     |
-| `dim_method`    | `select` | `gamma` | How the screens get darker below their lowest brightness: `gamma`, with hyprsunset, or `overlay`, a black layer. Gamma falls back to the layer where hyprsunset is missing. |
-| `per_workspace` | `bool`   | `false` | Each workspace keeps its own dimming. Needs Hyprland.                                                                                                                       |
-| `step_dims`     | `bool`   | `false` | Advanced. Scrolling on the widget and the brightness keys go on past the lowest brightness into extra dim.                                                                  |
+| Setting         | Type          | Default | Description                                                                                                                                                                 |
+| --------------- | ------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `max_dim`       | `int`         | `75`    | How dark the screens can get below their lowest brightness, in percent.                                                                                                     |
+| `dim_method`    | `select`      | `gamma` | How the screens get darker below their lowest brightness: `gamma`, with hyprsunset, or `overlay`, a black layer. Gamma falls back to the layer where hyprsunset is missing. |
+| `per_workspace` | `bool`        | `false` | Each workspace keeps its own dimming. Needs Hyprland.                                                                                                                       |
+| `step_dims`     | `bool`        | `false` | Advanced. Scrolling on the widget and the brightness keys go on past the lowest brightness into extra dim.                                                                  |
+| `skip_monitors` | `string_list` | `[]`    | Advanced. Monitors to leave out, by connector, such as `HDMI-A-1`, or part of their name. For a monitor whose brightness control misbehaves.                                |
 
 ## IPC
 
