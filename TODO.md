@@ -10,14 +10,6 @@ Open questions and pending tasks. When one is settled, write the decision where 
 ## Tasks
 
 1. Every plugin shows a missing required command in its panel, as [DESIGN.md](.claude/docs/DESIGN.md), section 9.6, says.
-2. Resurrect keeps one source of truth when sharing is on. Decided with the owner:
-   - `shared/` holds the dotfiles, the settings, one package list per package manager, the service lists, and what the shared hooks save.
-   - `devices/<name>/` holds only what differs: `exclude.txt`, the shared packages and services this device leaves out, in place of `skip.txt`; `extra.txt`, the packages only this device keeps; `files/`, for **Only this device**; `settings.toml`, the settings tied to the hardware; and the device's own hooks. The full copies of the package and service lists, Noctalia's config, `settings.toml` and `plugins.txt` go.
-   - A package installed on one device joins the shared list. Other devices list it in the panel, with **Install…** and **Not here**, which adds it to `exclude.txt`.
-   - A package uninstalled on one device leaves the shared list. A device that still has it does not add it back by itself: the panel lists it, with **Share again** and **Only here**, which adds it to `extra.txt`. Services follow the same rules.
-   - `hooks/` holds the shared hooks, which run on every device and save into `shared/`. `devices/<name>/hooks/` holds that device's own hooks, which save into its folder. The owner's dconf, VS Code and language, timezone and keyboard hooks become shared hooks.
-   - A new install restores `shared/` and its own device folder when there is one, without asking which device to copy.
-   - A repository in the current layout moves to this one on its next save.
 
 ## Plugins
 

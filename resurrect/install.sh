@@ -1,8 +1,10 @@
 #!/bin/sh
-# Installs packages that other devices have, in a terminal the panel opens:
+# Installs packages and turns on services that other devices have, in a terminal the panel
+# opens:
 #   install.sh <file>
-# Each line of the file is "<list> <name>", where <list> is pacman, aur, apt, dnf or flatpak.
-# Then it saves again, so the panel shows what is still missing.
+# Each line of the file is "<list> <name>", where <list> is pacman, aur, apt, dnf or flatpak,
+# or system or user for a service. Services start from the next boot or login. Then it saves
+# again, so the panel shows what is still missing.
 set -u
 
 file=$1
@@ -33,6 +35,13 @@ fi
 if [ -n "$(names flatpak)" ]; then
   names flatpak | xargs flatpak install -y
 fi
+# One at a time, so a unit this system does not have does not stop the others.
+for unit in $(names system); do
+  sudo systemctl enable "$unit" || echo "skipped: $unit"
+done
+for unit in $(names user); do
+  systemctl --user enable "$unit" || echo "skipped: $unit"
+done
 
 rm -f "$file"
 command -v noctalia >/dev/null && noctalia msg plugin omerfuyar/resurrect:service all save >/dev/null
