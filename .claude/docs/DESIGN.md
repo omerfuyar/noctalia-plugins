@@ -108,11 +108,13 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 ## 9. Dependencies and setup
 
 1. A plugin first uses what Noctalia provides (section 10). It runs an external command only when Noctalia cannot do the job.
-2. Every external command is listed in `dependencies` and in the README's Requirements. The Requirements are a table of each command, whether it is required or optional, and what it is for; an optional one also says what stops working without it.
-3. On start, the service checks each required command with `noctalia.commandExists`.
+2. Every external command is listed in `dependencies` and in the README's Requirements. The Requirements are a table of each command, whether it is required or optional, what it is for, and what stops working without it.
+   - A command is required when the plugin's default settings use it, even when the plugin still runs without it. A command that only some systems use says which: "Required on Hyprland".
+   - A command is optional only when a setting that is off by default needs it, or a program the user may not have, such as Flatpak.
+3. On start, the service checks each command the plugin cannot work without with `noctalia.commandExists`.
 4. When something is missing, the panel shows a setup card in place of its normal content. The card names what is missing and has one button that installs it in a terminal with `noctalia.runInTerminal`. The bar widget shows the setup state as section 5 says.
 5. One-time setup that needs root, such as loading a kernel module, uses the same card.
-6. A missing optional command only hides the feature that needs it.
+6. A missing command that only one feature needs hides that feature.
 
 ## 10. Noctalia and external commands
 

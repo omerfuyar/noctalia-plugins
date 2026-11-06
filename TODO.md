@@ -5,7 +5,8 @@ Open questions and pending tasks. When one is settled, write the decision where 
 ## Open questions
 
 1. Formatter for Luau: StyLua, with which settings?
-2. Why does dimming below the lowest brightness not show on the owner's desktop, with gamma or with the black layer?
+2. Why does dimming below the lowest brightness work on the owner's laptop only with gamma, not with the black layer, while the desktop works with both? Test again on the laptop's new install.
+3. Should a plugin say so when a required command that only one feature needs is missing, such as Resurrect's `gitleaks` or `python3`? Today the feature hides without a word, so saves go unchecked for secrets. Recommended: the panel shows one line naming the missing commands, with a button that installs them in a terminal.
 
 ## Plugins
 

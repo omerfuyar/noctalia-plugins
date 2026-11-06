@@ -27,7 +27,7 @@ Bandcamp, Dailymotion and Bilibili. The full list is
 | `ffmpeg`   | Required | Joins video and audio, and converts audio.                                          |
 | `sh`       | Required | Runs each download in the background. It comes with every Linux system.             |
 | `kill`     | Required | Stops a download. It comes with every Linux system.                                 |
-| `xdg-open` | Optional | Opens finished files and the download folder. Without it, those buttons are hidden. |
+| `xdg-open` | Required | Opens finished files and the download folder. Without it, those buttons are hidden. |
 
 When `yt-dlp` or `ffmpeg` is missing, the panel offers to install both in a terminal.
 

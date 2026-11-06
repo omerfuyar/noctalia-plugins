@@ -20,7 +20,7 @@ by name, with the CPU and memory they use right now.
 | `kill`    | Required | Ends a process.                                                                                                         |
 | `sh`      | Required | Reads every process in one go, with `awk` and `cat`. They come with every Linux system.                                 |
 | `getconf` | Required | Finds the clock rate and page size, to turn the kernel's numbers into CPU and memory. It comes with every Linux system. |
-| `pkexec`  | Optional | Ends another user's process, after asking for an administrator's password. Without it, those cannot be ended.           |
+| `pkexec`  | Required | Ends another user's process, after asking for an administrator's password. Without it, those cannot be ended.           |
 
 ## Usage
 

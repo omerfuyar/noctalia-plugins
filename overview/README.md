@@ -18,7 +18,7 @@ to move it there.
 | Command   | Needed   | What for                                                                                      |
 | --------- | -------- | --------------------------------------------------------------------------------------------- |
 | `hyprctl` | Required | Reads the workspaces and windows, and focuses and moves them. Overview works on Hyprland.     |
-| `grim`    | Optional | Takes a small picture of each window. Without it, windows show as their app's icon and title. |
+| `grim`    | Required | Takes a small picture of each window. Without it, windows show as their app's icon and title. |
 
 ## Usage
 
