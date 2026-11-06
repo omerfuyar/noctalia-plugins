@@ -98,3 +98,16 @@ icon = "keyboard"
 description = "Switch between your keyboard layouts and fcitx5 input methods, such as Hangul, from one list."
 plugin_api = 43
 tags = ["bar", "hyprland", "language"]
+
+[[plugin]]
+id = "omerfuyar/plugin-hub"
+name = "Plugin Hub"
+version = "1.0.0"
+updated_at = 1793983092
+added_at = 1793983092
+author = "omerfuyar"
+license = "MIT"
+icon = "apps"
+description = "Every plugin in one panel: enable it, open its panels, run its commands and give any of them a key."
+plugin_api = 43
+tags = ["hyprland", "launcher", "shortcut", "utility"]
