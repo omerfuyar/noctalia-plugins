@@ -86,7 +86,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 
 1. The panel holds the details and controls that do not fit the bar.
 2. Its height follows its content, up to a limit.
-3. Long lists scroll inside the panel: a `ui.scroll` with `flexGrow = 1`, so the panel grows up to its `max_height` and the list scrolls inside it. A list whose height the plugin works out from its rows may give the scroll that `height` instead. A scroll keeps the height it was made with, so the placeholder shown while data loads stays outside it, and its `key` changes when its content grows, such as when hidden rows show.
+3. Long lists scroll inside the panel. A `ui.scroll` takes the height of its content the first time it is laid out, and it ignores its own `height`. So the list sits in a `ui.column` whose `height` the plugin works out from its rows, at most what fits in the panel's `max_height`, and the scroll inside it has `flexGrow = 1`. The scroll then follows that column as the list grows or shrinks. Rows that the height is worked out from get a fixed `height`.
 4. It shows a placeholder while data loads, and never an empty frame.
 5. A panel that a bar widget opens has `placement = "attached"`, `position = "auto"` and `open_near_click = true`, so it opens next to the widget, as Noctalia's own panels do. Opened by IPC or a key binding, it follows the same settings.
 6. A row whose fill changes with its state sets a transparent fill, such as `primary/0`, when it is off, never `nil`, so the old fill does not stay.
