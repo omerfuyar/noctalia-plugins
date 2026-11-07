@@ -11,7 +11,6 @@ Open questions and pending tasks. When one is settled, write the decision where 
 ## Tasks
 
 1. Every plugin shows a missing required command in its panel, as [DESIGN.md](.claude/docs/DESIGN.md), section 9.6, says.
-2. Downloader, Resurrect, Process Manager and Overview scroll their lists as [DESIGN.md](.claude/docs/DESIGN.md), section 6.3, says. Today a list taller than the panel is cut off at the bottom and does not scroll.
 
 ## Plugins
 

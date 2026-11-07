@@ -129,7 +129,7 @@ local function card(workspace, monitor, active)
       panel.close()
     end,
   }, {
-    ui.row({ gap = 6, align = "center" }, {
+    ui.row({ gap = 6, align = "center", height = CARD_HEADER - 6 }, {
       ui.label({ text = noctalia.tr("workspace.name", { name = workspace.name }),
         color = active and "primary" or "on_surface", fontWeight = "semibold", flexGrow = 1 }),
       ui.label({ text = noctalia.trp("workspace.windows", count), color = "on_surface_variant" }),
@@ -160,7 +160,7 @@ local function monitorSection(monitor, showName)
   local children = {}
   if showName then
     height += 20 + 14
-    table.insert(children, ui.row({ gap = 6, align = "center" }, {
+    table.insert(children, ui.row({ gap = 6, align = "center", height = 20 }, {
       ui.glyph({ name = "device-desktop", size = 16, color = "on_surface_variant" }),
       ui.label({ text = monitor.name, color = "on_surface_variant" }),
     }))
@@ -183,7 +183,8 @@ local function render()
     return
   end
 
-  -- A scroll in a panel that follows its content needs a height of its own.
+  -- A scroll keeps the height of its first content, so it fills a column of the list's
+  -- height (DESIGN.md, section 6.3).
   local sections, contentHeight = {}, 0
   for index, monitor in ipairs(model.monitors) do
     local section, height = monitorSection(monitor, #model.monitors > 1)
@@ -197,8 +198,9 @@ local function render()
       ui.label({ text = noctalia.tr("panel.title"), fontWeight = "semibold", flexGrow = 1 }),
       ui.label({ text = noctalia.tr("panel.hint"), color = "on_surface_variant" }),
     }),
-    ui.scroll({ key = "list" .. math.min(contentHeight, MAX_LIST_HEIGHT), gap = 20,
-      height = math.min(contentHeight, MAX_LIST_HEIGHT) }, sections),
+    ui.column({ height = math.min(contentHeight, MAX_LIST_HEIGHT) }, {
+      ui.scroll({ key = "list", flexGrow = 1, gap = 20 }, sections),
+    }),
   }))
 end
 

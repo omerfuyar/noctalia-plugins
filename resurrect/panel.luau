@@ -6,6 +6,30 @@
 local model = nil
 local confirming = false
 
+-- The cards scroll inside a column of their height, up to what fits in the panel
+-- (DESIGN.md, section 6.3). Rows have fixed heights; labels that wrap are estimated, and
+-- cards keep their own height, so a label that wraps more than estimated scrolls instead
+-- of being cut off.
+local LIST_MAX = 560
+local CARD_GAP = 14
+local CARD_PADDING = 12
+local ROW_GAP = 8
+local TITLE_HEIGHT = 24
+local LINE_HEIGHT = 20
+local BUTTON_ROW_HEIGHT = 28
+local CHARS_PER_LINE = 34
+
+-- About how tall a label of <text> is, wrapped to at most <maxLines>.
+local function textHeight(text, maxLines)
+  return LINE_HEIGHT * math.clamp(math.ceil(#text / CHARS_PER_LINE), 1, maxLines)
+end
+
+-- A card of <rows>, which together are <height> tall, and the card's own height.
+local function card(rows, height)
+  height += 2 * CARD_PADDING + ROW_GAP * (#rows - 1)
+  return ui.column({ gap = ROW_GAP, padding = CARD_PADDING, radius = 12, fill = "surface_container_high" }, rows), height
+end
+
 local function send(command)
   command.n = noctalia.nowMs()
   noctalia.state.set("resurrect.command", command)
@@ -26,24 +50,26 @@ local function statusCard()
     title, color, glyph = noctalia.tr("status.never"), "on_surface_variant", "clock"
   end
   local lines = {
-    ui.row({ gap = 8, align = "center" }, {
+    ui.row({ gap = 8, align = "center", height = TITLE_HEIGHT }, {
       ui.glyph({ name = glyph, size = 20, color = color }),
       ui.label({ text = title, fontWeight = "semibold", flexGrow = 1 }),
     }),
   }
+  local height = TITLE_HEIGHT
+  local function line(text, textColor, maxLines)
+    table.insert(lines, ui.label({ text = text, color = textColor, maxLines = maxLines }))
+    height += textHeight(text, maxLines)
+  end
   if model.error then
-    table.insert(lines, ui.label({ text = model.error, color = "error", maxLines = 3 }))
+    line(model.error, "error", 3)
   end
-  table.insert(lines, ui.label({ text = noctalia.tr("status.folder", { folder = model.folder }), color = "on_surface_variant" }))
-  table.insert(lines, ui.label({
-    text = model.remote ~= "" and noctalia.tr("status.remote", { remote = model.remote }) or noctalia.tr("status.local"),
-    color = "on_surface_variant",
-    maxLines = 2,
-  }))
+  line(noctalia.tr("status.folder", { folder = model.folder }), "on_surface_variant", 2)
+  line(model.remote ~= "" and noctalia.tr("status.remote", { remote = model.remote }) or noctalia.tr("status.local"),
+    "on_surface_variant", 2)
   if model.share and model.remote ~= "" then
-    table.insert(lines, ui.label({ text = noctalia.tr("status.shared"), color = "on_surface_variant", maxLines = 2 }))
+    line(noctalia.tr("status.shared"), "on_surface_variant", 2)
   end
-  return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container_high" }, lines)
+  return card(lines, height)
 end
 
 -- At most this many waiting files are listed; the rest are counted.
@@ -65,7 +91,7 @@ local function waitingRow(path, isHeld)
       tooltip = isHeld and noctalia.tr("waiting.theirs_held") or nil,
       onClick = function() send({ action = "resolve", path = path, choice = "theirs" }) end }))
   end
-  return ui.row({ gap = 6, align = "center" }, children)
+  return ui.row({ gap = 6, align = "center", height = 2 * LINE_HEIGHT }, children)
 end
 
 local function waiting()
@@ -74,31 +100,38 @@ local function waiting()
     return nil
   end
   local rows = {
-    ui.row({ gap = 8, align = "center" }, {
+    ui.row({ gap = 8, align = "center", height = TITLE_HEIGHT }, {
       ui.glyph({ name = "git-merge", size = 18, color = "error" }),
       ui.label({ text = noctalia.trp("waiting.title", total), fontWeight = "semibold", flexGrow = 1 }),
     }),
   }
+  local height = TITLE_HEIGHT
   local shown = 0
   for _, path in ipairs(model.conflicts) do
     if shown < MAX_WAITING then
       table.insert(rows, waitingRow(path, false))
+      height += 2 * LINE_HEIGHT
       shown += 1
     end
   end
   if #model.held > 0 and shown < MAX_WAITING then
-    table.insert(rows, ui.label({ text = noctalia.tr("waiting.held"), color = "on_surface_variant", maxLines = 2 }))
+    local note = noctalia.tr("waiting.held")
+    table.insert(rows, ui.label({ text = note, color = "on_surface_variant", maxLines = 2 }))
+    height += textHeight(note, 2)
     for _, path in ipairs(model.held) do
       if shown < MAX_WAITING then
         table.insert(rows, waitingRow(path, true))
+        height += 2 * LINE_HEIGHT
         shown += 1
       end
     end
   end
   if total > shown then
-    table.insert(rows, ui.label({ text = noctalia.tr("waiting.more", { count = total - shown }), color = "on_surface_variant" }))
+    table.insert(rows, ui.label({ text = noctalia.tr("waiting.more", { count = total - shown }), color = "on_surface_variant",
+      maxLines = 1 }))
+    height += LINE_HEIGHT
   end
-  return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container_high" }, rows)
+  return card(rows, height)
 end
 
 -- The list a package or service comes from, as the panel names it.
@@ -116,17 +149,21 @@ local function missingCard()
     return nil
   end
   local rows = {
-    ui.row({ gap = 8, align = "center" }, {
+    ui.row({ gap = 8, align = "center", height = TITLE_HEIGHT }, {
       ui.glyph({ name = "package", size = 18, color = "primary" }),
       ui.label({ text = noctalia.trp("missing.title", #missing), fontWeight = "semibold", flexGrow = 1 }),
     }),
   }
+  local height = TITLE_HEIGHT + BUTTON_ROW_HEIGHT
   for index, package in ipairs(missing) do
     if index > MAX_WAITING then
-      table.insert(rows, ui.label({ text = noctalia.tr("waiting.more", { count = #missing - MAX_WAITING }), color = "on_surface_variant" }))
+      table.insert(rows, ui.label({ text = noctalia.tr("waiting.more", { count = #missing - MAX_WAITING }),
+        color = "on_surface_variant", maxLines = 1 }))
+      height += LINE_HEIGHT
       break
     end
-    table.insert(rows, ui.row({ gap = 6, align = "center" }, {
+    height += BUTTON_ROW_HEIGHT
+    table.insert(rows, ui.row({ gap = 6, align = "center", height = BUTTON_ROW_HEIGHT }, {
       ui.label({ text = package.name, flexGrow = 1, maxLines = 1 }),
       ui.label({ text = listName(package.list), color = "on_surface_variant" }),
       ui.button({ text = noctalia.tr("missing.skip"), variant = "ghost", controlSize = "sm",
@@ -138,7 +175,7 @@ local function missingCard()
   for _, package in ipairs(missing) do
     table.insert(names, package.name)
   end
-  table.insert(rows, ui.row({ gap = 8, justify = "end" }, {
+  table.insert(rows, ui.row({ gap = 8, justify = "end", height = BUTTON_ROW_HEIGHT }, {
     ui.button({ text = noctalia.tr("missing.skip_all"), variant = "ghost", controlSize = "sm",
       onClick = function() send({ action = "skip", names = names }) end }),
     ui.button({ text = noctalia.tr("missing.install"), glyph = "terminal-2", variant = "primary", controlSize = "sm",
@@ -148,7 +185,7 @@ local function missingCard()
         panel.close()
       end }),
   }))
-  return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container_high" }, rows)
+  return card(rows, height)
 end
 
 -- Packages and services another device removed and this one still has, with Share again
@@ -158,24 +195,29 @@ local function leftCard()
   if #left == 0 then
     return nil
   end
+  local title = noctalia.trp("left.title", #left)
   local rows = {
     ui.row({ gap = 8, align = "center" }, {
       ui.glyph({ name = "package-off", size = 18, color = "primary" }),
-      ui.label({ text = noctalia.trp("left.title", #left), fontWeight = "semibold", flexGrow = 1, maxLines = 2 }),
+      ui.label({ text = title, fontWeight = "semibold", flexGrow = 1, maxLines = 2 }),
     }),
   }
+  local height = math.max(TITLE_HEIGHT, textHeight(title, 2))
   for index, item in ipairs(left) do
     if index > MAX_WAITING then
-      table.insert(rows, ui.label({ text = noctalia.tr("waiting.more", { count = #left - MAX_WAITING }), color = "on_surface_variant" }))
+      table.insert(rows, ui.label({ text = noctalia.tr("waiting.more", { count = #left - MAX_WAITING }),
+        color = "on_surface_variant", maxLines = 1 }))
+      height += LINE_HEIGHT
       break
     end
+    height += LINE_HEIGHT + 2 + BUTTON_ROW_HEIGHT
     -- The name has a line of its own, as two buttons beside it leave it too little room.
-    table.insert(rows, ui.column({ gap = 2 }, {
-      ui.row({ gap = 6, align = "center" }, {
+    table.insert(rows, ui.column({ gap = 2, height = LINE_HEIGHT + 2 + BUTTON_ROW_HEIGHT }, {
+      ui.row({ gap = 6, align = "center", height = LINE_HEIGHT }, {
         ui.label({ text = item.name, flexGrow = 1, maxLines = 1 }),
         ui.label({ text = listName(item.list), color = "on_surface_variant" }),
       }),
-      ui.row({ gap = 6, justify = "end" }, {
+      ui.row({ gap = 6, justify = "end", height = BUTTON_ROW_HEIGHT }, {
         ui.button({ text = noctalia.tr("left.again"), variant = "ghost", controlSize = "sm",
           tooltip = noctalia.tr("left.again_tooltip"),
           onClick = function() send({ action = "again", items = { item } }) end }),
@@ -186,18 +228,20 @@ local function leftCard()
     }))
   end
   if #left > 1 then
-    table.insert(rows, ui.row({ gap = 8, justify = "end" }, {
+    height += BUTTON_ROW_HEIGHT
+    table.insert(rows, ui.row({ gap = 8, justify = "end", height = BUTTON_ROW_HEIGHT }, {
       ui.button({ text = noctalia.tr("left.again_all"), variant = "ghost", controlSize = "sm",
         onClick = function() send({ action = "again", items = left }) end }),
       ui.button({ text = noctalia.tr("left.only_all"), variant = "ghost", controlSize = "sm",
         onClick = function() send({ action = "only", items = left }) end }),
     }))
   end
-  return ui.column({ gap = 8, padding = 12, radius = 12, fill = "surface_container_high" }, rows)
+  return card(rows, height)
 end
 
 -- One kind of thing a save holds, with how many the last save had.
 local function includedRow(glyph, text, on, count)
+  local height = math.max(BUTTON_ROW_HEIGHT, textHeight(text, 2))
   local children = {
     ui.glyph({ name = on and glyph or "minus", size = 16, color = on and "primary" or "on_surface_variant" }),
     ui.label({ text = text, color = on and "on_surface" or "on_surface_variant", maxLines = 2, flexGrow = 1 }),
@@ -205,7 +249,7 @@ local function includedRow(glyph, text, on, count)
   if on and count then
     table.insert(children, ui.label({ text = tostring(count), color = "on_surface_variant" }))
   end
-  return ui.row({ gap = 8, align = "center", flexGrow = 1 }, children)
+  return ui.row({ gap = 8, align = "center", flexGrow = 1 }, children), height
 end
 
 local function included()
@@ -213,20 +257,26 @@ local function included()
   local files = #model.files > 0 and table.concat(model.files, ", ") or noctalia.tr("saved.no_files")
   -- Until a save has counted them, the steps are named without a number.
   local hookText = counts.hooks and noctalia.trp("saved.hooks", counts.hooks) or noctalia.tr("saved.hooks_any")
-  local hookRow = { includedRow("terminal-2", hookText, counts.hooks ~= 0) }
+  local hookItem, hookHeight = includedRow("terminal-2", hookText, counts.hooks ~= 0)
+  local hookRow = { hookItem }
   if model.canOpen then
     table.insert(hookRow, ui.button({ glyph = "folder", variant = "ghost", controlSize = "sm",
       tooltip = noctalia.tr("saved.open_hooks"), onClick = function() send({ action = "hooks" }) end }))
   end
-  return ui.column({ gap = 6 }, {
-    ui.label({ text = noctalia.tr("saved.title"), color = "on_surface_variant" }),
-    includedRow("package", noctalia.tr("saved.packages"), model.packages, counts.packages),
-    includedRow("file-text", noctalia.tr(model.share and "saved.files_shared" or "saved.files", { files = files }),
-      #model.files > 0, counts.files and (counts.files + (model.share and counts.shared or 0)) or nil),
-    includedRow("settings", noctalia.tr("saved.services"), model.services, counts.services),
-    includedRow("adjustments", noctalia.tr("saved.noctalia"), model.noctalia, counts.plugins),
-    ui.row({ gap = 4, align = "center" }, hookRow),
-  })
+  local rows = { ui.label({ text = noctalia.tr("saved.title"), color = "on_surface_variant", maxLines = 1 }) }
+  local height = LINE_HEIGHT + hookHeight
+  local function add(row, rowHeight)
+    table.insert(rows, row)
+    height += rowHeight
+  end
+  add(includedRow("package", noctalia.tr("saved.packages"), model.packages, counts.packages))
+  add(includedRow("file-text", noctalia.tr(model.share and "saved.files_shared" or "saved.files", { files = files }),
+    #model.files > 0, counts.files and (counts.files + (model.share and counts.shared or 0)) or nil))
+  add(includedRow("settings", noctalia.tr("saved.services"), model.services, counts.services))
+  add(includedRow("adjustments", noctalia.tr("saved.noctalia"), model.noctalia, counts.plugins))
+  table.insert(rows, ui.row({ gap = 4, align = "center" }, hookRow))
+  height += 6 * (#rows - 1)
+  return ui.column({ gap = 6 }, rows), height
 end
 
 local function actions()
@@ -290,23 +340,23 @@ render = function()
     return
   end
   -- The cards scroll between the fixed header and buttons when they do not fit.
-  local cards = { statusCard() }
-  local waitingCard = waiting()
-  if waitingCard then
-    table.insert(cards, waitingCard)
+  local cards, height = {}, -CARD_GAP
+  local function add(item, itemHeight)
+    if item then
+      table.insert(cards, item)
+      height += itemHeight + CARD_GAP
+    end
   end
-  local packagesCard = missingCard()
-  if packagesCard then
-    table.insert(cards, packagesCard)
-  end
-  local removedCard = leftCard()
-  if removedCard then
-    table.insert(cards, removedCard)
-  end
-  table.insert(cards, included())
+  add(statusCard())
+  add(waiting())
+  add(missingCard())
+  add(leftCard())
+  add(included())
   panel.render(ui.column({ gap = 14, padding = 16 }, {
     header,
-    ui.scroll({ gap = 14, flexGrow = 1 }, cards),
+    ui.column({ height = math.min(height, LIST_MAX) }, {
+      ui.scroll({ key = "cards", gap = CARD_GAP, flexGrow = 1 }, cards),
+    }),
     ui.separator({}),
     actions(),
   }))

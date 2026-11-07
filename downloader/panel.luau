@@ -8,6 +8,14 @@ local mode = nil
 -- A new key gives the link field a new value (ui.input is seeded only when created).
 local inputKey = 0
 
+-- The queue scrolls inside a column of the rows' height, up to what fits in the panel
+-- (DESIGN.md, section 6.3). A row is this tall, more for a second status line and progress.
+local LIST_MAX = 280
+local LIST_GAP = 6
+local ROW_HEIGHT = 56
+local LINE_HEIGHT = 17
+local PROGRESS_HEIGHT = 8
+
 local STATUS_GLYPHS = {
   queued = "clock",
   running = "download",
@@ -158,19 +166,23 @@ local function jobRow(job)
   end
 
   local color = job.status == "failed" and "error" or (job.status == "running" and "primary" or "on_surface_variant")
+  local failed = job.status == "failed"
+  local height = ROW_HEIGHT + (failed and LINE_HEIGHT or 0)
   local text = {
     ui.label({ text = job.title or job.url, maxLines = 1 }),
-    ui.label({ text = statusText(job), color = job.status == "failed" and "error" or "on_surface_variant", maxLines = 2 }),
+    ui.label({ text = statusText(job), color = failed and "error" or "on_surface_variant", maxLines = failed and 2 or 1 }),
   }
   if job.status == "running" then
     table.insert(text, ui.progress({ progress = job.progress, height = 4 }))
+    height += PROGRESS_HEIGHT
   end
 
-  return ui.row({ key = job.id, gap = 10, align = "center", padding = 8, radius = 8, fill = "surface_container/0.6" }, {
+  return ui.row({ key = job.id, gap = 10, align = "center", padding = 8, radius = 8, fill = "surface_container/0.6",
+    height = height }, {
     ui.glyph({ name = STATUS_GLYPHS[job.status] or "download", size = 18, color = color }),
     ui.column({ gap = 4, flexGrow = 1 }, text),
     ui.row({ gap = 2 }, actions),
-  })
+  }), height
 end
 
 local function queue()
@@ -180,17 +192,23 @@ local function queue()
       ui.label({ text = noctalia.tr("panel.sites"), color = "on_surface_variant" }),
     })
   end
-  local rows = {}
+  local rows, height = {}, -LIST_GAP
   local finished = 0
   -- Newest first.
   for index = #model.jobs, 1, -1 do
     local job = model.jobs[index]
-    table.insert(rows, jobRow(job))
+    local row, rowHeight = jobRow(job)
+    table.insert(rows, row)
+    height += rowHeight + LIST_GAP
     if job.status ~= "running" and job.status ~= "queued" then
       finished += 1
     end
   end
-  local children = { ui.scroll({ gap = 6, flexGrow = 1 }, rows) }
+  local children = {
+    ui.column({ height = math.min(height, LIST_MAX) }, {
+      ui.scroll({ key = "queue", gap = LIST_GAP, flexGrow = 1 }, rows),
+    }),
+  }
   if finished > 0 then
     table.insert(children, ui.row({ justify = "end" }, {
       ui.button({
@@ -201,7 +219,7 @@ local function queue()
       }),
     }))
   end
-  return ui.column({ gap = 6, flexGrow = 1 }, children)
+  return ui.column({ gap = 6 }, children)
 end
 
 local function modeButton(value, glyph)

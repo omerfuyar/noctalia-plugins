@@ -282,9 +282,11 @@ render = function()
       ui.spacer({ flexGrow = 1 }),
       ui.label({ text = noctalia.trp("panel.apps", #list), color = "on_surface_variant" }),
     }),
-    -- A scroll in a panel that follows its content needs a height of its own. The key
-    -- changes with it, since a scroll keeps the height it was made with.
-    ui.scroll({ key = "list" .. listHeight, gap = 2, height = listHeight }, rows),
+    -- A scroll keeps the height of its first content, so it fills a column of the list's
+    -- height (DESIGN.md, section 6.3).
+    ui.column({ height = listHeight }, {
+      ui.scroll({ key = "list", flexGrow = 1, gap = 2 }, rows),
+    }),
   }))
 end
 
