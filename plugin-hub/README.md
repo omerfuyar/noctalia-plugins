@@ -32,6 +32,8 @@ key:
 noctalia msg panel-toggle omerfuyar/plugin-hub:panel
 ```
 
+![Plugin Hub in the bar](screenshots/bar.webp)
+
 Open one plugin's settings page directly, such as from a key:
 
 ```sh
