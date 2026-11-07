@@ -11,6 +11,7 @@ Open questions and pending tasks. When one is settled, write the decision where 
 ## Tasks
 
 1. Every plugin shows a missing required command in its panel, as [DESIGN.md](.claude/docs/DESIGN.md), section 9.6, says.
+2. Downloader, Resurrect, Process Manager and Overview scroll their lists as [DESIGN.md](.claude/docs/DESIGN.md), section 6.3, says. Today a list taller than the panel is cut off at the bottom and does not scroll.
 
 ## Plugins
 
@@ -27,4 +28,5 @@ Plugins to build:
 1. Ask Noctalia, in a feature request, for a plugin API to workspaces and windows, and to read brightness and caffeine. Plugins would then work on every compositor without their own commands.
 2. Offer `[[layer]]` support to the validator of community-plugins. Until it has it, Screen Control cannot be offered there ([DESIGN.md](.claude/docs/DESIGN.md), section 13.1).
 3. Offer Crashes a change to its author: also show failed services and errors from the system log since boot, and make the AI diagnosis optional.
-4. Review the other community plugins the owner uses against the principles in README.md: Ayet Köşesi, Default Apps, Hyprland Settings, Keybind Cheatsheet, Mawaqit, Network Toolkit, NoctaProton VPN, Process Monitor and Shelly. Propose changes to their authors.
+4. Report to Noctalia that, in a panel with `height = "content"`, a `ui.scroll` with `flexGrow = 1` keeps the height of its first content, as its documentation does not say, so a long list is cut off instead of scrolling; and that `ui.scroll` ignores its `height`. The cause is in `ScrollView::doLayout`, which calls `setSize` while it is measured.
+5. Review the other community plugins the owner uses against the principles in README.md: Ayet Köşesi, Default Apps, Hyprland Settings, Keybind Cheatsheet, Mawaqit, Network Toolkit, NoctaProton VPN, Process Monitor and Shelly. Propose changes to their authors.

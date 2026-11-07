@@ -7,6 +7,20 @@
 
 local CONTROL_WIDTH = 170
 
+-- A scroll takes its content's height when it is first laid out, so each list sits in a
+-- column whose height the panel works out from its rows (DESIGN.md, section 6.3). The
+-- limits keep the panel within its max_height of 640, less padding, title and gaps.
+local LIST_MAX = 536
+local LIST_MAX_NO_KEYS = 494
+local HEADER_HEIGHT = 40
+local ROW_HEIGHT = 36
+local NOTE_HEIGHT = 20
+local INPUT_HEIGHT = 32
+local GROUP_GAP = 4
+local LIST_GAP = 10
+local PAGE_GAP = 14
+local SECTION_GAP = 10
+
 local model = nil
 local search = ""
 local editing = nil -- the command whose key is being typed
@@ -113,7 +127,7 @@ local function actionRow(action)
       onClick = function() send({ action = "remove_custom", command = action.command }) end,
     }))
   end
-  return ui.row({ key = action.command, gap = 8, align = "center", paddingH = 4 }, children)
+  return ui.row({ key = action.command, gap = 8, align = "center", paddingH = 4, height = ROW_HEIGHT }, children)
 end
 
 local function groupHeader(group, open)
@@ -148,7 +162,7 @@ local function groupHeader(group, open)
     gap = 8,
     align = "center",
     paddingH = 4,
-    paddingV = 4,
+    height = HEADER_HEIGHT,
     radius = 8,
     onClick = function()
       expanded[group.id] = not expanded[group.id] or nil
@@ -157,6 +171,13 @@ local function groupHeader(group, open)
   }, children)
 end
 
+local function note(text)
+  return ui.row({ height = NOTE_HEIGHT, align = "center" }, {
+    ui.label({ text = text, color = "on_surface_variant", fontSize = 11, maxLines = 1 }),
+  })
+end
+
+-- A group's block and its height.
 local function groupBlock(group)
   local rows = {}
   local headerMatches = matches(group, nil)
@@ -168,19 +189,22 @@ local function groupBlock(group)
     end
   end
   if not headerMatches and #rows == 0 then
-    return nil
+    return nil, 0
   end
   local open = search ~= "" or expanded[group.id] == true
   local children = { groupHeader(group, open) }
+  local height = HEADER_HEIGHT
   if not open then
-    return ui.column({ key = "group-" .. group.id, gap = 4 }, children)
+    return ui.column({ key = "group-" .. group.id, gap = GROUP_GAP }, children), height
   end
   if group.enabled == false then
-    table.insert(children, ui.label({ text = noctalia.tr("plugin.off"), color = "on_surface_variant", fontSize = 11 }))
+    table.insert(children, note(noctalia.tr("plugin.off")))
+    height += GROUP_GAP + NOTE_HEIGHT
   elseif group.custom then
     for _, row in ipairs(rows) do
       table.insert(children, row)
     end
+    height += #rows * (GROUP_GAP + ROW_HEIGHT) + GROUP_GAP + INPUT_HEIGHT
     table.insert(children, ui.input({
       key = "add-custom-" .. #group.actions,
       controlSize = "sm",
@@ -192,13 +216,27 @@ local function groupBlock(group)
       end,
     }))
   elseif #rows == 0 then
-    table.insert(children, ui.label({ text = noctalia.tr("plugin.nothing"), color = "on_surface_variant", fontSize = 11 }))
+    table.insert(children, note(noctalia.tr("plugin.nothing")))
+    height += GROUP_GAP + NOTE_HEIGHT
   else
     for _, row in ipairs(rows) do
       table.insert(children, row)
     end
+    height += #rows * (GROUP_GAP + ROW_HEIGHT)
   end
-  return ui.column({ key = "group-" .. group.id, gap = 4 }, children)
+  return ui.column({ key = "group-" .. group.id, gap = GROUP_GAP }, children), height
+end
+
+-- A list of <blocks> as tall as <height>, up to <limit>; above it the list scrolls.
+local function scrollList(key, gap, height, limit, blocks)
+  return ui.column({ height = math.min(height, limit) }, {
+    ui.scroll({ key = key, flexGrow = 1, gap = gap }, blocks),
+  })
+end
+
+-- About how tall a label of <text> is at font size 11, wrapped to at most <maxLines>.
+local function textHeight(text, maxLines)
+  return 2 + 14 * math.min(maxLines, math.ceil(#text / 60))
 end
 
 local function groupTitle(id)
@@ -309,8 +347,16 @@ local function fieldControl(field, at, section)
   })
 end
 
+-- A setting's row and about how tall it is.
 local function fieldRow(field, at, section)
   local problem = pageModel.errors and pageModel.errors[`{at}/{field.key}`]
+  local height = ROW_HEIGHT
+  if field.description then
+    height += textHeight(field.description, 4)
+  end
+  if problem then
+    height += textHeight(problem, 3)
+  end
   return ui.column({ key = `field-{at}-{field.key}`, gap = 2 }, {
     ui.row({ gap = 8, align = "center" }, {
       ui.label({ text = field.label, flexGrow = 1, maxLines = 2 }),
@@ -318,7 +364,7 @@ local function fieldRow(field, at, section)
     }),
     field.description and ui.label({ text = field.description, color = "on_surface_variant", fontSize = 11, maxLines = 4 }) or nil,
     problem and ui.label({ text = problem, color = "error", fontSize = 11, maxLines = 3 }) or nil,
-  })
+  }), height
 end
 
 local function sectionTitle(section)
@@ -334,6 +380,7 @@ end
 
 local function settingsPage()
   local blocks = {}
+  local height = 0
   local hasAdvanced = false
   local loading = pageModel == nil or pageModel.loading
   if loading then
@@ -352,24 +399,30 @@ local function settingsPage()
           detail and ui.label({ text = tostring(detail), color = "on_surface_variant", fontSize = 11, maxLines = 1 }) or nil,
         }),
       }
+      local sectionHeight = NOTE_HEIGHT
       for _, field in ipairs(section.fields) do
         hasAdvanced = hasAdvanced or field.advanced
         if (showAdvanced or not field.advanced) and isVisible(field, section, own) then
-          table.insert(rows, fieldRow(field, at, section))
+          local row, rowHeight = fieldRow(field, at, section)
+          table.insert(rows, row)
+          sectionHeight += SECTION_GAP + rowHeight
         end
       end
       -- A section whose settings are all advanced shows once they are.
       if #rows > 1 then
         if #blocks > 0 then
           table.insert(blocks, ui.separator({}))
+          height += 2 * PAGE_GAP + 1
         end
-        table.insert(blocks, ui.column({ key = `section-{at}`, gap = 10 }, rows))
+        table.insert(blocks, ui.column({ key = `section-{at}`, gap = SECTION_GAP }, rows))
+        height += sectionHeight
       end
     end
   end
   if hasAdvanced then
     table.insert(blocks, ui.separator({}))
-    table.insert(blocks, ui.row({ gap = 8, align = "center" }, {
+    height += 2 * PAGE_GAP + 1 + INPUT_HEIGHT
+    table.insert(blocks, ui.row({ gap = 8, align = "center", height = INPUT_HEIGHT }, {
       ui.label({ text = noctalia.tr("page.advanced"), color = "on_surface_variant", flexGrow = 1 }),
       ui.toggle({
         checked = showAdvanced,
@@ -405,13 +458,10 @@ local function settingsPage()
         end,
       }),
     }),
-    -- The panel takes the height of the scroll as it is first made, so the scroll is made
-    -- again once the page has loaded, and when advanced settings show or hide.
-    loading and blocks[1] or ui.scroll({
-      key = `settings-{pageId}-{showAdvanced}`,
-      flexGrow = 1,
-      gap = 14,
-    }, blocks),
+    -- Placeholders, errors and an empty page show without a scroll.
+    not loading and not pageModel.error and #pageModel.sections > 0
+        and scrollList(`settings-{pageId}`, PAGE_GAP, height, LIST_MAX, blocks)
+      or blocks[1],
   }))
 end
 
@@ -428,17 +478,23 @@ render = function()
     return
   end
   local blocks = {}
+  local height = 0
   for _, group in ipairs(model.groups) do
-    local block = groupBlock(group)
+    local block, blockHeight = groupBlock(group)
     if block then
       if #blocks > 0 then
         table.insert(blocks, ui.separator({}))
+        height += 2 * LIST_GAP + 1
       end
       table.insert(blocks, block)
+      height += blockHeight
     end
   end
   if #blocks == 0 then
-    table.insert(blocks, ui.label({ text = noctalia.tr("panel.no_match"), color = "on_surface_variant" }))
+    table.insert(blocks, ui.row({ height = NOTE_HEIGHT, align = "center" }, {
+      ui.label({ text = noctalia.tr("panel.no_match"), color = "on_surface_variant" }),
+    }))
+    height = NOTE_HEIGHT
   end
   local children = {
     ui.row({ gap = 8, align = "center" }, {
@@ -459,7 +515,7 @@ render = function()
   if not model.canBind then
     table.insert(children, ui.label({ text = noctalia.tr("panel.no_keys"), color = "on_surface_variant", fontSize = 11, maxLines = 2 }))
   end
-  table.insert(children, ui.scroll({ key = "list", flexGrow = 1, gap = 10 }, blocks))
+  table.insert(children, scrollList("list", LIST_GAP, height, model.canBind and LIST_MAX or LIST_MAX_NO_KEYS, blocks))
   panel.render(ui.column({ gap = 12, padding = 16 }, children))
 end
 
