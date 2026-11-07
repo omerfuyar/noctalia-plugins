@@ -5,7 +5,6 @@
 -- gets a key with its key button. Renders "hub.model" and "hub.settings", and sends actions
 -- on "hub.command".
 
-local LIST_HEIGHT = 460
 local CONTROL_WIDTH = 170
 
 local model = nil
@@ -336,7 +335,8 @@ end
 local function settingsPage()
   local blocks = {}
   local hasAdvanced = false
-  if pageModel == nil or pageModel.loading then
+  local loading = pageModel == nil or pageModel.loading
+  if loading then
     table.insert(blocks, ui.label({ text = noctalia.tr("panel.loading"), color = "on_surface_variant" }))
   elseif pageModel.error then
     table.insert(blocks, ui.label({ text = pageModel.error, color = "error", maxLines = 4 }))
@@ -405,15 +405,13 @@ local function settingsPage()
         end,
       }),
     }),
-    -- A scroll keeps the size of its first content, so it gets a new key when the page
-    -- loads and when the advanced settings show. The column keeps the page as tall as the list.
-    ui.column({ height = LIST_HEIGHT }, {
-      ui.scroll({
-        key = `settings-{pageId}-{pageModel ~= nil and not pageModel.loading}-{showAdvanced}`,
-        height = LIST_HEIGHT,
-        gap = 14,
-      }, blocks),
-    }),
+    -- The panel takes the height of the scroll as it is first made, so the scroll is made
+    -- again once the page has loaded, and when advanced settings show or hide.
+    loading and blocks[1] or ui.scroll({
+      key = `settings-{pageId}-{showAdvanced}`,
+      flexGrow = 1,
+      gap = 14,
+    }, blocks),
   }))
 end
 
@@ -425,9 +423,7 @@ render = function()
   if model == nil or not model.ready then
     panel.render(ui.column({ gap = 12, padding = 16 }, {
       ui.label({ text = noctalia.tr("panel.title"), fontWeight = "semibold" }),
-      ui.column({ height = LIST_HEIGHT }, {
-        ui.label({ text = noctalia.tr("panel.loading"), color = "on_surface_variant" }),
-      }),
+      ui.label({ text = noctalia.tr("panel.loading"), color = "on_surface_variant" }),
     }))
     return
   end
@@ -463,7 +459,7 @@ render = function()
   if not model.canBind then
     table.insert(children, ui.label({ text = noctalia.tr("panel.no_keys"), color = "on_surface_variant", fontSize = 11, maxLines = 2 }))
   end
-  table.insert(children, ui.scroll({ key = "list-" .. LIST_HEIGHT, height = LIST_HEIGHT, gap = 10 }, blocks))
+  table.insert(children, ui.scroll({ key = "list", flexGrow = 1, gap = 10 }, blocks))
   panel.render(ui.column({ gap = 12, padding = 16 }, children))
 end
 
