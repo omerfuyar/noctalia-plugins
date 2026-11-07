@@ -7,6 +7,7 @@
 local Hyprland = {}
 
 local lua = nil -- whether Hyprland takes Lua; nil until the first apply tells
+local vrrNow = {} -- screen id -> the VRR Hyprland reported last
 
 local function quoted(value)
   return string.format("%q", tostring(value))
@@ -62,7 +63,9 @@ function Hyprland.read(callback)
     end
     local screens = {}
     for _, monitor in ipairs(monitors) do
-      table.insert(screens, screenOf(monitor))
+      local screen = screenOf(monitor)
+      vrrNow[screen.id] = screen.vrr
+      table.insert(screens, screen)
     end
     -- A mirror names its source by connector; the layout names it by screen.
     local byName = {}
@@ -156,13 +159,29 @@ local function luaRules(layout, ruled, current)
       end
     end
   end
+  -- Hyprland merges a rule into the one it has and cannot remove one while it runs, so a
+  -- workspace gets back the fields its rule had, and keeps the screen until Hyprland
+  -- reloads its config when its rule named none.
   for id, rule in pairs(ruled) do
-    if kept[id] == nil then
-      table.insert(lines, rule and workspaceRule(id, rule)
-        or string.format("hl.workspace_rule({ workspace = %s, enabled = false })", quoted(id)))
+    if kept[id] == nil and rule then
+      table.insert(lines, workspaceRule(id, rule))
     end
   end
   return table.concat(lines, "\n"), kept
+end
+
+-- Hyprland leaves VRR out when it compares a monitor rule with the one in use, so a rule
+-- that changes only VRR does not apply. A rule that also changes another value, the
+-- brightness of normal content here, comes first; the real rule then applies VRR.
+local function vrrRules(layout)
+  local lines = {}
+  for _, screen in ipairs(layout) do
+    if screen.enabled and vrrNow[screen.id] ~= nil and screen.vrr ~= vrrNow[screen.id] then
+      table.insert(lines, string.format("hl.monitor({ output = %s, vrr = %d, sdrbrightness = %s })",
+        quoted("desc:" .. screen.id), screen.vrr, quoted((tonumber(screen.sdrBrightness) or 1) + 0.01)))
+    end
+  end
+  return table.concat(lines, "\n")
 end
 
 local function keywordRules(layout)
@@ -226,19 +245,27 @@ function Hyprland.apply(layout, ruled, callback)
       end
     end
     local text, kept = luaRules(layout, ruled, current)
-    -- A Hyprland without Lua answers "unknown request". A Lua error exits with an error; a
-    -- warning, such as a workspace that does not exist yet, does not.
-    noctalia.runAsync({ "hyprctl", "eval", text }, function(result)
-      if result.exitCode == 0 and not result.stdout:find("unknown request", 1, true) then
-        lua = true
-        callback(true, nil, kept)
-      elseif lua == nil and result.exitCode == 0 then
-        lua = false
-        older()
-      else
-        callback(false, noctalia.string.trim(result.stdout .. result.stderr), ruled)
-      end
-    end, 10000)
+    local function run()
+      -- A Hyprland without Lua answers "unknown request". A Lua error exits with an error; a
+      -- warning, such as a workspace that does not exist yet, does not.
+      noctalia.runAsync({ "hyprctl", "eval", text }, function(result)
+        if result.exitCode == 0 and not result.stdout:find("unknown request", 1, true) then
+          lua = true
+          callback(true, nil, kept)
+        elseif lua == nil and result.exitCode == 0 then
+          lua = false
+          older()
+        else
+          callback(false, noctalia.string.trim(result.stdout .. result.stderr), ruled)
+        end
+      end, 10000)
+    end
+    local first = lua ~= false and vrrRules(layout) or ""
+    if first == "" then
+      run()
+    else
+      noctalia.runAsync({ "hyprctl", "eval", first }, run, 10000)
+    end
   end, 5000)
 end
 
@@ -251,9 +278,13 @@ function Hyprland.applyNow(layout, ruled)
   end
   if lua == false then
     noctalia.runAsync({ "hyprctl", "--batch", keywordRules(layout) })
-  else
-    noctalia.runAsync({ "hyprctl", "eval", (luaRules(layout, ruled, {})) })
+    return
   end
+  local first = vrrRules(layout)
+  if first ~= "" then
+    noctalia.runAsync({ "hyprctl", "eval", first })
+  end
+  noctalia.runAsync({ "hyprctl", "eval", (luaRules(layout, ruled, {})) })
 end
 
 return Hyprland

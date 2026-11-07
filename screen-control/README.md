@@ -54,6 +54,8 @@ noctalia msg panel-toggle omerfuyar/screen-control:panel
 
 Pick **Layout** at the top of the panel. It works on Hyprland.
 
+![Screen Control's Layout view](screenshots/layout.webp)
+
 - It shows your screens to scale, as they are arranged. Drag a screen onto an edge of
   another to put it there: left, right, above or below, lined up at the start, the middle
   or the end of that edge.
@@ -82,8 +84,10 @@ layout until you change it.
 The layout applies while Noctalia runs: when Noctalia starts, when screens are plugged in
 or out, and after Hyprland reloads its config. Screen Control never writes Hyprland's
 config. Before Noctalia starts, and once the plugin is turned off or removed, Hyprland's
-own settings apply. Leave other display tools, such as Hyprland Settings' Displays page or
-kanshi, without rules for the same screens, or they change them back.
+own settings apply. Hyprland cannot take a workspace rule back while it runs, so a
+workspace taken off a screen keeps opening there until Hyprland reloads its config, unless
+your config names a screen for it. Leave other display tools, such as Hyprland Settings'
+Displays page or kanshi, without rules for the same screens, or they change them back.
 
 ## Settings
 
