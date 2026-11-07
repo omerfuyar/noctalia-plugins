@@ -50,8 +50,8 @@ tags = ["bar", "hyprland", "utility"]
 [[plugin]]
 id = "omerfuyar/resurrect"
 name = "Resurrect"
-version = "2.3.1"
-updated_at = 1794016001
+version = "2.4.0"
+updated_at = 1794018316
 added_at = 1793335076
 author = "omerfuyar"
 license = "MIT"
@@ -102,8 +102,8 @@ tags = ["bar", "hyprland", "language"]
 [[plugin]]
 id = "omerfuyar/plugin-hub"
 name = "Plugin Hub"
-version = "1.2.1"
-updated_at = 1794016001
+version = "1.2.2"
+updated_at = 1794017974
 added_at = 1793983092
 author = "omerfuyar"
 license = "MIT"
