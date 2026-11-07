@@ -24,15 +24,15 @@ tags = ["bar", "media", "video", "utility"]
 [[plugin]]
 id = "omerfuyar/screen-control"
 name = "Screen Control"
-version = "1.5.0"
-updated_at = 1793964742
+version = "1.6.0"
+updated_at = 1794019951
 added_at = 1793330113
 author = "omerfuyar"
 license = "MIT"
 icon = "sun"
-description = "Manage brightness per monitor, extra dim below the lowest brightness, night light and caffeine. All in one bar widget."
+description = "Your screens in one place: brightness, extra dim, night light, caffeine, and the layout, modes, scale, VRR and HDR."
 plugin_api = 43
-tags = ["bar", "system", "utility"]
+tags = ["bar", "hyprland", "hardware", "system", "utility"]
 
 [[plugin]]
 id = "omerfuyar/overview"
