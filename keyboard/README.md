@@ -9,7 +9,7 @@ compositor's layouts.
 | Field   | Value                                                                  |
 | ------- | ---------------------------------------------------------------------- |
 | ID      | `omerfuyar/keyboard`                                                   |
-| Entries | Bar widget: `widget`; panel: `panel`; service: `service`; layer: `osk` |
+| Entries | Bar widget: `widget`; panel: `panel`; service: `service`; layers: `osk`, `outline` |
 
 ## Requirements
 
@@ -43,8 +43,8 @@ Add the **Keyboard** widget to the bar. It shows the language you type in, such 
 
 - Turn on **On-screen keyboard** in the panel for a compact key grid at the bottom of the
   screen, in your theme. It never takes the keyboard focus, so each key goes to the window you
-  type in. It floats above the windows and never moves them. To move it, click its grip: the
-  place it would take follows the pointer, and a click puts it there. The button at the left of
+  type in. It floats above the windows and never moves them. To move it, click its grip: an
+  outline of it follows the pointer, and a click puts it there. The button at the left of
   its grip docks it again. It stays where you put it. Its ✕ hides it. The keys follow the active language: Turkish for TR,
   English otherwise. Shift, Ctrl and Alt hold for the next key. Korean is typed with a real
   keyboard: fcitx5 composes Hangul only from it.

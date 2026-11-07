@@ -6,8 +6,8 @@
 -- key. Renders "keyboard.model".
 --
 -- A click on the grip starts a move: the service spreads the layer over the whole monitor,
--- the place the keyboard would take follows the pointer, and a click puts it there. The
--- dock button puts it back at the bottom.
+-- an outline of the keyboard follows the pointer, and a click puts it there. The dock
+-- button puts it back at the bottom.
 
 local model = nil
 local shift, ctrl, alt = false, false, false
@@ -187,9 +187,9 @@ local function keys()
 end
 
 -- While moving, the monitor is a grid of cells that never move, so the pointer is always
--- read right. The cell under the pointer is where the keyboard's middle goes: the cells it
--- would cover are tinted, and a click puts it there.
-local CELL = 60
+-- read right. The cells draw nothing: the cell under the pointer is where the keyboard's
+-- middle goes, the service shows the keyboard's outline there, and a click puts it there.
+local CELL = 40
 
 local hovered = nil -- { column, row } of the cell under the pointer
 -- The layer grows to the whole monitor just after a move starts; a hover before that comes
@@ -209,20 +209,14 @@ local function moving()
     return math.clamp(math.floor(cx - width / 2), 0, math.max(0, outWidth - width)),
       math.clamp(math.floor(cy - height / 2), 0, math.max(0, outHeight - height))
   end
-  local px, py = nil, nil
-  if hovered then
-    px, py = placeAt(hovered[1], hovered[2])
-  end
   local lines = {}
   for row = 1, rows do
     local cells = {}
     for column = 1, columns do
-      local cx, cy = (column - 0.5) * cellWidth, (row - 0.5) * cellHeight
-      local covered = px ~= nil and cx >= px and cx < px + width and cy >= py and cy < py + height
+      -- A button, as a layer's boxes take no pointer; it is drawn fully clear.
       table.insert(cells, ui.button({
-        key = `cell-{column}-{row}`,
-        variant = covered and "primary" or "ghost",
-        opacity = covered and 0.45 or 1,
+        variant = "ghost",
+        opacity = 0,
         flexGrow = 1,
         height = math.floor(cellHeight),
         -- "true" when the pointer enters the cell. A leave is not used: it can come after
@@ -231,7 +225,8 @@ local function moving()
           local settled = noctalia.nowMs() - movingSince >= SETTLE_MS
           if settled and tostring(state) == "true" and (hovered == nil or hovered[1] ~= column or hovered[2] ~= row) then
             hovered = { column, row }
-            render()
+            local x, y = placeAt(column, row)
+            send({ action = "osk_outline", x = x, y = y })
           end
         end,
         onClick = function()
@@ -240,7 +235,7 @@ local function moving()
         end,
       }))
     end
-    table.insert(lines, ui.row({ key = `row-{row}` }, cells))
+    table.insert(lines, ui.row({}, cells))
   end
   return ui.column({ flexGrow = 1, fill = "surface/0.4" }, lines)
 end

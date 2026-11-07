@@ -169,15 +169,20 @@ local function leftCard()
       table.insert(rows, ui.label({ text = noctalia.tr("waiting.more", { count = #left - MAX_WAITING }), color = "on_surface_variant" }))
       break
     end
-    table.insert(rows, ui.row({ gap = 6, align = "center" }, {
-      ui.label({ text = item.name, flexGrow = 1, maxLines = 1 }),
-      ui.label({ text = listName(item.list), color = "on_surface_variant" }),
-      ui.button({ text = noctalia.tr("left.again"), variant = "ghost", controlSize = "sm",
-        tooltip = noctalia.tr("left.again_tooltip"),
-        onClick = function() send({ action = "again", items = { item } }) end }),
-      ui.button({ text = noctalia.tr("left.only"), variant = "ghost", controlSize = "sm",
-        tooltip = noctalia.tr("left.only_tooltip"),
-        onClick = function() send({ action = "only", items = { item } }) end }),
+    -- The name has a line of its own, as two buttons beside it leave it too little room.
+    table.insert(rows, ui.column({ gap = 2 }, {
+      ui.row({ gap = 6, align = "center" }, {
+        ui.label({ text = item.name, flexGrow = 1, maxLines = 1 }),
+        ui.label({ text = listName(item.list), color = "on_surface_variant" }),
+      }),
+      ui.row({ gap = 6, justify = "end" }, {
+        ui.button({ text = noctalia.tr("left.again"), variant = "ghost", controlSize = "sm",
+          tooltip = noctalia.tr("left.again_tooltip"),
+          onClick = function() send({ action = "again", items = { item } }) end }),
+        ui.button({ text = noctalia.tr("left.only"), variant = "ghost", controlSize = "sm",
+          tooltip = noctalia.tr("left.only_tooltip"),
+          onClick = function() send({ action = "only", items = { item } }) end }),
+      }),
     }))
   end
   if #left > 1 then

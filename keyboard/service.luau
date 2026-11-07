@@ -84,6 +84,7 @@ gdbus call --session --dest org.fcitx.Fcitx5 --object-path /controller \
 ]=]
 
 local OSK = "osk"
+local OUTLINE = "outline" -- the frame that shows where a move puts the keyboard
 -- The docked keyboard's gap to the bottom edge, in pixels.
 local DOCK_MARGIN = 12
 -- wtype types the on-screen keyboard's keys; each system installs it its own way.
@@ -573,8 +574,25 @@ local function setOsk(open)
     noctalia.layer.show(OSK)
   else
     noctalia.layer.hide(OSK)
+    noctalia.layer.hide(OUTLINE)
   end
   build()
+end
+
+-- While moving, shows the outline of the keyboard with its top left at x, y.
+local function showOutline(x, y)
+  if not oskMoving then
+    return
+  end
+  local size = oskSize()
+  noctalia.layer.configure(OUTLINE, {
+    anchors = { "top", "left" },
+    width = size.width,
+    height = size.height,
+    margins = { top = math.floor(y), left = math.floor(x) },
+    output = "focused",
+  })
+  noctalia.layer.show(OUTLINE)
 end
 
 -- Starts moving the keyboard, or puts it down: docked, or with its top left at x, y.
@@ -588,6 +606,7 @@ local function moveOsk(place)
     noctalia.writeFile(oskFile, noctalia.json.encode(oskPlace) or "")
   end
   oskMoving = place == nil
+  noctalia.layer.hide(OUTLINE)
   configureOsk()
   build()
 end
@@ -636,6 +655,8 @@ noctalia.state.watch("keyboard.command", function(command)
     end
   elseif command.action == "osk_move" then
     moveOsk(nil)
+  elseif command.action == "osk_outline" and type(command.x) == "number" and type(command.y) == "number" then
+    showOutline(command.x, command.y)
   elseif command.action == "osk_place" and (command.docked == true or (type(command.x) == "number" and type(command.y) == "number")) then
     moveOsk(command)
   elseif command.action == "install_wtype" then
