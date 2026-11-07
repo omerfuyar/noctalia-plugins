@@ -1,13 +1,13 @@
 id = "omerfuyar/screen-control"
 name = "Screen Control"
-version = "1.5.0"
+version = "1.6.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
 icon = "sun"
-description = "Manage brightness per monitor, extra dim below the lowest brightness, night light and caffeine. All in one bar widget."
+description = "Your screens in one place: brightness, extra dim, night light, caffeine, and the layout, modes, scale, VRR and HDR."
 dependencies = ["noctalia", "hyprsunset", "hyprctl", "ddcutil", "systemd-inhibit"]
-tags = ["bar", "system", "utility"]
+tags = ["bar", "hyprland", "hardware", "system", "utility"]
 
 [[setting]]
 key = "max_dim"
@@ -52,9 +52,24 @@ description_key = "settings.skip_monitors.description"
 default = []
 advanced = true
 
+[[setting]]
+key = "keep_seconds"
+type = "int"
+label_key = "settings.keep_seconds.label"
+description_key = "settings.keep_seconds.description"
+default = 15
+min = 5
+max = 60
+step = 5
+advanced = true
+
 [[service]]
 id = "service"
 entry = "service.luau"
+
+[[service]]
+id = "layout"
+entry = "service_layout.luau"
 
 [[widget]]
 id = "widget"
@@ -63,9 +78,9 @@ entry = "widget.luau"
 [[panel]]
 id = "panel"
 entry = "panel.luau"
-width = 380
+width = 460
 height = "content"
-max_height = 560
+max_height = 720
 placement = "attached"
 position = "auto"
 open_near_click = true

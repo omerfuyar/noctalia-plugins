@@ -1,12 +1,14 @@
 --!nonstrict
--- Screen Control bar widget: a sun, or a moon while night light is on.
--- Scroll moves the bar's monitor along the brightness and dim scale; a click opens the panel.
+-- Screen Control bar widget: a sun, or a moon while night light is on, or a clock while a
+-- layout change waits to be kept. Scroll moves the bar's monitor along the brightness and
+-- dim scale; a click opens the panel.
 
 local Level = require("./lib/level.luau")
 
 local PANEL = "omerfuyar/screen-control:panel"
 
 local model = nil
+local layout = nil
 
 local function send(command)
   command.n = noctalia.nowMs()
@@ -29,12 +31,16 @@ local function render()
     return
   end
   local own = ownMonitor()
-  local glyph = model.night.mode == "on" and "moon" or "sun"
+  local waiting = layout ~= nil and layout.pending ~= nil
+  local glyph = waiting and "clock-hour-4" or model.night.mode == "on" and "moon" or "sun"
   -- color nil keeps the bar's own color.
-  local color = own.dim > 0 and "primary" or nil
+  local color = (waiting or own.dim > 0) and "primary" or nil
   barWidget.render(ui.glyph({ name = glyph, color = color }))
 
   local rows = {}
+  if waiting then
+    table.insert(rows, { key = noctalia.tr("layout.keep_question"), value = noctalia.trp("layout.keep_countdown", layout.pending) })
+  end
   for _, monitor in ipairs(model.monitors) do
     table.insert(rows, { key = monitor.label, value = Level.text(monitor.brightness, monitor.dim) })
   end
@@ -47,9 +53,15 @@ noctalia.state.watch("screen-control.model", function(value)
   render()
 end)
 
+noctalia.state.watch("screen-control.layout", function(value)
+  layout = value
+  render()
+end)
+
 function update()
   noctalia.setUpdateInterval(60000)
   model = model or noctalia.state.get("screen-control.model")
+  layout = layout or noctalia.state.get("screen-control.layout")
   render()
 end
 
