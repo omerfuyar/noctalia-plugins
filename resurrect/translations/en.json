@@ -96,7 +96,7 @@
       "label": "Save Noctalia's settings"
     },
     "secret_check": {
-      "description": "Check each save with gitleaks for passwords, tokens and keys before it is committed.",
+      "description": "Check each save with gitleaks for passwords, tokens and keys before it is committed. Noctalia's own config and settings are saved whole.",
       "label": "Check saves for secrets"
     },
     "packages": {
