@@ -50,8 +50,8 @@ tags = ["bar", "hyprland", "utility"]
 [[plugin]]
 id = "omerfuyar/resurrect"
 name = "Resurrect"
-version = "2.3.0"
-updated_at = 1793980473
+version = "2.3.1"
+updated_at = 1794016001
 added_at = 1793335076
 author = "omerfuyar"
 license = "MIT"
@@ -89,8 +89,8 @@ tags = ["bar", "productivity", "time"]
 [[plugin]]
 id = "omerfuyar/keyboard"
 name = "Keyboard"
-version = "1.4.1"
-updated_at = 1793985304
+version = "1.4.2"
+updated_at = 1794016001
 added_at = 1793966332
 author = "omerfuyar"
 license = "MIT"
@@ -102,8 +102,8 @@ tags = ["bar", "hyprland", "language"]
 [[plugin]]
 id = "omerfuyar/plugin-hub"
 name = "Plugin Hub"
-version = "1.2.0"
-updated_at = 1793985396
+version = "1.2.1"
+updated_at = 1794016001
 added_at = 1793983092
 author = "omerfuyar"
 license = "MIT"

@@ -4,7 +4,8 @@
 #   live.sh --remove <plugin>  take its widgets out of the bar, remove the "dev" source, and
 #                              enable the plugin again from its own source if it was enabled
 # Prints the screenshot path, then the plugin's new warnings and errors from Noctalia's log.
-# Otherwise prints only problems. Exits 1 when the plugin logged errors.
+# Otherwise prints only problems. Exits 1 when the plugin logged errors, and when Noctalia's
+# settings changed outside what the test itself changes.
 set -euo pipefail
 
 remove=false
@@ -62,6 +63,66 @@ print("[" + ", ".join("\x27" + w + "\x27" for w in items) + "]")
 # Whether the plugin was enabled from its own source before the test, kept until --remove.
 was_enabled="$root/ignore/live/.enabled-${id//\//_}"
 
+# Noctalia's settings before the test, kept until --remove, with the bar's end section as
+# Noctalia read it then. check_settings compares the settings now with them, leaving out
+# what the test changes: the tested plugin in the bar's end section and in the enabled
+# list, the dev source, the plugin's own settings, and the wallpaper's paths, which change
+# as wallpapers rotate. It prints the changed settings by name only, since some hold keys.
+settings="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/settings.toml"
+before="$root/ignore/live/.settings-${id//\//_}.toml"
+before_end="$before.end"
+mkdir -p "$root/ignore/live"
+if [[ ! -f $before ]]; then
+  cp --preserve=mode,timestamps "$settings" "$before"
+  noctalia msg config-get "bar.$bar.end" >"$before_end"
+fi
+check_settings() {
+  python3 - "$before" "$settings" "$id" "$bar" "$(cat "$before_end")" "${widgets[@]}" <<'PY' || {
+import ast, sys, tomllib
+
+before_path, after_path, plugin, bar, end, *widgets = sys.argv[1:]
+before = tomllib.load(open(before_path, "rb"))
+after = tomllib.load(open(after_path, "rb"))
+
+
+def cleaned(settings, end_default):
+    plugins = settings.get("plugins", {})
+    if "enabled" in plugins:
+        plugins["enabled"] = [p for p in plugins["enabled"] if p != plugin]
+    if "source" in plugins:
+        plugins["source"] = [s for s in plugins["source"] if s.get("name") != "dev"]
+    settings.get("plugin_settings", {}).pop(plugin, None)
+    section = settings.get("bar", {}).get(bar, {})
+    section["end"] = [w for w in section.get("end", end_default) if w not in widgets]
+    wallpaper = settings.get("wallpaper", {})
+    wallpaper.pop("last", None)
+    wallpaper.get("default", {}).pop("path", None)
+    for monitor in wallpaper.get("monitors", {}).values():
+        monitor.pop("path", None)
+    return settings
+
+
+def changes(a, b, path=""):
+    if isinstance(a, dict) and isinstance(b, dict):
+        for key in sorted(set(a) | set(b), key=str):
+            yield from changes(a.get(key), b.get(key), f"{path}.{key}" if path else str(key))
+    elif a != b:
+        yield path
+
+
+end_default = [w for w in ast.literal_eval(end) if w not in widgets]
+found = list(changes(cleaned(before, end_default), cleaned(after, end_default)))
+if found:
+    print("Noctalia's settings changed outside this test:", file=sys.stderr)
+    for path in found:
+        print("  " + path, file=sys.stderr)
+    sys.exit(1)
+PY
+    echo "settings before the test: $before" >&2
+    exit 1
+  }
+}
+
 if $remove; then
   ((${#widgets[@]})) && place_widgets remove
   noctalia msg plugins disable "$id" >/dev/null
@@ -75,12 +136,17 @@ if $remove; then
       sleep 1
       if grep -qE "^$id \[[^]]+\] [^ ]+ enabled( |$)" <<<"$(noctalia msg plugins list)"; then
         rm -f "$was_enabled"
-        exit 0
+        break
       fi
     done
-    echo "$id is still disabled; enable it with: noctalia msg plugins enable $id" >&2
-    exit 1
+    if [[ -f $was_enabled ]]; then
+      echo "$id is still disabled; enable it with: noctalia msg plugins enable $id" >&2
+      exit 1
+    fi
   fi
+  sleep 1
+  check_settings
+  rm -f "$before" "$before_end"
   exit 0
 fi
 
@@ -143,6 +209,8 @@ if [[ -z $shot ]]; then
   exit 1
 fi
 echo "$shot"
+
+check_settings
 
 # The plugin's warnings and errors since the reload. A smaller log means it was rotated.
 if [[ -f $log ]]; then

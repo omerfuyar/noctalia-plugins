@@ -86,7 +86,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 
 1. The panel holds the details and controls that do not fit the bar.
 2. Its height follows its content, up to a limit.
-3. Long lists scroll inside the panel: a `ui.scroll` with `flexGrow = 1`, so the panel grows up to its `max_height` and the list scrolls inside it. A list whose height the plugin works out from its rows may give the scroll that `height` instead. A scroll keeps the height it was made with, so the placeholder shown while data loads stays outside it, and its `key` changes when its content grows, such as when hidden rows show.
+3. Long lists scroll inside the panel. A `ui.scroll` takes the height of its content the first time it is laid out, and it ignores its own `height`. So the list sits in a `ui.column` whose `height` the plugin works out from its rows, at most what fits in the panel's `max_height`, and the scroll inside it has `flexGrow = 1`. The scroll then follows that column as the list grows or shrinks. Rows that the height is worked out from get a fixed `height`.
 4. It shows a placeholder while data loads, and never an empty frame.
 5. A panel that a bar widget opens has `placement = "attached"`, `position = "auto"` and `open_near_click = true`, so it opens next to the widget, as Noctalia's own panels do. Opened by IPC or a key binding, it follows the same settings.
 6. A row whose fill changes with its state sets a transparent fill, such as `primary/0`, when it is off, never `nil`, so the old fill does not stay.
@@ -167,6 +167,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 3. It puts the plugin's widgets at the start of the first bar's `end` section with `noctalia msg config-set`. Noctalia saves this in its settings overrides, so the widgets stay until `live.sh --remove <plugin>` takes them out, disables the plugin and removes the `dev` source. When the plugin was enabled from its own source before the test, `--remove` enables it again.
 4. It takes a screenshot of the focused monitor into `ignore/shots/` and prints its path.
 5. It prints the plugin's new warnings and errors from Noctalia's log, `$XDG_CACHE_HOME/noctalia/noctalia.log`, and fails when there are errors. Plugin errors there have the form `[ERR] [luau] plugin <id>:<entry>: ...`.
+6. Before the test, it copies Noctalia's `settings.toml` to `ignore/live/`. After the test and after `--remove`, it fails when a setting changed that the test does not change itself: the plugin's widgets in the bar, its place in the enabled list, the `dev` source, its own settings and the wallpaper's paths. It names the changed settings without their values, and keeps the copy for the owner to compare.
 
 Edits to Luau files reload by themselves while the plugin is enabled. Panels and IPC events are tested with `noctalia msg panel-toggle <id>:<panel>` and `noctalia msg plugin <id>:<entry> <target> <event> [payload]`, followed by `noctalia msg screenshot-fullscreen`.
 

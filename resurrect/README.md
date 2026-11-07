@@ -15,17 +15,17 @@ your devices, and on a new install, bring it all back with one script.
 
 ## Requirements
 
-| Command                       | Needed                     | What for                                                                                                               |
-| ----------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `git`                         | Required                   | Keeps each save as a commit, and pushes it when a remote is set. Without it, the panel says so.                        |
-| `sh`, `awk`                   | Required                   | Run the plugin's save scripts, and share Noctalia's settings one setting at a time. They come with every Linux system. |
-| `systemctl`                   | Required                   | Lists and restores the services that start by themselves. Without it, services are not saved.                          |
-| `xdg-open`                    | Required                   | Opens the repository folder. Without it, that button is hidden.                                                        |
-| `pacman`, `apt-mark` or `dnf` | Required                   | Lists the installed packages, with the system's package manager. Without one, no packages are saved.                   |
-| `flatpak`                     | Optional                   | Lists the installed Flatpak apps too. Without it, none are saved.                                                      |
-| `paru` or `yay`               | Required with AUR packages | Restores AUR packages. Without them, the AUR list stays in `packages/aur.txt`.                                         |
-| `gitleaks`                    | Optional                   | Checks each save for passwords, tokens and keys before it is committed. Without it, saves are not checked.             |
-| `hyprctl`                     | Required on Hyprland       | Checks Hyprland's config after shared files come in. Without it, they are not checked.                                 |
+| Command                       | Needed                     | What for                                                                                                                                          |
+| ----------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `git`                         | Required                   | Keeps each save as a commit, and pushes it when a remote is set. Without it, the panel says so.                                                   |
+| `sh`, `awk`                   | Required                   | Run the plugin's save scripts, and share Noctalia's settings one setting at a time. They come with every Linux system.                            |
+| `systemctl`                   | Required                   | Lists and restores the services that start by themselves. Without it, services are not saved.                                                     |
+| `xdg-open`                    | Required                   | Opens the repository folder. Without it, that button is hidden.                                                                                   |
+| `pacman`, `apt-mark` or `dnf` | Required                   | Lists the installed packages, with the system's package manager. Without one, no packages are saved.                                              |
+| `flatpak`                     | Optional                   | Lists the installed Flatpak apps too. Without it, none are saved.                                                                                 |
+| `paru` or `yay`               | Required with AUR packages | Restores AUR packages. Without them, the AUR list stays in `packages/aur.txt`.                                                                    |
+| `gitleaks`                    | Optional                   | Checks each save for passwords, tokens and keys before it is committed, except Noctalia's config and settings. Without it, saves are not checked. |
+| `hyprctl`                     | Required on Hyprland       | Checks Hyprland's config after shared files come in. Without it, they are not checked.                                                            |
 
 ## Usage
 
@@ -145,8 +145,12 @@ repository from an older version moves to this layout on each device's next save
 
 ### Secrets
 
-When `gitleaks` is installed, each save is checked before it is committed. If something
-looks like a password, token or key, nothing is committed, and the panel names the file.
+Noctalia's config and settings are saved whole, with any tokens and keys they hold, such as a
+plugin's API key. So push only to a private repository.
+
+When `gitleaks` is installed, the rest of each save is checked before it is committed. If
+something looks like a password, token or key, nothing is committed, and the panel names the
+file.
 Take the file out of the dotfiles, or allow the finding in `.gitleaksignore`. Turn off
 **Check saves for secrets** in the advanced settings to commit saves without the check.
 
@@ -183,19 +187,19 @@ The panel's hooks button opens the folder and creates it when it is missing.
 
 ## Settings
 
-| Setting        | Type          | Default         | Description                                                                |
-| -------------- | ------------- | --------------- | -------------------------------------------------------------------------- |
-| `folder`       | `folder`      | `~/resurrect`   | The git repository the setup is saved in. It is created when missing.      |
-| `remote`       | `string`      | `""`            | A git remote to push each save to. Empty keeps the saves on this device.   |
-| `files`        | `string_list` | `["~/.config"]` | Files and folders in the home folder to save.                              |
-| `leave_out`    | `string_list` | `[]`            | Files and folders inside the dotfiles not to save.                         |
-| `share`        | `bool`        | `true`          | Share the dotfiles with the other devices that push to the same remote.    |
-| `device_files` | `string_list` | `[]`            | Shown when `share` is on. Files and folders saved but kept on this device. |
-| `daily`        | `bool`        | `true`          | Save once a day while Noctalia runs.                                       |
-| `packages`     | `bool`        | `true`          | Advanced. Save the list of installed packages.                             |
-| `services`     | `bool`        | `true`          | Advanced. Save which services start by themselves.                         |
-| `noctalia`     | `bool`        | `true`          | Advanced. Save Noctalia's config and settings.                             |
-| `secret_check` | `bool`        | `true`          | Advanced. Check each save with `gitleaks` before it is committed.          |
+| Setting        | Type          | Default         | Description                                                                                              |
+| -------------- | ------------- | --------------- | -------------------------------------------------------------------------------------------------------- |
+| `folder`       | `folder`      | `~/resurrect`   | The git repository the setup is saved in. It is created when missing.                                    |
+| `remote`       | `string`      | `""`            | A git remote to push each save to. Empty keeps the saves on this device.                                 |
+| `files`        | `string_list` | `["~/.config"]` | Files and folders in the home folder to save.                                                            |
+| `leave_out`    | `string_list` | `[]`            | Files and folders inside the dotfiles not to save.                                                       |
+| `share`        | `bool`        | `true`          | Share the dotfiles with the other devices that push to the same remote.                                  |
+| `device_files` | `string_list` | `[]`            | Shown when `share` is on. Files and folders saved but kept on this device.                               |
+| `daily`        | `bool`        | `true`          | Save once a day while Noctalia runs.                                                                     |
+| `packages`     | `bool`        | `true`          | Advanced. Save the list of installed packages.                                                           |
+| `services`     | `bool`        | `true`          | Advanced. Save which services start by themselves.                                                       |
+| `noctalia`     | `bool`        | `true`          | Advanced. Save Noctalia's config and settings.                                                           |
+| `secret_check` | `bool`        | `true`          | Advanced. Check each save with `gitleaks` before it is committed, except Noctalia's config and settings. |
 
 ## IPC
 

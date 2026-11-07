@@ -254,8 +254,12 @@ if [ "$share" = true ]; then
     if [ -f "$HOME/.local/state/noctalia/settings.toml" ]; then
       their_settings=$(mktemp)
       [ -n "$theirs" ] && git show "$theirs:shared/noctalia/settings.toml" >"$their_settings" 2>/dev/null
+      # The agreed settings change in a copy, which takes their place once the save is
+      # committed. A setting of a save that was not committed would otherwise read, on the
+      # next save, as removed by another device, and be removed here too.
+      [ -f "$git_dir/resurrect-settings" ] && cp "$git_dir/resurrect-settings" "$work/base"
       result=$(sh "$here/settings.sh" "$HOME/.local/state/noctalia/settings.toml" \
-        "$their_settings" "$git_dir/resurrect-settings" "$dir/settings.toml") || {
+        "$their_settings" "$work/base" "$dir/settings.toml") || {
         rm -f "$their_settings"
         echo "could not share Noctalia's settings"
         exit 1
@@ -303,10 +307,12 @@ echo "count hooks $hooks"
 
 git add -A
 
-# Nothing that looks like a password or key is committed, since saves may be pushed. Known
-# findings can be allowed in .gitleaksignore. The secret_check setting turns this off.
+# Nothing that looks like a password or key is committed, since saves may be pushed, except
+# in Noctalia's config and settings, which are saved whole (gitleaks.toml). Known findings
+# can be allowed in .gitleaksignore. The secret_check setting turns this off.
 if [ "${RESURRECT_SECRET_CHECK:-true}" != false ] && command -v gitleaks >/dev/null &&
-  ! found=$(gitleaks git --pre-commit --staged --redact --no-banner -v . 2>&1); then
+  ! found=$(gitleaks git --pre-commit --staged --redact --no-banner -v \
+    --config "$here/gitleaks.toml" . 2>&1); then
   git reset -q
   echo "$found" | sed 's/\x1b\[[0-9;]*m//g' | sed -n 's/^File:[[:space:]]*/secret found in: /p' | sort -u
   exit 4
@@ -319,6 +325,7 @@ else
     commit -q -m "Snapshot of $device on $(date '+%Y-%m-%d %H:%M')" || exit 1
   echo "saved"
 fi
+[ -f "$work/base" ] && mv -f "$work/base" "$git_dir/resurrect-settings"
 
 if [ -n "$remote" ]; then
   # Other devices push to the same repository. Their saves are in their own folders, and
