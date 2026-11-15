@@ -16,12 +16,6 @@ Open questions and pending tasks. When one is settled, write the decision where 
 
 Less code, fewer dependencies, no shell where Luau can do the job. Each item goes once it is done.
 
-### Process Manager
-
-1. `READ` (`sh -c` with `ps`, `awk`, `cat`, `tr`, `head`, `cut`): every process, plus details of one. Luau lists `/proc` with `listDir` and reads `stat`, `status` and `cmdline` of each process, user names from `/etc/passwd`. Measure that one read of every process stays under 25 ms; if not, spread it over update ticks.
-2. `getconf CLK_TCK; getconf PAGESIZE; id -u` (`sh -c`): the uid comes from `/proc/self/status`, memory from `VmRSS` in kB, so the page size is not needed; the clock rate is 100 on Linux.
-3. `sh`, `ps` and `getconf` leave `dependencies` and the README; `kill`, `pkexec` and `sudo` stay.
-
 ### Resurrect
 
 1. Eight `.sh` files and `settings.awk`, 1,900 lines, and 14 dependencies. The save engine moves to the Luau service: it runs `git` and the package managers with argv and applies files itself; only `git push` runs detached. The settings merge moves to Luau too, so `restore.sh` puts the saved settings where the plugin merges them on its first start, and `settings.awk` goes.
