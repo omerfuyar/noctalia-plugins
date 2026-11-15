@@ -16,13 +16,6 @@ Open questions and pending tasks. When one is settled, write the decision where 
 
 Less code, fewer dependencies, no shell where Luau can do the job. Each item goes once it is done.
 
-### Media Downloader
-
-1. `RUNNER` (`sh -c`): starts yt-dlp detached and writes its log, pid and exit code. It stays, as the one wrapper a download needs to outlive a reload, but the pid line shrinks to `$!`: the service reads the boot id and the start time from `/proc` itself.
-2. `SIGNAL` (`sh -c`): checks the pid file against the boot id and `/proc/<pid>/stat`, then signals. Luau reads those files; only `kill` runs, with argv. A check with signal 0 needs no command at all.
-3. Cancelling before the pid file is written does nothing, and the job stays "cancelling" until it ends by itself. The service cancels it once the pid appears.
-4. `sh` stays a dependency for `RUNNER`; `kill` and `xdg-open` stay.
-
 ### Process Manager
 
 1. `READ` (`sh -c` with `ps`, `awk`, `cat`, `tr`, `head`, `cut`): every process, plus details of one. Luau lists `/proc` with `listDir` and reads `stat`, `status` and `cmdline` of each process, user names from `/etc/passwd`. Measure that one read of every process stays under 25 ms; if not, spread it over update ticks.
