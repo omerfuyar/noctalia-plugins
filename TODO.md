@@ -18,7 +18,7 @@ Less code, fewer dependencies, no shell where Luau can do the job. Each item goe
 
 ### Keyboard
 
-1. Broken in 1.4.2, cause not found: switching, the panel, the on-screen keyboard and both keys work in a live test, and the log has no error. Waits for the owner's answer.
+1. Moving the on-screen keyboard is broken in 1.4.2. Find the cause first.
 2. `POLL` (`sh -c`): `hyprctl -j devices`, then `fcitx5-remote -n`. Two argv calls do it.
 3. `DETAILS` and `CATALOG` (`sh -c` with `awk`, `sed`, `grep`): layout names from `evdev.lst`, and fcitx5's group and input methods through `gdbus`. Luau reads `evdev.lst` with `readFileAsync` once, runs `gdbus` with argv, and parses its answer.
 4. `sh`, `awk`, `sed` and `grep` run but are not in `dependencies` or the README. They go with items 2 and 3.
@@ -52,7 +52,7 @@ Less code, fewer dependencies, no shell where Luau can do the job. Each item goe
 
 ### Resurrect
 
-1. Eight `.sh` files and `settings.awk`, 1,900 lines, and 14 dependencies. Scope waits for the owner's answer.
+1. Eight `.sh` files and `settings.awk`, 1,900 lines, and 14 dependencies. The save engine moves to the Luau service: it runs `git` and the package managers with argv and applies files itself; only `git push` runs detached. The settings merge moves to Luau too, so `restore.sh` puts the saved settings where the plugin merges them on its first start, and `settings.awk` goes.
 2. `RUNNER` (`sh -c`) runs `snapshot.sh` detached, as a push can outlive the 60 s limit.
 3. Scripts the owner runs in a terminal: `restore.sh` (also on a new install, before Noctalia), `review.sh` and `install.sh`.
 4. `cmp`, `diff`, `find`, `du`, `xargs`, `mktemp`, `date` and `uname` run but are not in `dependencies` or the README.
