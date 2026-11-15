@@ -10,7 +10,7 @@
 -- The active one is read every second; the lists and their names when the service starts,
 -- every 30 seconds, and when the panel asks.
 --
--- The on-screen keyboard is the "osk" layer, shown, hidden and moved here.
+-- The on-screen keyboard is the "osk" layer, shown, hidden and placed here.
 --
 -- The panel adds and removes layouts and input methods. Once the owner changes the layouts
 -- here, the plugin keeps its own list in its data folder and sets it in Hyprland while
@@ -30,63 +30,21 @@ local keys = { Keybind.new("keybind", IPC .. "next"), Keybind.new("osk_key", IPC
 local KEYS_DELAY_MS = 1500
 local keysDueMs = nil
 
--- Hyprland's keyboards, then fcitx5's input method.
-local POLL = [[
-if [ -n "$HYPRLAND_INSTANCE_SIGNATURE" ] && command -v hyprctl >/dev/null; then
-  hyprctl -j devices 2>/dev/null
-fi
-echo
-echo "@@current $(fcitx5-remote -n 2>/dev/null)"
-]]
-
--- The names of the compositor's layouts ($@), then fcitx5's group: its default layout and
--- input methods, each with its name, label and language.
-local DETAILS = [=[
-awk -v codes="$*" '
-  BEGIN { n = split(codes, list, " "); for (i = 1; i <= n; i++) wanted[list[i]] = 1 }
-  /^! layout/ { on = 1; next }
-  /^!/ { on = 0 }
-  on && ($1 in wanted) { code = $1; $1 = ""; sub(/^ +/, ""); print "@@xkb " code "\t" $0 }
-' /usr/share/X11/xkb/rules/evdev.lst 2>/dev/null
-command -v gdbus >/dev/null || exit 0
-call() {
-  gdbus call --session --dest org.fcitx.Fcitx5 --object-path /controller \
-    --method "org.fcitx.Fcitx.Controller1.$1" ${2:+"$2"} 2>/dev/null
-}
-group=$(call CurrentInputMethodGroup | sed -n "s/^('\(.*\)',)$/\1/p")
-[ -n "$group" ] || exit 0
-info=$(call InputMethodGroupInfo "$group")
-echo "@@group $group"
-echo "@@info $info"
-# The group's input methods, and the keyboard of each layout, for its language: only these,
-# since parsing all of them takes longer than a callback may. One per line; names hold
-# parentheses, such as "English (US)".
-ids=$(echo "$info" | grep -o "('[^']*', '[^']*')" | sed "s/^('\([^']*\)'.*/\1/")
-for code in "$@"; do
-  ids="$ids keyboard-$code"
-done
-call AvailableInputMethods | sed 's/), (/)\n(/g' | sed 's/^[[(]*//' | while read -r line; do
-  for id in $ids; do
-    case $line in "'$id', "*) echo "@@im $line" ;; esac
-  done
-done
-]=]
-
--- What can be added: every keyboard layout, as "@@layout <code>\t<name>", and each fcitx5
--- input method that is more than a plain keyboard, as "@@im <fields>".
-local CATALOG = [=[
-awk '/^! layout/ { on = 1; next } /^!/ { on = 0 } on { code = $1; $1 = ""; sub(/^ +/, ""); print "@@layout " code "\t" $0 }' \
-  /usr/share/X11/xkb/rules/evdev.lst 2>/dev/null
-command -v gdbus >/dev/null || exit 0
-gdbus call --session --dest org.fcitx.Fcitx5 --object-path /controller \
-  --method org.fcitx.Fcitx.Controller1.AvailableInputMethods 2>/dev/null |
-  sed 's/), (/)\n(/g' | sed 's/^[[(]*//' | grep -v "^'keyboard-" | sed 's/^/@@im /'
-]=]
+-- xkb's list of layouts and their names.
+local XKB_LIST = "/usr/share/X11/xkb/rules/evdev.lst"
+local onHyprland = noctalia.getenv("HYPRLAND_INSTANCE_SIGNATURE") ~= nil and noctalia.commandExists("hyprctl")
+local hasFcitx = noctalia.commandExists("fcitx5-remote")
+local FCITX = { "gdbus", "call", "--session", "--dest", "org.fcitx.Fcitx5", "--object-path", "/controller", "--method" }
 
 local OSK = "osk"
-local OUTLINE = "outline" -- the frame that shows where a move puts the keyboard
--- The docked keyboard's gap to the bottom edge, in pixels.
-local DOCK_MARGIN = 12
+-- The keyboard's gap to the screen edges it sits at, in pixels.
+local MARGIN = 12
+-- The edges each place is anchored to; "center" has none.
+local SPOT_ANCHORS = {
+  top_left = { "top", "left" }, top = { "top" }, top_right = { "top", "right" },
+  left = { "left" }, center = {}, right = { "right" },
+  bottom_left = { "bottom", "left" }, bottom = { "bottom" }, bottom_right = { "bottom", "right" },
+}
 -- wtype types the on-screen keyboard's keys; each system installs it its own way.
 local WTYPE_INSTALLERS = {
   { manager = "pacman", command = "sudo pacman -S --needed wtype" },
@@ -96,9 +54,9 @@ local WTYPE_INSTALLERS = {
 }
 
 local oskOpen = false
-local oskMoving = false
--- Where the on-screen keyboard is: docked at the bottom, or at x, y from the output's top left.
-local oskPlace: { docked: boolean, x: number?, y: number? } = { docked = true }
+local oskPicking = false -- the keyboard shows its nine places instead of its keys
+local oskSpot = "bottom"
+local hasWtype = noctalia.commandExists("wtype")
 
 local dataDir = noctalia.pluginDataDir() or ""
 local layoutsFile = dataDir .. "/layouts.json"
@@ -116,7 +74,7 @@ local wantCatalog = false -- read the catalog once the running refresh is done
 local catalog = nil -- what the panel can add: { layouts = { { code, name } }, ims = { { id, name } } }
 local layouts = {} -- { code, variant } of the compositor, in order
 local activeLayout = 0 -- index into layouts, from 0 as Hyprland counts
-local layoutNames = {} -- code -> "Turkish"
+local layoutNames = nil -- code -> "Turkish", every layout xkb knows, read once
 local layoutLangs = {} -- code -> "en", from fcitx5's keyboard input methods
 local groupLayout = nil -- the layout fcitx5's group types its input methods on, such as "us"
 local inputMethods = {} -- in the group's order: { id, name, label, lang, layout }
@@ -156,7 +114,7 @@ local function build()
       index = index - 1,
       code = layout.code,
       short = upper(layoutLangs[layout.code] or layout.code),
-      name = layoutNames[layout.code] or layout.code,
+      name = layoutNames and layoutNames[layout.code] or layout.code,
     })
   end
   for _, im in ipairs(inputMethods) do
@@ -197,11 +155,11 @@ local function build()
     managed = stored ~= nil,
     catalog = catalog,
     osk = oskOpen,
-    oskMoving = oskMoving,
-    oskPlace = oskPlace,
+    oskPicking = oskPicking,
+    oskSpot = oskSpot,
     oskSize = oskSize(),
     oskKey = noctalia.string.trim(noctalia.getConfig("osk_key") or ""),
-    wtype = noctalia.commandExists("wtype"),
+    wtype = hasWtype,
   }
   publish()
 end
@@ -281,66 +239,124 @@ local function saveStored()
   end
 end
 
+-- Hyprland's keyboards, then fcitx5's input method.
 local function poll()
   if polling then
     return
   end
   polling = true
   lastPollMs = noctalia.nowMs()
-  noctalia.runAsync({ "sh", "-c", POLL }, function(result)
-    polling = false
-    local out = result.stdout or ""
-    local json, current = out:match("^(.-)\n@@current ([^\n]*)")
+  local function readIm()
+    if not hasFcitx then
+      polling = false
+      currentIm = nil
+      ensureApplied()
+      build()
+      return
+    end
+    noctalia.runAsync({ "fcitx5-remote", "-n" }, function(result)
+      polling = false
+      local current = result.exitCode == 0 and noctalia.string.trim(result.stdout or "") or ""
+      currentIm = current ~= "" and current or nil
+      ensureApplied()
+      build()
+    end, 5000)
+  end
+  if not onHyprland then
+    readIm()
+    return
+  end
+  noctalia.runAsync({ "hyprctl", "-j", "devices" }, function(result)
     local before = layoutCodes()
-    readDevices(json)
+    readDevices(result.stdout)
     -- New layouts need their names.
     if layoutCodes() ~= before then
       lastRefreshMs = nil
     end
-    current = noctalia.string.trim(current or "")
-    currentIm = current ~= "" and current or nil
-    ensureApplied()
-    build()
+    readIm()
   end, 5000)
 end
 
--- One input method from AvailableInputMethods: id, name, native name, icon, label, language, configurable.
-local function readInputMethod(line)
-  local fields = {}
-  for value in line:gmatch("'([^']*)'") do
-    table.insert(fields, value)
+-- Every layout xkb knows, as code -> name, from the "! layout" part of its list.
+local function readLayoutNames(text)
+  local names, inLayouts = {}, false
+  for line in (text or ""):gmatch("[^\n]+") do
+    if line:sub(1, 1) == "!" then
+      inLayouts = line:match("^!%s*layout") ~= nil
+    elseif inLayouts then
+      local code, name = line:match("^%s*(%S+)%s+(.-)%s*$")
+      if code then
+        names[code] = name
+      end
+    end
   end
-  return { id = fields[1], name = fields[2] or fields[1], label = fields[5] or "", lang = fields[6] or "" }
+  return names
 end
 
--- Every layout, and the input methods fcitx5 has besides plain keyboards, for the panel's pickers.
-local function readCatalog()
-  noctalia.runAsync({ "sh", "-c", CATALOG }, function(result)
-    local found = { layouts = {}, ims = {} }
-    local inGroup = {}
-    for _, item in ipairs(groupItems) do
-      inGroup[item.id] = true
-    end
-    for line in (result.stdout or ""):gmatch("[^\n]+") do
-      local code, name = line:match("^@@layout (%S+)\t(.+)$")
-      -- "custom" is a placeholder for a layout file of one's own.
-      if code and code ~= "custom" then
-        table.insert(found.layouts, { code = code, name = name })
-      end
-      local im = line:match("^@@im (.+)$")
-      if im then
-        local id, imName = im:match("^'([^']*)', '([^']*)'")
-        if id and not inGroup[id] then
-          table.insert(found.ims, { id = id, name = imName })
-        end
-      end
-    end
-    table.sort(found.layouts, function(a, b)
-      return a.name < b.name
-    end)
-    catalog = found
-    build()
+-- Calls a method of fcitx5's controller over D-Bus, and passes its answer to done.
+local function fcitx(method, args, done)
+  local argv = table.clone(FCITX)
+  table.insert(argv, "org.fcitx.Fcitx.Controller1." .. method)
+  for _, arg in ipairs(args) do
+    table.insert(argv, arg)
+  end
+  noctalia.runAsync(argv, function(result)
+    done(result.exitCode == 0 and result.stdout or nil)
   end, 10000)
+end
+
+-- What can be added: every layout, and the input methods fcitx5 has besides plain keyboards
+-- and the ones in its group. For the panel's picker.
+local function buildCatalog(available)
+  local found = { layouts = {}, ims = {} }
+  local inGroup = {}
+  for _, item in ipairs(groupItems) do
+    inGroup[item.id] = true
+  end
+  for code, name in pairs(layoutNames or {}) do
+    -- "custom" is a placeholder for a layout file of one's own.
+    if code ~= "custom" then
+      table.insert(found.layouts, { code = code, name = name })
+    end
+  end
+  table.sort(found.layouts, function(a, b)
+    return a.name < b.name
+  end)
+  for _, im in ipairs(available) do
+    if keyboardLayout(im.id) == nil and not inGroup[im.id] then
+      table.insert(found.ims, { id = im.id, name = im.name })
+    end
+  end
+  catalog = found
+end
+
+-- fcitx5's group and its input methods, then every input method fcitx5 has: each one is
+-- (id, name, native name, icon, label, language, configurable). Names hold parentheses,
+-- such as "English (US)", so the fields are matched as quoted strings.
+local function readFcitx(done)
+  fcitx("CurrentInputMethodGroup", {}, function(answer)
+    local group = answer and answer:match("^%('(.*)',%)")
+    if group == nil then
+      done({})
+      return
+    end
+    fcitx("InputMethodGroupInfo", { group }, function(info)
+      groupName = group
+      groupLayout = info and info:match("^%('([^']*)'")
+      groupItems = {}
+      for id, layout in ((info or ""):match("%[(.*)%]") or ""):gmatch("%('([^']*)', '([^']*)'%)") do
+        table.insert(groupItems, { id = id, layout = layout })
+      end
+      fcitx("AvailableInputMethods", {}, function(list)
+        local available = {}
+        local pattern = "%('([^']*)', '([^']*)', '[^']*', '[^']*', '([^']*)', '([^']*)', %a+%)"
+        for id, name, label, lang in (list or ""):gmatch(pattern) do
+          table.insert(available, { id = id, name = name, label = label, lang = lang })
+        end
+        done(available)
+      end)
+    end)
+  end)
 end
 
 local function refresh()
@@ -349,54 +365,45 @@ local function refresh()
   end
   refreshing = true
   lastRefreshMs = noctalia.nowMs()
-  local argv = { "sh", "-c", DETAILS, "keyboard" }
-  for _, layout in ipairs(layouts) do
-    table.insert(argv, layout.code)
+  local function withNames()
+    if not noctalia.commandExists("gdbus") then
+      refreshing = false
+      if wantCatalog then
+        wantCatalog = false
+        buildCatalog({})
+      end
+      build()
+      return
+    end
+    readFcitx(function(available)
+      refreshing = false
+      local byId = {}
+      for _, im in ipairs(available) do
+        byId[im.id] = im
+        local imLayout = keyboardLayout(im.id)
+        if imLayout and im.lang ~= "" and im.id == "keyboard-" .. imLayout then
+          layoutLangs[imLayout] = im.lang
+        end
+      end
+      inputMethods = {}
+      for _, item in ipairs(groupItems) do
+        table.insert(inputMethods, byId[item.id] or { id = item.id, name = item.id, label = "", lang = "" })
+      end
+      if wantCatalog then
+        wantCatalog = false
+        buildCatalog(available)
+      end
+      build()
+    end)
   end
-  noctalia.runAsync(argv, function(result)
-    refreshing = false
-    local found, order = {}, {}
-    for line in (result.stdout or ""):gmatch("[^\n]+") do
-      local code, name = line:match("^@@xkb (%S+)\t(.+)$")
-      if code then
-        layoutNames[code] = name
-      end
-      local info = line:match("^@@info (.+)$")
-      local group = line:match("^@@group (.+)$")
-      if group then
-        groupName = group
-      end
-      if info then
-        groupLayout = info:match("^%('([^']*)'")
-        local list = info:match("%[(.*)%]") or ""
-        groupItems = {}
-        for id, layout in list:gmatch("%('([^']*)', '([^']*)'%)") do
-          table.insert(order, id)
-          table.insert(groupItems, { id = id, layout = layout })
-        end
-      end
-      local im = line:match("^@@im (.+)$")
-      if im then
-        local parsed = readInputMethod(im)
-        if parsed.id then
-          found[parsed.id] = parsed
-          local imLayout = keyboardLayout(parsed.id)
-          if imLayout and parsed.lang ~= "" and parsed.id == "keyboard-" .. imLayout then
-            layoutLangs[imLayout] = parsed.lang
-          end
-        end
-      end
-    end
-    inputMethods = {}
-    for _, id in ipairs(order) do
-      table.insert(inputMethods, found[id] or { id = id, name = id, label = "", lang = "" })
-    end
-    build()
-    if wantCatalog then
-      wantCatalog = false
-      readCatalog()
-    end
-  end, 10000)
+  if layoutNames then
+    withNames()
+  else
+    noctalia.readFileAsync(XKB_LIST, function(text)
+      layoutNames = readLayoutNames(text)
+      withNames()
+    end)
+  end
 end
 
 -- Switches to one entry of the list.
@@ -543,71 +550,57 @@ local function removeInputMethod(id)
   end
 end
 
--- The on-screen keyboard, on the focused monitor, floating above the windows and never moving
--- them. Docked, it sits at the bottom in the middle; placed, it floats where it was dropped. While it is
--- moved, the layer covers the whole monitor, so the keyboard can follow the pointer.
+-- The on-screen keyboard, on the focused monitor, at its place: anchored to the edges the
+-- place names, MARGIN from each. It floats above the windows and never moves them, and keeps
+-- clear of the bar.
 local function configureOsk()
   local size = oskSize()
-  local props
-  if oskMoving then
-    props = { anchors = { "top", "bottom", "left", "right" }, width = 0, height = 0, margins = {}, exclusiveZone = -1 }
-  elseif oskPlace.docked then
-    props = { anchors = { "bottom" }, width = size.width, height = size.height, margins = { bottom = DOCK_MARGIN }, exclusiveZone = -1 }
-  else
-    props = {
-      anchors = { "top", "left" },
-      width = size.width,
-      height = size.height,
-      margins = { top = oskPlace.y, left = oskPlace.x },
-      exclusiveZone = -1,
-    }
+  local margins = {}
+  for _, edge in ipairs(SPOT_ANCHORS[oskSpot]) do
+    margins[edge] = MARGIN
   end
-  props.output = "focused"
-  noctalia.layer.configure(OSK, props)
+  noctalia.layer.configure(OSK, {
+    anchors = SPOT_ANCHORS[oskSpot],
+    width = size.width,
+    height = size.height,
+    margins = margins,
+    exclusiveZone = 0,
+    output = "focused",
+  })
 end
 
 local function setOsk(open)
   oskOpen = open
-  oskMoving = false
+  oskPicking = false
   if open then
     configureOsk()
     noctalia.layer.show(OSK)
   else
     noctalia.layer.hide(OSK)
-    noctalia.layer.hide(OUTLINE)
   end
   build()
 end
 
--- While moving, shows the outline of the keyboard with its top left at x, y.
-local function showOutline(x, y)
-  if not oskMoving then
-    return
+-- Shows the nine places instead of the keys, or the keys again.
+local function pickSpot()
+  if oskOpen then
+    oskPicking = not oskPicking
+    build()
   end
-  local size = oskSize()
-  noctalia.layer.configure(OUTLINE, {
-    anchors = { "top", "left" },
-    width = size.width,
-    height = size.height,
-    margins = { top = math.floor(y), left = math.floor(x) },
-    output = "focused",
-  })
-  noctalia.layer.show(OUTLINE)
 end
 
--- Starts moving the keyboard, or puts it down: docked, or with its top left at x, y.
-local function moveOsk(place)
-  if not oskOpen then
+-- Puts the keyboard at one of the nine places, and remembers it.
+local function placeOsk(spot)
+  if SPOT_ANCHORS[spot] == nil then
     return
   end
-  if place then
-    oskPlace = place.docked and { docked = true } or { docked = false, x = math.max(0, math.floor(place.x)), y = math.max(0, math.floor(place.y)) }
-    noctalia.mkdirAll(dataDir)
-    noctalia.writeFile(oskFile, noctalia.json.encode(oskPlace) or "")
+  oskSpot = spot
+  oskPicking = false
+  noctalia.mkdirAll(dataDir)
+  noctalia.writeFile(oskFile, noctalia.json.encode({ spot = spot }) or "")
+  if oskOpen then
+    configureOsk()
   end
-  oskMoving = place == nil
-  noctalia.layer.hide(OUTLINE)
-  configureOsk()
   build()
 end
 
@@ -654,14 +647,13 @@ noctalia.state.watch("keyboard.command", function(command)
       setOsk(not oskOpen)
     end
   elseif command.action == "osk_move" then
-    moveOsk(nil)
-  elseif command.action == "osk_outline" and type(command.x) == "number" and type(command.y) == "number" then
-    showOutline(command.x, command.y)
-  elseif command.action == "osk_place" and (command.docked == true or (type(command.x) == "number" and type(command.y) == "number")) then
-    moveOsk(command)
+    pickSpot()
+  elseif command.action == "osk_place" and type(command.spot) == "string" then
+    placeOsk(command.spot)
   elseif command.action == "install_wtype" then
     installWtype()
   elseif command.action == "open" then
+    hasWtype = noctalia.commandExists("wtype")
     wantCatalog = true
     refresh()
   elseif command.action == "add_layout" and type(command.code) == "string" then
@@ -683,6 +675,7 @@ end)
 -- noctalia msg plugin omerfuyar/keyboard:service all add-im|remove-im <fcitx5 id, such as mozc>
 -- noctalia msg plugin omerfuyar/keyboard:service all reset-layouts
 -- noctalia msg plugin omerfuyar/keyboard:service all osk|osk-move
+-- noctalia msg plugin omerfuyar/keyboard:service all osk-place <place, such as top_left>
 function onIpc(event, payload)
   local value = payload and noctalia.string.trim(payload) or ""
   if event == "add-layout" and value ~= "" then
@@ -699,7 +692,9 @@ function onIpc(event, payload)
     if not oskOpen then
       setOsk(true)
     end
-    moveOsk(nil)
+    pickSpot()
+  elseif event == "osk-place" then
+    placeOsk(value)
   elseif event == "reset-layouts" then
     resetLayouts()
   elseif event == "add-im" and value ~= "" then
@@ -756,8 +751,8 @@ end
 noctalia.setUpdateInterval(250)
 noctalia.readFileAsync(oskFile, function(text)
   local saved = text and noctalia.json.decode(text)
-  if type(saved) == "table" and (saved.docked == true or (type(saved.x) == "number" and type(saved.y) == "number")) then
-    oskPlace = saved.docked and { docked = true } or { docked = false, x = saved.x, y = saved.y }
+  if type(saved) == "table" and SPOT_ANCHORS[saved.spot] then
+    oskSpot = saved.spot
   end
 end)
 noctalia.readFileAsync(layoutsFile, function(text)

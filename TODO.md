@@ -16,14 +16,6 @@ Open questions and pending tasks. When one is settled, write the decision where 
 
 Less code, fewer dependencies, no shell where Luau can do the job. Each item goes once it is done.
 
-### Keyboard
-
-1. Moving the on-screen keyboard is broken in 1.4.2. Find the cause first.
-2. `POLL` (`sh -c`): `hyprctl -j devices`, then `fcitx5-remote -n`. Two argv calls do it.
-3. `DETAILS` and `CATALOG` (`sh -c` with `awk`, `sed`, `grep`): layout names from `evdev.lst`, and fcitx5's group and input methods through `gdbus`. Luau reads `evdev.lst` with `readFileAsync` once, runs `gdbus` with argv, and parses its answer.
-4. `sh`, `awk`, `sed` and `grep` run but are not in `dependencies` or the README. They go with items 2 and 3.
-5. `build()` runs `commandExists("wtype")` every second; once at start and on `recheck` is enough.
-
 ### Media Downloader
 
 1. `RUNNER` (`sh -c`): starts yt-dlp detached and writes its log, pid and exit code. It stays, as the one wrapper a download needs to outlive a reload, but the pid line shrinks to `$!`: the service reads the boot id and the start time from `/proc` itself.

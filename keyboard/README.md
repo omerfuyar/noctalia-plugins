@@ -9,7 +9,7 @@ compositor's layouts.
 | Field   | Value                                                                  |
 | ------- | ---------------------------------------------------------------------- |
 | ID      | `omerfuyar/keyboard`                                                   |
-| Entries | Bar widget: `widget`; panel: `panel`; service: `service`; layers: `osk`, `outline` |
+| Entries | Bar widget: `widget`; panel: `panel`; service: `service`; layer: `osk` |
 
 ## Requirements
 
@@ -43,9 +43,9 @@ Add the **Keyboard** widget to the bar. It shows the language you type in, such 
 
 - Turn on **On-screen keyboard** in the panel for a compact key grid at the bottom of the
   screen, in your theme. It never takes the keyboard focus, so each key goes to the window you
-  type in. It floats above the windows and never moves them. To move it, click its grip: an
-  outline of it follows the pointer, and a click puts it there. The button at the left of
-  its grip docks it again. It stays where you put it. Its ✕ hides it. The keys follow the active language: Turkish for TR,
+  type in. It floats above the windows and never moves them or covers the bar. To move it,
+  click its grip: nine places around the screen show in place of the keys, and a click on
+  one puts it there. It stays where you put it. Its ✕ hides it. The keys follow the active language: Turkish for TR,
   English otherwise. Shift, Ctrl and Alt hold for the next key. Korean is typed with a real
   keyboard: fcitx5 composes Hangul only from it.
 - Set **Switch key** in the settings, such as `SUPER + Space`, to switch from the keyboard.
@@ -87,11 +87,12 @@ noctalia msg plugin omerfuyar/keyboard:service all remove-im mozc
 noctalia msg plugin omerfuyar/keyboard:service all reset-layouts
 ```
 
-Show or hide the on-screen keyboard, or pick it up to move it, as its grip does:
+Show or hide the on-screen keyboard, show its places as its grip does, or put it at one:
 
 ```sh
 noctalia msg plugin omerfuyar/keyboard:service all osk
 noctalia msg plugin omerfuyar/keyboard:service all osk-move
+noctalia msg plugin omerfuyar/keyboard:service all osk-place top_left
 ```
 
 ## Notes
@@ -100,3 +101,5 @@ noctalia msg plugin omerfuyar/keyboard:service all osk-move
 - The active language is read every second, so a switch made with fcitx5's own key shows too.
 - The layouts Keyboard keeps are in `~/.local/state/noctalia/plugins/data/omerfuyar/keyboard/layouts.json`.
   Where the on-screen keyboard was put is in `osk.json` in the same folder.
+- The places are `top_left`, `top`, `top_right`, `left`, `center`, `right`, `bottom_left`,
+  `bottom` and `bottom_right`.

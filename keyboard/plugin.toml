@@ -1,6 +1,6 @@
 id = "omerfuyar/keyboard"
 name = "Keyboard"
-version = "1.4.2"
+version = "1.5.0"
 plugin_api = 43
 author = "omerfuyar"
 license = "MIT"
@@ -59,18 +59,6 @@ layer = "top"
 anchors = ["bottom"]
 width = 660
 height = 220
-exclusive_zone = -1
+exclusive_zone = 0
 keyboard = "none"
-output = "focused"
-
-[[layer]]
-id = "outline"
-entry = "outline.luau"
-layer = "overlay"
-anchors = ["top", "left"]
-width = 660
-height = 220
-exclusive_zone = -1
-keyboard = "none"
-click_through = true
 output = "focused"
