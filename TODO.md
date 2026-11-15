@@ -29,13 +29,6 @@ Less code, fewer dependencies, no shell where Luau can do the job. Each item goe
 2. `rm -f "$1"/*.png` (`sh -c`) at start: `listDir` and `removeFile`.
 3. `sh` leaves `dependencies` and the README.
 
-### Plugin Hub
-
-1. Bug: a plugin removed in Noctalia's settings still shows as off, and switching it on installs it again. Noctalia keeps an off plugin in `plugins/materialized/<source>/<dir>` and deletes that folder when it removes one. The hub lists an off plugin only while that folder holds its `plugin.toml`, and forgets it otherwise.
-2. `DISCOVER` (`sh -c` with `awk`, `git`): the name, panels, settings and README commands of each plugin. With item 1 every listed plugin has its folder, so Luau reads its files with `readFileAsync` and parses them; the `git show` path goes.
-3. `READ` in `lib/settings.luau` (`sh -c` with `awk`, `git`, `tr`): translations and setting fields. Luau reads the files and parses the manifest with `lib/toml.luau`.
-4. `sh`, `awk` and `git` leave `dependencies` and the README.
-
 ### Process Manager
 
 1. `READ` (`sh -c` with `ps`, `awk`, `cat`, `tr`, `head`, `cut`): every process, plus details of one. Luau lists `/proc` with `listDir` and reads `stat`, `status` and `cmdline` of each process, user names from `/etc/passwd`. Measure that one read of every process stays under 25 ms; if not, spread it over update ticks.
