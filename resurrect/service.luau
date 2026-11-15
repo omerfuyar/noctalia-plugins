@@ -164,7 +164,7 @@ local function newJob(out)
     until noctalia.nowMs() >= untilMs
   end
   function jobApi.run(argv)
-    local box = { co = coroutine.running() }
+    local box = { co = coroutine.running(), paused = false, result = nil }
     local started = noctalia.runAsync(argv, function(result)
       if box.paused and job and job.co == box.co then
         resume(result)

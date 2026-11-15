@@ -36,11 +36,12 @@ local SKIP = {
 }
 local CHUNK = 500
 
-local function trim(text)
+-- trim, eachLine and entries take, as <_>, the error a file read returns beside the text.
+local function trim(text, _)
   return noctalia.string.trim(text or "")
 end
 
-local function eachLine(text)
+local function eachLine(text, _)
   return (text or ""):gmatch("[^\n]+")
 end
 
@@ -54,7 +55,7 @@ local function isDir(path)
 end
 
 -- Lines of a list kept by hand, without comments and blank lines.
-local function entries(text)
+local function entries(text, _)
   local out = {}
   for line in eachLine(text) do
     line = line:gsub("#.*", ""):gsub("%s+$", "")
