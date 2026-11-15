@@ -155,7 +155,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 `.github/scripts/check.sh` checks every plugin without running Noctalia:
 
 1. It runs the validator of community-plugins, from a fixed commit, on this repository. The validator checks manifests, entry scripts, translations, READMEs and thumbnails as community-plugins does. It does not know `[[layer]]` entries yet, so `check.sh` leaves out that one error.
-2. `rules.py` checks this repository's own rules. A slow call such as `noctalia.appIconPath` is an error in a panel, widget, launcher or layer entry, and in any file such an entry loads with `require` (section 1.5). Every translation key written in full in a Luau file must be in `translations/en.json`.
+2. `rules.py` checks this repository's own rules. A slow call such as `noctalia.appIconPath` is an error in a panel, widget, launcher or layer entry, and in any file such an entry loads with `require` (section 1.5). Every translation key written in full in a Luau file must be in `translations/en.json`. No Luau file runs a shell script (`sh -c` or `bash -c` in an argv, or `runAsync` with one string) except the ones listed in `rules.py`, each with why only a shell can do it.
 3. It checks every Luau file with `luau-lsp analyze` against `noctalia.d.luau`, which it fetches from official-plugins, from a fixed commit. When luau-lsp is not installed, it says so and skips this step.
 4. Fetched files go to `ignore/` and are not committed.
 
