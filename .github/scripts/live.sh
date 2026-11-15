@@ -71,6 +71,17 @@ was_enabled="$root/ignore/live/.enabled-${id//\//_}"
 settings="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/settings.toml"
 before="$root/ignore/live/.settings-${id//\//_}.toml"
 before_end="$before.end"
+# One plugin at a time: the dev source holds one plugin, so a second test would drop the
+# first one's copy and leave its plugin disabled.
+for other in "$root"/ignore/live/.settings-*.toml; do
+  $remove && break
+  [[ -f $other && $other != "$before" ]] || continue
+  other=${other##*/.settings-}
+  other=${other%.toml}
+  echo "the live test of ${other/_//} is still on; end it first with: live.sh --remove <its directory>" >&2
+  exit 1
+done
+
 mkdir -p "$root/ignore/live"
 if [[ ! -f $before ]]; then
   cp --preserve=mode,timestamps "$settings" "$before"
