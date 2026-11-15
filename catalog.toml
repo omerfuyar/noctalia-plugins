@@ -102,8 +102,8 @@ tags = ["hyprland", "launcher", "shortcut", "utility"]
 [[plugin]]
 id = "omerfuyar/media-downloader"
 name = "Media Downloader"
-version = "2.0.0"
-updated_at = 1794757126
+version = "2.1.0"
+updated_at = 1794762977
 added_at = 1794757126
 author = "omerfuyar"
 license = "MIT"
