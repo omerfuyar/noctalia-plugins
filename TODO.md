@@ -12,6 +12,63 @@ Open questions and pending tasks. When one is settled, write the decision where 
 
 1. Every plugin shows a missing required command in its panel, as [DESIGN.md](.claude/docs/DESIGN.md), section 9.6, says.
 
+## Audit
+
+Less code, fewer dependencies, no shell where Luau can do the job. Each item goes once it is done.
+
+### Keyboard
+
+1. Broken in 1.4.2, cause not found: switching, the panel, the on-screen keyboard and both keys work in a live test, and the log has no error. Waits for the owner's answer.
+2. `POLL` (`sh -c`): `hyprctl -j devices`, then `fcitx5-remote -n`. Two argv calls do it.
+3. `DETAILS` and `CATALOG` (`sh -c` with `awk`, `sed`, `grep`): layout names from `evdev.lst`, and fcitx5's group and input methods through `gdbus`. Luau reads `evdev.lst` with `readFileAsync` once, runs `gdbus` with argv, and parses its answer.
+4. `sh`, `awk`, `sed` and `grep` run but are not in `dependencies` or the README. They go with items 2 and 3.
+5. `build()` runs `commandExists("wtype")` every second; once at start and on `recheck` is enough.
+
+### Media Downloader
+
+1. `RUNNER` (`sh -c`): starts yt-dlp detached and writes its log, pid and exit code. It stays, as the one wrapper a download needs to outlive a reload, but the pid line shrinks to `$!`: the service reads the boot id and the start time from `/proc` itself.
+2. `SIGNAL` (`sh -c`): checks the pid file against the boot id and `/proc/<pid>/stat`, then signals. Luau reads those files; only `kill` runs, with argv. A check with signal 0 needs no command at all.
+3. Cancelling before the pid file is written does nothing, and the job stays "cancelling" until it ends by itself. The service cancels it once the pid appears.
+4. `sh` stays a dependency for `RUNNER`; `kill` and `xdg-open` stay.
+
+### Overview
+
+1. `CAPTURE` (`sh -c`): runs `grim` for each window. The service runs `grim` with argv, one window after another.
+2. `rm -f "$1"/*.png` (`sh -c`) at start: `listDir` and `removeFile`.
+3. `sh` leaves `dependencies` and the README.
+
+### Plugin Hub
+
+1. Bug: a plugin removed in Noctalia's settings still shows as off, and switching it on installs it again. Noctalia keeps an off plugin in `plugins/materialized/<source>/<dir>` and deletes that folder when it removes one. The hub lists an off plugin only while that folder holds its `plugin.toml`, and forgets it otherwise.
+2. `DISCOVER` (`sh -c` with `awk`, `git`): the name, panels, settings and README commands of each plugin. With item 1 every listed plugin has its folder, so Luau reads its files with `readFileAsync` and parses them; the `git show` path goes.
+3. `READ` in `lib/settings.luau` (`sh -c` with `awk`, `git`, `tr`): translations and setting fields. Luau reads the files and parses the manifest with `lib/toml.luau`.
+4. `sh`, `awk` and `git` leave `dependencies` and the README.
+
+### Process Manager
+
+1. `READ` (`sh -c` with `ps`, `awk`, `cat`, `tr`, `head`, `cut`): every process, plus details of one. Luau lists `/proc` with `listDir` and reads `stat`, `status` and `cmdline` of each process, user names from `/etc/passwd`. Measure that one read of every process stays under 25 ms; if not, spread it over update ticks.
+2. `getconf CLK_TCK; getconf PAGESIZE; id -u` (`sh -c`): the uid comes from `/proc/self/status`, memory from `VmRSS` in kB, so the page size is not needed; the clock rate is 100 on Linux.
+3. `sh`, `ps` and `getconf` leave `dependencies` and the README; `kill`, `pkexec` and `sudo` stay.
+
+### Resurrect
+
+1. Eight `.sh` files and `settings.awk`, 1,900 lines, and 14 dependencies. Scope waits for the owner's answer.
+2. `RUNNER` (`sh -c`) runs `snapshot.sh` detached, as a push can outlive the 60 s limit.
+3. Scripts the owner runs in a terminal: `restore.sh` (also on a new install, before Noctalia), `review.sh` and `install.sh`.
+4. `cmp`, `diff`, `find`, `du`, `xargs`, `mktemp`, `date` and `uname` run but are not in `dependencies` or the README.
+
+### Screen Control
+
+1. No shell. Its commands, `noctalia`, `hyprctl`, `hyprsunset`, `ddcutil` and `systemd-inhibit`, have no Luau replacement.
+
+### Screen Time
+
+1. No shell and no dependencies. Nothing to change.
+
+### Repository
+
+1. `rules.py` stops new `sh -c` outside an allowlist kept in it, with a reason for each entry.
+
 ## Plugins
 
 Plugins to build:
