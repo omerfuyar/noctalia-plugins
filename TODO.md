@@ -23,12 +23,6 @@ Less code, fewer dependencies, no shell where Luau can do the job. Each item goe
 3. Cancelling before the pid file is written does nothing, and the job stays "cancelling" until it ends by itself. The service cancels it once the pid appears.
 4. `sh` stays a dependency for `RUNNER`; `kill` and `xdg-open` stay.
 
-### Overview
-
-1. `CAPTURE` (`sh -c`): runs `grim` for each window. The service runs `grim` with argv, one window after another.
-2. `rm -f "$1"/*.png` (`sh -c`) at start: `listDir` and `removeFile`.
-3. `sh` leaves `dependencies` and the README.
-
 ### Process Manager
 
 1. `READ` (`sh -c` with `ps`, `awk`, `cat`, `tr`, `head`, `cut`): every process, plus details of one. Luau lists `/proc` with `listDir` and reads `stat`, `status` and `cmdline` of each process, user names from `/etc/passwd`. Measure that one read of every process stays under 25 ms; if not, spread it over update ticks.
