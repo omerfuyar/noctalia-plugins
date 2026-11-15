@@ -24,8 +24,8 @@ tags = ["bar", "hyprland", "hardware", "system", "utility"]
 [[plugin]]
 id = "omerfuyar/overview"
 name = "Overview"
-version = "1.5.4"
-updated_at = 1794756779
+version = "1.6.0"
+updated_at = 1794762802
 added_at = 1793333899
 author = "omerfuyar"
 license = "MIT"
