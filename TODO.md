@@ -12,22 +12,6 @@ Open questions and pending tasks. When one is settled, write the decision where 
 
 1. Every plugin shows a missing required command in its panel, as [DESIGN.md](.claude/docs/DESIGN.md), section 9.6, says.
 
-## Audit
-
-Less code, fewer dependencies, no shell where Luau can do the job. Each item goes once it is done.
-
-### Screen Control
-
-1. No shell. Its commands, `noctalia`, `hyprctl`, `hyprsunset`, `ddcutil` and `systemd-inhibit`, have no Luau replacement.
-
-### Screen Time
-
-1. No shell and no dependencies. Nothing to change.
-
-### Repository
-
-1. `rules.py` stops new `sh -c` outside an allowlist kept in it, with a reason for each entry.
-
 ## Plugins
 
 Plugins to build:
