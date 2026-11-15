@@ -168,6 +168,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 4. It takes a screenshot of the focused monitor into `ignore/shots/` and prints its path.
 5. It prints the plugin's new warnings and errors from Noctalia's log, `$XDG_CACHE_HOME/noctalia/noctalia.log`, and fails when there are errors. Plugin errors there have the form `[ERR] [luau] plugin <id>:<entry>: ...`.
 6. Before the test, it copies Noctalia's `settings.toml` to `ignore/live/`. After the test and after `--remove`, it fails when a setting changed that the test does not change itself: the plugin's widgets in the bar, its place in the enabled list, the `dev` source, its own settings and the wallpaper's paths. It names the changed settings without their values, and keeps the copy for the owner to compare.
+7. One plugin is tested at a time. While another plugin's settings copy is in `ignore/live/`, the script stops before changing anything and names that plugin: a second test would replace the first plugin's link in `dev`, and Noctalia would leave the first plugin disabled.
 
 Edits to Luau files reload by themselves while the plugin is enabled. Panels and IPC events are tested with `noctalia msg panel-toggle <id>:<panel>` and `noctalia msg plugin <id>:<entry> <target> <event> [payload]`, followed by `noctalia msg screenshot-fullscreen`.
 
