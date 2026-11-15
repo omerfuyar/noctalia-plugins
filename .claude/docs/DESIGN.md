@@ -155,8 +155,9 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 `.github/scripts/check.sh` checks every plugin without running Noctalia:
 
 1. It runs the validator of community-plugins, from a fixed commit, on this repository. The validator checks manifests, entry scripts, translations, READMEs and thumbnails as community-plugins does. It does not know `[[layer]]` entries yet, so `check.sh` leaves out that one error.
-2. It checks every Luau file with `luau-lsp analyze` against `noctalia.d.luau`, which it fetches from official-plugins, from a fixed commit. When luau-lsp is not installed, it says so and skips this step.
-3. Fetched files go to `ignore/` and are not committed.
+2. `rules.py` checks this repository's own rules. A slow call such as `noctalia.appIconPath` is an error in a panel, widget, launcher or layer entry, and in any file such an entry loads with `require` (section 1.5). Every translation key written in full in a Luau file must be in `translations/en.json`.
+3. It checks every Luau file with `luau-lsp analyze` against `noctalia.d.luau`, which it fetches from official-plugins, from a fixed commit. When luau-lsp is not installed, it says so and skips this step.
+4. Fetched files go to `ignore/` and are not committed.
 
 ### 13.2 Live test
 
@@ -165,8 +166,8 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 1. The plugin source `dev` is the folder `ignore/live/`, which holds a link to the plugin under test only, since Noctalia disables every plugin of a source when the source is removed. It is not the repository root, because Noctalia reads only `catalog.toml` from a path source that has one, and the root's `catalog.toml` lists only what is on `main`.
 2. It reloads Noctalia's config, then disables and enables the plugin, so that every entry loads again. `noctalia msg plugins enable` answers `ok` even for a plugin it cannot find, so the script checks `noctalia msg plugins list` instead.
 3. It puts the plugin's widgets at the start of the first bar's `end` section with `noctalia msg config-set`. Noctalia saves this in its settings overrides, so the widgets stay until `live.sh --remove <plugin>` takes them out, disables the plugin and removes the `dev` source. When the plugin was enabled from its own source before the test, `--remove` enables it again.
-4. It takes a screenshot of the focused monitor into `ignore/shots/` and prints its path.
-5. It prints the plugin's new warnings and errors from Noctalia's log, `$XDG_CACHE_HOME/noctalia/noctalia.log`, and fails when there are errors. Plugin errors there have the form `[ERR] [luau] plugin <id>:<entry>: ...`.
+4. It opens each of the plugin's panels for a few seconds, so their renders run with real data, then takes a screenshot of the focused monitor into `ignore/shots/` and prints its path.
+5. It prints the plugin's new warnings and errors from Noctalia's log, `$XDG_CACHE_HOME/noctalia/noctalia.log`, and fails when there are errors. Plugin errors there have the form `[ERR] [luau] plugin <id>:<entry>: ...`, a callback over its CPU time among them.
 6. Before the test, it copies Noctalia's `settings.toml` to `ignore/live/`. After the test and after `--remove`, it fails when a setting changed that the test does not change itself: the plugin's widgets in the bar, its place in the enabled list, the `dev` source, its own settings and the wallpaper's paths. It names the changed settings without their values, and keeps the copy for the owner to compare.
 7. One plugin is tested at a time. While another plugin's settings copy is in `ignore/live/`, the script stops before changing anything and names that plugin: a second test would replace the first plugin's link in `dev`, and Noctalia would leave the first plugin disabled.
 

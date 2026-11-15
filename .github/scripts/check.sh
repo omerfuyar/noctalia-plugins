@@ -24,6 +24,10 @@ if [[ -n $errors ]]; then
   status=1
 fi
 
+# This repository's own rules: no slow calls in panels and widgets, and no missing
+# translation keys (rules.py).
+python3 -I .github/scripts/rules.py || status=1
+
 # Luau files, when luau-lsp is installed. The API types come from official-plugins, from a
 # fixed commit; delete noctalia.d.luau after changing it.
 types=285c6b7e793664cc66aaf4bdfbd43c5bd2f9608f
