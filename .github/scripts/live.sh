@@ -35,13 +35,21 @@ read_manifest() {
 import sys, tomllib
 m = tomllib.load(open(sys.argv[1], "rb"))
 print(m["id"])
-for w in m.get("widget", []):
-    print(m["id"] + ":" + w["id"])
+for kind in ("widget", "panel"):
+    for e in m.get(kind, []):
+        print(kind + " " + m["id"] + ":" + e["id"])
 ' "$manifest"
 }
 mapfile -t lines < <(read_manifest)
 id=${lines[0]}
-widgets=("${lines[@]:1}")
+widgets=()
+panels=()
+for line in "${lines[@]:1}"; do
+  case $line in
+    "widget "*) widgets+=("${line#widget }") ;;
+    "panel "*) panels+=("${line#panel }") ;;
+  esac
+done
 
 # Adds or removes the widgets at the start of the first bar's end section.
 # The change is saved in Noctalia's settings overrides, so it lasts until --remove.
@@ -201,6 +209,15 @@ if ! $enabled; then
 fi
 ((${#widgets[@]})) && place_widgets add
 sleep 2
+
+# Each panel opens for a few seconds, so its renders run with real data: a render that goes
+# over its CPU time or raises an error shows in the log below.
+for panel in "${panels[@]}"; do
+  noctalia msg panel-open "$panel" >/dev/null
+  sleep 4
+  noctalia msg panel-close "$panel" >/dev/null
+  sleep 0.5
+done
 
 # Screenshot of the focused monitor.
 shots="$root/ignore/shots"
