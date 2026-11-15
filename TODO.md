@@ -16,13 +16,6 @@ Open questions and pending tasks. When one is settled, write the decision where 
 
 Less code, fewer dependencies, no shell where Luau can do the job. Each item goes once it is done.
 
-### Resurrect
-
-1. Eight `.sh` files and `settings.awk`, 1,900 lines, and 14 dependencies. The save engine moves to the Luau service: it runs `git` and the package managers with argv and applies files itself; only `git push` runs detached. The settings merge moves to Luau too, so `restore.sh` puts the saved settings where the plugin merges them on its first start, and `settings.awk` goes.
-2. `RUNNER` (`sh -c`) runs `snapshot.sh` detached, as a push can outlive the 60 s limit.
-3. Scripts the owner runs in a terminal: `restore.sh` (also on a new install, before Noctalia), `review.sh` and `install.sh`.
-4. `cmp`, `diff`, `find`, `du`, `xargs`, `mktemp`, `date` and `uname` run but are not in `dependencies` or the README.
-
 ### Screen Control
 
 1. No shell. Its commands, `noctalia`, `hyprctl`, `hyprsunset`, `ddcutil` and `systemd-inhibit`, have no Luau replacement.
