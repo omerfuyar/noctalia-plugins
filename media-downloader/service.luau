@@ -274,7 +274,7 @@ end
 
 -- Whether the job's process still runs: the same boot and the same start time.
 local function stillRuns(job)
-  return job.pid ~= nil and job.boot == bootId() and startOf(noctalia.readFile(`/proc/{job.pid}/stat`)) == job.start
+  return job.pid ~= nil and job.boot == bootId() and startOf((noctalia.readFile(`/proc/{job.pid}/stat`))) == job.start
 end
 
 local function stop(job)
