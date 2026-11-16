@@ -5,22 +5,23 @@ set -euo pipefail
 root=$(git rev-parse --show-toplevel)
 cd "$root"
 
-# The validator of noctalia-dev/community-plugins, from a fixed commit.
-upstream=cd454463cdafa8684e7e886fd9bd9bc99b51b462
-tools="ignore/upstream-${upstream:0:12}/scripts"
+# The validator community-plugins runs, shared from official-plugins, from a fixed commit. It
+# needs langdetect, which goes into a virtual environment next to it.
+upstream=99a892dc9cb3490634412701c45acd024fe0383b
+tools="ignore/validator-${upstream:0:12}"
 validator="$tools/validate-plugins.py"
-if [[ ! -f $validator ]]; then
+if [[ ! -x $tools/venv/bin/python ]]; then
   mkdir -p "$tools"
-  curl -fsSL -o "$validator" \
-    "https://raw.githubusercontent.com/noctalia-dev/community-plugins/$upstream/.github/workflows/scripts/validate-plugins.py"
+  for file in validate-plugins.py requirements.txt; do
+    curl -fsSL -o "$tools/$file" \
+      "https://raw.githubusercontent.com/noctalia-dev/official-plugins/$upstream/.github/actions/validate-plugins/$file"
+  done
+  python3 -m venv "$tools/venv"
+  "$tools/venv/bin/pip" install -q --disable-pip-version-check -r "$tools/requirements.txt"
 fi
 
 status=0
-# The validator does not know [[layer]] entries yet (Noctalia has them since plugin API 36),
-# so that one error is left out.
-errors=$(python3 -I "$validator" --root "$root" 2>&1 >/dev/null | grep -vF "unknown root field 'layer'" || true)
-if [[ -n $errors ]]; then
-  echo "$errors" >&2
+if ! "$tools/venv/bin/python" -I "$validator" --profile community --root "$root" >/dev/null; then
   status=1
 fi
 

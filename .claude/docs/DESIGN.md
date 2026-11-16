@@ -154,7 +154,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 
 `.github/scripts/check.sh` checks every plugin without running Noctalia:
 
-1. It runs the validator of community-plugins, from a fixed commit, on this repository. The validator checks manifests, entry scripts, translations, READMEs and thumbnails as community-plugins does. It does not know `[[layer]]` entries yet, so `check.sh` leaves out that one error.
+1. It runs the validator that community-plugins runs, shared from official-plugins, from a fixed commit, with its community profile. The validator checks manifests, entry scripts, translations, READMEs and thumbnails as community-plugins does. Its one Python package, `langdetect`, goes into a virtual environment next to it.
 2. `rules.py` checks this repository's own rules. A slow call such as `noctalia.appIconPath` is an error in a panel, widget, launcher or layer entry, and in any file such an entry loads with `require` (section 1.5). Every translation key written in full in a Luau file must be in `translations/en.json`. No Luau file runs a shell script (`sh -c` or `bash -c` in an argv, or `runAsync` with one string) except the ones listed in `rules.py`, each with why only a shell can do it.
 3. It checks every Luau file with `luau-lsp analyze` against `noctalia.d.luau`, which it fetches from official-plugins, from a fixed commit. When luau-lsp is not installed, it says so and skips this step.
 4. Fetched files go to `ignore/` and are not committed.
@@ -176,7 +176,7 @@ Edits to Luau files reload by themselves while the plugin is enabled. Panels and
 ### 13.3 The owner's machine
 
 1. Live tests run only on the owner's machine, where Noctalia runs. The clone lives there, and Claude Code works on it either by running there or from a cloud session attached to the folder through Remote Control.
-2. The machine needs `noctalia`, `git`, `python3` and `curl`. `luau-lsp` is optional; on CachyOS it comes from the AUR package `luau-lsp-bin`.
+2. The machine needs `noctalia`, `git`, `python3`, `curl` and, to publish, `gh`. `luau-lsp` is optional; on CachyOS it comes from the AUR package `luau-lsp-bin`.
 
 ### 13.4 CI
 
@@ -192,9 +192,10 @@ On every pull request, CI installs luau-lsp, from a fixed release, and runs `che
 ### 14.2 community-plugins
 
 1. A finished plugin is offered to community-plugins in its own pull request, unchanged.
-2. Its `README.md` follows the template of community-plugins: a title, a short explanation, the plugin table, Usage, Requirements, Settings, and IPC and Notes when needed.
-3. `thumbnail.webp` is 960 × 540 pixels and made with the thumbnail generator that community-plugins links.
-4. A plugin with a visible surface has screenshots in its README, at least the panel and the bar widget. They are WebP files in the plugin's `screenshots/` directory, linked with relative paths.
+2. `.github/scripts/publish.sh <plugin>` copies the plugin, as it is on `main`, onto its branch of the fork `omerfuyar/community-plugins`, in a clone in `~/.cache/noctalia-plugins/fork/`, and pushes it. The branch is the one of the author's open pull request that touches the plugin. Without one, it is a branch named after the plugin, made again from community-plugins' `main`, and the script prints the link to open the pull request.
+3. Its `README.md` follows the template of community-plugins: a title, a short explanation, the plugin table, Usage, Requirements, Settings, and IPC and Notes when needed.
+4. `thumbnail.webp` is 960 × 540 pixels and made with the thumbnail generator that community-plugins links.
+5. A plugin with a visible surface has screenshots in its README, at least the panel and the bar widget. They are WebP files in the plugin's `screenshots/` directory, linked with relative paths.
 
 ### 14.3 Other authors' plugins
 
