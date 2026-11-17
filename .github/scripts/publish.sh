@@ -26,6 +26,11 @@ fi
 title=$(git show "origin/main:$plugin/plugin.toml" |
   python3 -I -c 'import sys, tomllib; m = tomllib.load(sys.stdin.buffer); print(m["name"], m["version"])')
 
+# git push without GitHub's "remote:" lines, which -q does not hide.
+push() {
+  git -C "$clone" push -q "$@" 2>&1 | { grep -v '^remote:' >&2 || true; }
+}
+
 clone=${XDG_CACHE_HOME:-$HOME/.cache}/noctalia-plugins/fork
 if [[ ! -d $clone/.git ]]; then
   git clone -q --filter=blob:none "https://github.com/$fork" "$clone"
@@ -54,11 +59,11 @@ fi
 
 if $open; then
   if [[ $(git -C "$clone" rev-parse HEAD) != $(git -C "$clone" rev-parse "origin/$branch") ]]; then
-    git -C "$clone" push -q origin "$branch"
+    push origin "$branch"
   fi
 elif [[ $(git -C "$clone" rev-parse HEAD) == $(git -C "$clone" rev-parse upstream/main) ]]; then
   echo "$plugin on main is the same as in community-plugins: nothing to publish" >&2
 else
-  git -C "$clone" push -q --force origin "$branch"
+  push --force origin "$branch"
   echo "https://github.com/$upstream/compare/main...${fork%%/*}:${fork#*/}:$branch"
 fi
