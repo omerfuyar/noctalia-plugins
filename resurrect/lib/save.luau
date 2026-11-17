@@ -249,7 +249,7 @@ function Save.run(job, opt)
   -- remote. git writes links as plain files here, and links already here are removed before
   -- a save writes or removes anything, so nothing is written or removed through one.
   git("config", "core.symlinks", "false")
-  local links = job.run({ "find", "-H", repo, "-mindepth", "1", "-path", repo .. "/.git", "-prune", "-o", "-type", "l", "-delete" })
+  local links = job.run({ "find", "-H", repo, "-mindepth", "1", "-path", repo .. "/.git", "-prune", "-o", "-type", "l", "-exec", "rm", "-f", "--", "{}", "+" })
   if links.exitCode ~= 0 then
     failed(links, 1, "could not remove the links in " .. repo)
   end
