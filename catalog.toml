@@ -63,8 +63,8 @@ tags = ["bar", "system", "utility"]
 [[plugin]]
 id = "omerfuyar/screen-time"
 name = "Screen Time"
-version = "1.0.1"
-updated_at = 1794022056
+version = "1.0.2"
+updated_at = 1794916125
 added_at = 1793965179
 author = "omerfuyar"
 license = "MIT"
