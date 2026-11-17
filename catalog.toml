@@ -37,8 +37,8 @@ tags = ["bar", "hyprland", "utility"]
 [[plugin]]
 id = "omerfuyar/resurrect"
 name = "Resurrect"
-version = "2.6.2"
-updated_at = 1794912345
+version = "2.7.0"
+updated_at = 1794915876
 added_at = 1793335076
 author = "omerfuyar"
 license = "MIT"
