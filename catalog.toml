@@ -50,8 +50,8 @@ tags = ["bar", "system", "utility"]
 [[plugin]]
 id = "omerfuyar/process-manager"
 name = "Process Manager"
-version = "1.3.0"
-updated_at = 1794763475
+version = "1.3.1"
+updated_at = 1794913115
 added_at = 1793364329
 author = "omerfuyar"
 license = "MIT"
@@ -89,8 +89,8 @@ tags = ["bar", "hyprland", "language"]
 [[plugin]]
 id = "omerfuyar/plugin-hub"
 name = "Plugin Hub"
-version = "1.3.0"
-updated_at = 1794762710
+version = "1.3.1"
+updated_at = 1794913183
 added_at = 1793983092
 author = "omerfuyar"
 license = "MIT"
