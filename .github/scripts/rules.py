@@ -28,6 +28,10 @@ SHELL_SCRIPTS = {
         "a download outlives the service when it reloads, and the shell writes its exit code",
     ("resurrect/service.luau", "LONG"):
         "git's network commands may take longer than the 60 s limit of runAsync callbacks",
+    ("screen-control/lib/hyprland.luau", "EVAL_ALL"):
+        "the requests that put the screens back as the plugin stops run in order after it is gone",
+    ("screen-control/lib/hyprland.luau", "MONITOR_ALL"):
+        "the requests that put the screens back as the plugin stops run in order after it is gone",
 }
 SHELL = re.compile(r'"(?:sh|bash)",\s*"-c",\s*([\w.]+|"[^"]*"|\[)')
 STRING_COMMAND = re.compile(r'runAsync\(\s*(?:"|\[=*\[|string\.format)')
