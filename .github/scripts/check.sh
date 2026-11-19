@@ -29,21 +29,37 @@ fi
 # translation keys (rules.py).
 python3 -I .github/scripts/rules.py || status=1
 
-# Luau files, when luau-lsp is installed. The API types come from official-plugins, from a
-# fixed commit; delete noctalia.d.luau after changing it.
+# Luau files, with luau-lsp from a fixed release, checked against its checksum. The API types
+# come from official-plugins, from a fixed commit; delete noctalia.d.luau after changing it.
 types=285c6b7e793664cc66aaf4bdfbd43c5bd2f9608f
+lsp_version=1.70.1
+lsp_sha256=1a2ea1ae4f98f8946cefd970a4b54853e11ab4775e6932faa7f60cf920346567
+lsp_dir="ignore/luau-lsp-$lsp_version"
+lsp="$lsp_dir/luau-lsp"
+if [[ ! -x $lsp ]]; then
+  if [[ $(uname -sm) != "Linux x86_64" ]]; then
+    echo "luau-lsp is only fetched on Linux x86_64: Luau files were not checked" >&2
+    exit 1
+  fi
+  mkdir -p "$lsp_dir"
+  curl -fsSL -o "$lsp_dir/luau-lsp.zip" \
+    "https://github.com/JohnnyMorganz/luau-lsp/releases/download/$lsp_version/luau-lsp-linux-x86_64.zip"
+  echo "$lsp_sha256  $lsp_dir/luau-lsp.zip" | sha256sum -c --quiet
+  python3 -I -m zipfile -e "$lsp_dir/luau-lsp.zip" "$lsp_dir"
+  chmod +x "$lsp"
+fi
 mapfile -t files < <(git ls-files --cached --others --exclude-standard -- '*.luau' ':!:noctalia.d.luau')
 if ((${#files[@]})); then
-  if command -v luau-lsp >/dev/null; then
-    if [[ ! -f noctalia.d.luau ]]; then
-      curl -fsSL -o noctalia.d.luau \
-        "https://raw.githubusercontent.com/noctalia-dev/official-plugins/$types/noctalia.d.luau"
-    fi
-    luau-lsp analyze --platform=standard --definitions=@noctalia=noctalia.d.luau \
-      --base-luaurc=.luaurc "${files[@]}" || status=1
-  else
-    echo "luau-lsp is not installed: Luau files were not checked" >&2
+  if [[ ! -f noctalia.d.luau ]]; then
+    curl -fsSL -o noctalia.d.luau \
+      "https://raw.githubusercontent.com/noctalia-dev/official-plugins/$types/noctalia.d.luau"
   fi
+  # luau-lsp's [INFO] lines are not problems.
+  if ! "$lsp" analyze --platform=standard --definitions=@noctalia=noctalia.d.luau \
+    --base-luaurc=.luaurc "${files[@]}" >"$lsp_dir/output" 2>&1; then
+    status=1
+  fi
+  grep -v '^\[INFO\]' "$lsp_dir/output" >&2 || true
 fi
 
 exit "$status"
