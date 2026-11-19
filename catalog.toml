@@ -11,8 +11,8 @@
 [[plugin]]
 id = "omerfuyar/screen-control"
 name = "Screen Control"
-version = "1.6.1"
-updated_at = 1795089914
+version = "1.6.2"
+updated_at = 1795102290
 added_at = 1793330113
 author = "omerfuyar"
 license = "MIT"
