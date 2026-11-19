@@ -66,7 +66,7 @@ Screen Control, Media Downloader, Overview, Resurrect, Process Manager, Screen T
 
 ## Checks
 
-- Before each commit, run `.github/scripts/check.sh`. It validates every plugin with the community repository's validator and checks the Luau files with luau-lsp when it is installed.
+- Before each commit, run `.github/scripts/check.sh`. It validates every plugin with the community repository's validator and checks the Luau files with luau-lsp, which it fetches.
 - After a change to a plugin that has an open pull request in community-plugins is merged, run `.github/scripts/publish.sh <plugin>` (DESIGN.md, section 14.2).
 - Before a pull request, test each changed plugin live with `.github/scripts/live.sh <plugin>` and read the screenshot it prints. This needs the owner's machine: when `noctalia` is not installed where you run, say which plugins were not tested live.
 - The scripts print only problems, except the screenshot path from `live.sh`.

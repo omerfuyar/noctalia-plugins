@@ -156,7 +156,7 @@ service.luau ── fetches ──► noctalia.state ──► widget.luau (bar)
 
 1. It runs the validator that community-plugins runs, shared from official-plugins, from a fixed commit, with its community profile. The validator checks manifests, entry scripts, translations, READMEs and thumbnails as community-plugins does. Its one Python package, `langdetect`, goes into a virtual environment next to it.
 2. `rules.py` checks this repository's own rules. A slow call such as `noctalia.appIconPath` is an error in a panel, widget, launcher or layer entry, and in any file such an entry loads with `require` (section 1.5). Every translation key written in full in a Luau file must be in `translations/en.json`. No Luau file runs a shell script (`sh -c` or `bash -c` in an argv, or `runAsync` with one string) except the ones listed in `rules.py`, each with why only a shell can do it.
-3. It checks every Luau file with `luau-lsp analyze` against `noctalia.d.luau`, which it fetches from official-plugins, from a fixed commit. When luau-lsp is not installed, it says so and skips this step.
+3. It checks every Luau file with `luau-lsp analyze` against `noctalia.d.luau`, which it fetches from official-plugins, from a fixed commit. It fetches luau-lsp itself, from a fixed release, and checks it against its checksum, so a check never runs without it. That works on Linux x86_64; elsewhere the check fails.
 4. Fetched files go to `ignore/` and are not committed.
 
 ### 13.2 Live test
@@ -176,11 +176,11 @@ Edits to Luau files reload by themselves while the plugin is enabled. Panels and
 ### 13.3 The owner's machine
 
 1. Live tests run only on the owner's machine, where Noctalia runs. The clone lives there, and Claude Code works on it either by running there or from a cloud session attached to the folder through Remote Control.
-2. The machine needs `noctalia`, `git`, `python3`, `curl` and, to publish, `gh`. `luau-lsp` is optional; on CachyOS it comes from the AUR package `luau-lsp-bin`.
+2. The machine needs `noctalia`, `git`, `python3`, `curl` and, to publish, `gh`. `check.sh` fetches `luau-lsp` itself.
 
 ### 13.4 CI
 
-On every pull request, CI installs luau-lsp, from a fixed release, and runs `check.sh`.
+On every pull request, CI runs `check.sh`.
 
 ## 14. Publishing
 
