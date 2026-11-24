@@ -135,6 +135,8 @@ end
 local function groupHeader(group, open)
   local children = {
     ui.glyph({ name = open and "chevron-down" or "chevron-right", size = 16, color = "on_surface_variant" }),
+    -- A plugin that is off shows its icon muted.
+    ui.glyph({ name = group.glyph, size = 18, color = group.enabled == false and "on_surface_variant" or "primary" }),
     ui.label({ text = group.title, fontWeight = "semibold", flexGrow = 1, maxLines = 1 }),
   }
   if not open and group.enabled ~= false and #group.actions > 0 then
