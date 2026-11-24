@@ -9,9 +9,11 @@ local CONTROL_WIDTH = 170
 
 -- A scroll takes its content's height when it is first laid out, so each list sits in a
 -- column whose height the panel works out from its rows (DESIGN.md, section 6.3). The
--- limits keep the panel within its max_height of 640, less padding, title and gaps.
+-- limits keep the panel within its max_height of 640, less padding, title and gaps. The
+-- scroll pads its content by SCROLL_PAD_V above and below.
 local LIST_MAX = 536
 local LIST_MAX_NO_KEYS = 494
+local SCROLL_PAD_V = 8
 local HEADER_HEIGHT = 40
 local ROW_HEIGHT = 36
 local NOTE_HEIGHT = 20
@@ -229,7 +231,7 @@ end
 
 -- A list of <blocks> as tall as <height>, up to <limit>; above it the list scrolls.
 local function scrollList(key, gap, height, limit, blocks)
-  return ui.column({ height = math.min(height, limit) }, {
+  return ui.column({ height = math.min(height + 2 * SCROLL_PAD_V, limit) }, {
     ui.scroll({ key = key, flexGrow = 1, gap = gap }, blocks),
   })
 end
